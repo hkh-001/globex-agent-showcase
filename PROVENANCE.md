@@ -5,8 +5,8 @@
 - source commit: `51c938cce2cb60b55f9953ab465fe3c3625b8b12`
 - source tree: `0ceae88904f0a628cdb82a5f14ab723e62b82b6d`
 - source tag: `v1.1.2-showcase-source`
-- initial curated commit: `447380e70308dcd1aa50a43957ea75a36983e263`
-- initial curated tree: `37bdb75db9c59e0d3e5c864a747fe7dc41bdb460`
+- initial curated commit: `bafa50360e8f50b5b6fb4b9fda2832b33cb492fb`
+- initial curated tree: `f8b8a27b2268f97e2b25b7105f84e58b25f33e5a`
 
 源文件通过 `git archive` 导出。该方法只包含固定 tree 中已跟踪的文件，因此 `.env`、本地运行目录、构建产物和未跟踪 session 文件不会进入输出。
 

@@ -5,11 +5,15 @@ HARNESS_PYTHON ?= uv run python
 PUBLIC_BASELINE_OUTPUT ?= .globex-runtime/public-business-$(shell date +%Y%m%d-%H%M%S)/report.json
 PUBLIC_BASELINE_PYTHON ?= uv run python
 
-.PHONY: baseline eval-harness eval-harness-contracts eval-harness-dev eval-harness-release
+.PHONY: baseline public-evidence eval-harness eval-harness-contracts eval-harness-dev eval-harness-release
 
 # 公开确定性业务合同；不需要模型凭据，结果默认写入本机忽略目录。
 baseline:
 	$(PUBLIC_BASELINE_PYTHON) scripts/eval/run_public_business_baseline.py --output $(PUBLIC_BASELINE_OUTPUT)
+
+# 校验公开证据清单，拒绝缺失、额外或哈希变化的文件。
+public-evidence:
+	$(PUBLIC_BASELINE_PYTHON) scripts/verify_public_evidence.py
 
 # 每次 Harness 修改：安全契约 + 完整真实模型冒烟 + 同源码证据检查。
 eval-harness:
