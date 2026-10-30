@@ -14,7 +14,7 @@
 - 新仓为独立 Git 历史，remote 只指向公开作品集。
 - 文件和全历史不含本机绝对路径、真实密钥、个人邮箱或过程自评分文档。
 - 已知测试假密钥被明确登记为扫描假阳性。
-- 源码发布前，依赖扫描结果必须逐项分类：有兼容修复的 high/critical 必须修复；没有兼容修复的项必须记录公告、可利用边界、补偿措施和明确受阻的部署范围。未经评估的 high/critical 阻止源码发布。
+- 源码发布前，依赖扫描结果必须逐项分类：有兼容修复的 high/critical 必须修复；没有兼容修复的项必须记录公告、可利用边界、补偿措施和明确受阻的部署范围。未经评估的 high/critical 阻止源码发布。该条由 `scripts/check_npm_audit.py` 在 CI 强制执行，白名单见 `security/audit-allowlist.json`，过期条目同样阻止发布。
 - 公网部署要求 high/critical 为零；当前 AG-UI/Zod 公告使该部署门保持阻塞。
 - 创建公开仓后，匿名访问 README 和 Actions 成功，公开 Actions 为绿色。
 
