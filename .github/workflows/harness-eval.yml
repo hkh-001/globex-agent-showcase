@@ -54,6 +54,8 @@ jobs:
         run: uv run python scripts/verify_public_evidence.py
       - name: Frontend tests
         run: npm --prefix frontend ci --no-audit --no-fund && npm --prefix frontend test -- --run
+      - name: Reject new or stale high-severity dependency exceptions
+        run: uv run python scripts/check_npm_audit.py
       - name: Frontend production build
         run: npm --prefix frontend run build
       - name: Preserve public business baseline

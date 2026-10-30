@@ -1,0 +1,19 @@
+{
+  "schema_version": "globex.npm-audit-allowlist.v1",
+  "reviewed_at": "2026-10-30",
+  "scope": "frontend production and development dependencies",
+  "advisories": {
+    "GHSA-mrhx-c7xc-m3w5": {
+      "allowed_severity": "high",
+      "affected_packages": [
+        "@ag-ui/client",
+        "@ag-ui/core",
+        "@ag-ui/encoder",
+        "@ag-ui/proto",
+        "zod"
+      ],
+      "reason": "AG-UI 0.0.59 requires Zod 3; no compatible fixed release is available. Public internet deployment remains blocked in SECURITY.md.",
+      "remove_when": "AG-UI supports a Zod release that fixes the advisory, or AG-UI removes the vulnerable dependency path."
+    }
+  }
+}

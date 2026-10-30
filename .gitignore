@@ -23,7 +23,6 @@ node_modules/
 # 课程仓库内容（根目录）：只保留在本地 main 分支，不入工程仓库
 /*.md
 !/README.md
-!/AGENTS.md
 /*.html
 /*.json
 /*.xml
@@ -54,9 +53,6 @@ frontend/dist/
 # artifacts 是模型调用账本和运行证据，.globex-runtime 是隔离验收目录，都不入库。
 /artifacts/
 /.globex-runtime/
-
-# 设计文档、改动记录与图解仅在本地维护。
-/docs/
 
 # 评测使用的临时买家/学习数据库只保留在本机。
 /eval/verification/**/isolated/
