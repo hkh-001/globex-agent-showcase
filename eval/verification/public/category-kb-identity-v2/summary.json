@@ -1,0 +1,14 @@
+{
+  "checks": {
+    "physical_name_binds_full_identity": true,
+    "configured_and_actual_dimensions_are_512": true,
+    "all_45_documents_indexed": true,
+    "three_traceable_hits": true,
+    "tests_56_passed": true,
+    "endpoint_stored_as_hash_only": true
+  },
+  "chat_model_requests": 0,
+  "embedding_request_count": "not instrumented",
+  "source_commit": "8fd8808dd770a6acabc0ea2cca08080ba028980f",
+  "result": "pass"
+}

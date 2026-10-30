@@ -1,0 +1,12 @@
+{
+  "checks": {
+    "all_18_executed_and_passed": true,
+    "start_tracked_clean": true,
+    "full_worktree_disclosed": true,
+    "both_endpoint_source_stable": true,
+    "ten_contract_tests_passed": true
+  },
+  "source_commit": "d299abf1196eb19e0533c28e5402c191ea3b1e60",
+  "physical_model_call_count": "not instrumented",
+  "result": "pass"
+}

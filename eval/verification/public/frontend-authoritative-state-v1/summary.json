@@ -1,0 +1,14 @@
+{
+  "checks": {
+    "production_build_passed": true,
+    "stale_404_clears_cached_confirmation": true,
+    "transient_500_preserves_cached_confirmation": true,
+    "orders_view_refreshes_confirmations": true,
+    "landed_total_display_is_covered": true,
+    "frontend_tests_252_passed": true,
+    "late_404_cannot_overwrite_new_sse_confirmation": true
+  },
+  "chat_model_requests": 0,
+  "reference_commit": "58b9c59da2c51b2b3ed279e784d3f37d7247452a",
+  "result": "pass"
+}

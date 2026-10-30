@@ -1,0 +1,53 @@
+{
+  "schema": "globex.public-evidence-manifest.v1",
+  "source_commit": "51c938cce2cb60b55f9953ab465fe3c3625b8b12",
+  "source_tree": "0ceae88904f0a628cdb82a5f14ab723e62b82b6d",
+  "scope": "Curated conclusion files only; raw logs and private full evidence are intentionally excluded.",
+  "files": [
+    {
+      "path": "category-kb-identity-v2/result.json",
+      "sha256": "78648536b9acd9c8c52f0e2066300d0c66b9eea1a7d418c034bc74ad9739dbe8",
+      "bytes": 4906
+    },
+    {
+      "path": "category-kb-identity-v2/summary.json",
+      "sha256": "4a6ae329ea3e90d03a2c30915f50e683e200eab56b353433acc32261b0fb3683",
+      "bytes": 425
+    },
+    {
+      "path": "core-loop-landed-real-v2/summary.json",
+      "sha256": "8fb426eccc26e81c5b826da0e593629893a0cf3e58111e3eddfa85f52ec9fead",
+      "bytes": 6052
+    },
+    {
+      "path": "core-loop-landed-real-v2/ui-order-landed-total.png",
+      "sha256": "55fadfed6fdacb087a87e9a62c53e5d3c8169f903802391ea87ce9703b5309ca",
+      "bytes": 53777
+    },
+    {
+      "path": "core-loop-landed-real-v2/validation.json",
+      "sha256": "9c8ff994ba64810f844b301c181e81ea97debd7c822a069ddc595123184db5e7",
+      "bytes": 1351
+    },
+    {
+      "path": "frontend-authoritative-state-v1/summary.json",
+      "sha256": "7130d4deaa8b1025dddf452ce2515375bc7011ece91ef44fc2410469ca17084b",
+      "bytes": 472
+    },
+    {
+      "path": "landed-price-v1/summary.json",
+      "sha256": "ff9d757d734bb68d1bf7ecc3eda4f9695d8dbf8244feeedb37cad09f0276ff45",
+      "bytes": 602
+    },
+    {
+      "path": "public-business-baseline-v3/report.json",
+      "sha256": "538a66fdd261dbc27c9f8f91b4d879cb2e094a5e6cdc09f99464125778bc6bfc",
+      "bytes": 14885
+    },
+    {
+      "path": "public-business-baseline-v3/summary.json",
+      "sha256": "0dd1b2ce2f25ab40746f33fe2802d39d93016c5a1ddd16b8a7c30ecc6e632018",
+      "bytes": 345
+    }
+  ]
+}

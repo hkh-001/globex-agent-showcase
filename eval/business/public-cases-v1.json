@@ -1,0 +1,25 @@
+{
+  "schema_version": "globex.public-business.v1",
+  "title": "Globex 公开离线业务回归基线",
+  "provenance": "固定原项目业务合同与恢复后的有限改进；只引用公开 pytest 契约，不含私有留出。",
+  "cases": [
+    {"id":"R01","domain":"retrieval","title":"目标币种展示并保留源价格","nodeid":"tests/test_retrieval.py::TestTwoStageRecall::test_product_card_displays_target_currency_and_preserves_source_price","metrics":["constraint_satisfaction","price_integrity"]},
+    {"id":"R02","domain":"retrieval","title":"缺货商品过滤并解释","nodeid":"tests/test_retrieval.py::TestTwoStageRecall::test_out_of_stock_product_is_filtered_and_explained","metrics":["constraint_satisfaction","inventory_safety"]},
+    {"id":"R03","domain":"retrieval","title":"品类与材质硬过滤","nodeid":"tests/test_retrieval.py::TestTwoStageRecall::test_category_and_required_material_are_hard_filters","metrics":["constraint_satisfaction"]},
+    {"id":"R04","domain":"retrieval","title":"预算上限硬过滤","nodeid":"tests/test_retrieval.py::TestTwoStageRecall::test_price_cap_hard_filter","metrics":["constraint_satisfaction","budget_compliance"]},
+    {"id":"R05","domain":"retrieval","title":"不可配送候选给出过滤原因","nodeid":"tests/test_retrieval.py::TestTwoStageRecall::test_unshippable_candidate_reported_in_filtered_out","metrics":["constraint_satisfaction"]},
+    {"id":"R06","domain":"retrieval","title":"搜索结果内联到手价","nodeid":"tests/test_retrieval.py::TestTwoStageRecall::test_landed_price_inlined_with_ship_to","metrics":["landed_price_consistency","price_integrity"]},
+    {"id":"T01","domain":"transaction","title":"准备阶段不创建订单或扣库存","nodeid":"tests/test_confirmation_service.py::test_prepare_exposes_authoritative_snapshot_without_creating_order_or_deducting_stock","metrics":["authorization_safety","inventory_safety"]},
+    {"id":"T02","domain":"transaction","title":"批准后订单库存决议原子提交","nodeid":"tests/test_trade_store.py::test_create_commits_order_inventory_and_decision_together","metrics":["inventory_safety","transaction_atomicity"]},
+    {"id":"T03","domain":"transaction","title":"下单前权威重算到手价","nodeid":"tests/test_trade_store.py::test_landed_total_is_recomputed_before_atomic_create","metrics":["landed_price_consistency","price_integrity","transaction_atomicity"]},
+    {"id":"T04","domain":"transaction","title":"伪造运费闭锁拒绝","nodeid":"tests/test_trade_store.py::test_self_consistent_but_forged_freight_is_rejected","metrics":["landed_price_consistency","authorization_safety"]},
+    {"id":"T05","domain":"transaction","title":"哈希校验、拒绝决议与决策重放","nodeid":"tests/test_trade_store.py::test_hash_and_decision_replay_are_enforced","metrics":["authorization_safety","inventory_safety","idempotency"]},
+    {"id":"T06","domain":"transaction","title":"确认所有权隔离","nodeid":"tests/test_trade_store.py::test_confirmation_owner_is_enforced_everywhere[buyer-2-session-1]","metrics":["ownership_isolation","authorization_safety"]},
+    {"id":"T07","domain":"transaction","title":"并发重复批准仅执行一次","nodeid":"tests/test_trade_store.py::test_independent_connections_replay_one_decision_once","metrics":["idempotency","inventory_safety","transaction_atomicity"]},
+    {"id":"T08","domain":"transaction","title":"并发争抢最后库存仅一单成功","nodeid":"tests/test_trade_store.py::test_independent_operations_race_for_last_stock","metrics":["inventory_safety","transaction_atomicity"]},
+    {"id":"T09","domain":"transaction","title":"重启后库存与决议持久化","nodeid":"tests/test_trade_store.py::test_restart_does_not_reset_stock_and_can_replay_decision","metrics":["persistence","idempotency","inventory_safety"]},
+    {"id":"T10","domain":"transaction","title":"取消原子恢复且重复决议只恢复一次","nodeid":"tests/test_trade_store.py::test_cancel_is_atomic_and_repeated_resolution_only_restores_once","metrics":["inventory_safety","idempotency","transaction_atomicity"]},
+    {"id":"T11","domain":"transaction","title":"取消必须单独用户决议且所有权隔离","nodeid":"tests/test_confirmation_service.py::test_query_and_cancel_enforce_owner_and_cancellation_requires_separate_user_decision","metrics":["ownership_isolation","authorization_safety"]},
+    {"id":"T12","domain":"transaction","title":"不支持计价目的地明确降级为商品意向","nodeid":"tests/test_confirmation_service.py::test_unsupported_pricing_destination_keeps_explicit_merchandise_intent","metrics":["landed_price_consistency","constraint_satisfaction"]}
+  ]
+}

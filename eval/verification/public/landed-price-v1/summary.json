@@ -1,0 +1,19 @@
+{
+  "checks": {
+    "approval_debits_once": true,
+    "approval_replay_is_identical": true,
+    "cancel_preserves_price_snapshot": true,
+    "cancel_restores_once": true,
+    "confirmation_total_is_15400_minor": true,
+    "final_status_is_cancelled": true,
+    "order_total_is_15400_minor": true,
+    "prepare_does_not_debit": true,
+    "pricing_breakdown_is_12900_plus_2500_plus_0": true,
+    "search_landed_total_is_154_cny": true
+  },
+  "model_requests": 0,
+  "product_id": "P1003",
+  "result": "pass",
+  "scope": "deterministic_local_application_loop_no_model_no_payment",
+  "sku_id": "P1003-S1"
+}

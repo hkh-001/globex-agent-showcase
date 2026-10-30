@@ -1,0 +1,32 @@
+{
+  "backend_command": "LLM_API_KEY=test-only .venv/bin/python -m pytest -q -p no:cacheprovider tests/test_confirmation_routes.py tests/test_confirmation_service.py tests/test_eval_http_actions.py tests/test_pricing.py tests/test_trade_store.py tests/test_usecases.py",
+  "backend_log": "backend-tests.log",
+  "backend_related_tests": 133,
+  "backend_result": "passed",
+  "checks": {
+    "all_model_requests_finished_200": true,
+    "application_usage_complete": true,
+    "approval_creates_one_and_debits_once": true,
+    "cancel_approval_restores_once": true,
+    "cancel_prepare_does_not_restore": true,
+    "cancel_preserves_quote_snapshot": true,
+    "final_order_cancelled_at_154": true,
+    "fresh_batch_ledger": true,
+    "idempotent_cancel_replay": true,
+    "max_output_hard_capped_1024": true,
+    "no_pending_confirmations": true,
+    "order_preserves_landed_quote": true,
+    "persistence_reread_preserves_quote": true,
+    "physical_requests_within_limit": true,
+    "prepare_does_not_create_or_debit": true,
+    "prepare_has_landed_quote": true,
+    "prepare_is_pending": true,
+    "prepare_used_order_tool": true,
+    "search_reports_landed_154": true,
+    "search_used_product_tool": true,
+    "single_order_only": true,
+    "ui_displays_landed_total_154": true
+  },
+  "result": "pass",
+  "ui_evidence": "ui-order-landed-total.png"
+}

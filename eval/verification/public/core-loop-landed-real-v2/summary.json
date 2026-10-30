@@ -1,0 +1,126 @@
+{
+  "authorized_limit": 12,
+  "buyer_id": "pao-coder",
+  "checks": {
+    "all_model_requests_finished_200": true,
+    "application_usage_complete": true,
+    "approval_creates_one_and_debits_once": true,
+    "cancel_approval_restores_once": true,
+    "cancel_prepare_does_not_restore": true,
+    "cancel_preserves_quote_snapshot": true,
+    "final_order_cancelled_at_154": true,
+    "fresh_batch_ledger": true,
+    "idempotent_cancel_replay": true,
+    "max_output_hard_capped_1024": true,
+    "no_pending_confirmations": true,
+    "order_preserves_landed_quote": true,
+    "persistence_reread_preserves_quote": true,
+    "physical_requests_within_limit": true,
+    "prepare_does_not_create_or_debit": true,
+    "prepare_has_landed_quote": true,
+    "prepare_is_pending": true,
+    "prepare_used_order_tool": true,
+    "search_reports_landed_154": true,
+    "search_used_product_tool": true,
+    "single_order_only": true,
+    "ui_displays_landed_total_154": true
+  },
+  "inventory_sequence": [
+    80,
+    80,
+    79,
+    79,
+    80
+  ],
+  "known_nonblocking_startup_degradation": "category insight vector index unavailable because local optional KB expected 1024 dimensions while isolated embedding service returned 512; product retrieval index completed and both required tool calls succeeded",
+  "landed_quote_minor": {
+    "currency": "CNY",
+    "freight": 2500,
+    "merchandise": 12900,
+    "tariff": 0,
+    "total": 15400
+  },
+  "model_responses": {
+    "application_observed_usage": {
+      "cost_usd": null,
+      "total_input_tokens": 40485,
+      "total_model_calls": 4,
+      "total_output_tokens": 856,
+      "turns": [
+        {
+          "active_attempts_at_finish": 0,
+          "cost_usd": null,
+          "elapsed_ms": 7279.186875093728,
+          "fallbacks": 0,
+          "input_tokens": 18674,
+          "model_calls": 2,
+          "model_elapsed_ms": 3909.7992090974003,
+          "observed_input_tokens": 18674,
+          "observed_output_tokens": 506,
+          "output_tokens": 506,
+          "source": "turn-1-events.sse",
+          "status": "success",
+          "tool_calls": 1,
+          "tool_errors": 0,
+          "ttft_p95_ms": 573.5156669979915,
+          "unknown_cost_calls": 2,
+          "unknown_usage_calls": 0,
+          "usage_complete": true
+        },
+        {
+          "active_attempts_at_finish": 0,
+          "cost_usd": null,
+          "elapsed_ms": 3134.0902919182554,
+          "fallbacks": 0,
+          "input_tokens": 21811,
+          "model_calls": 2,
+          "model_elapsed_ms": 3107.3043330106884,
+          "observed_input_tokens": 21811,
+          "observed_output_tokens": 350,
+          "output_tokens": 350,
+          "source": "turn-2-events.sse",
+          "status": "success",
+          "tool_calls": 1,
+          "tool_errors": 0,
+          "ttft_p95_ms": 850.9751670062542,
+          "unknown_cost_calls": 2,
+          "unknown_usage_calls": 0,
+          "usage_complete": true
+        }
+      ],
+      "unknown_cost_calls": 4,
+      "unknown_usage_calls": 0
+    },
+    "provider_raw_usage": "not_preserved",
+    "status_codes": [
+      200,
+      200,
+      200,
+      200
+    ],
+    "supplier_response_ids": "not_preserved_by_application_contract"
+  },
+  "order_id": "aad03ab5ff434176895431c737793d30",
+  "physical_requests": 4,
+  "result": "pass",
+  "scope": "real_deepseek_natural_language_plus_deterministic_local_approval_no_payment",
+  "session_id": "core-loop-landed-real-v2",
+  "sku_id": "P1003-S1",
+  "source_commit": "52ba5324d90a2e0c00d006e4b82f33e4c92e4401",
+  "turns": [
+    {
+      "final_text": "在 200 元以内、可发往中国的轻便通勤背包里，我为你保留最合适的一款：\n\n**Wanderlite 折叠旅行双肩包 35L（product_id: P1003）**\n- 默认规格：P1003-S1 石墨黑；另有 P1003-S2 雾霾蓝，均为 129 元，有货\n- 轻便性：卡片标注重量 380g，结构化字段 weight_kg 为 0.33kg。这两处重量描述略有差异，但都属同级超轻，可折叠成手掌大小，适合随身通勤\n- 到手价（配送到中国，按单件商品计算）：\n  - 商品小计：129.00 元\n  - 运费：25.00 元\n  - 关税：0.00 元（适用低值免税，税率 9% 但实际免征）\n  - **合计：154.00 元**，在 200 元预算内\n\n备用参考：BudgetPack 20L 简易背包（P1049）到手 64 元，价格更低，但重量为 0.78kg，且没有轻便亮点，通勤体验不如上面这款。\n\n需要说明：这次检索到的背包只有这两款；另有 P1017 腰包、P2055 宠物出行包、P2312 收纳包，因商品类型不符，未纳入背包候选。\n\n如果你确定选择这款，我可以按石墨黑默认规格，为你准备订单确认单；收货地址需要你提供后才能生成。",
+      "query": "预算200元人民币，配送到中国，需要轻便通勤背包。请实际调用商品检索，只保留最合适的一款，并说明当前到手价（商品、运费、关税和合计）。",
+      "tools": [
+        "product_search_tool"
+      ]
+    },
+    {
+      "final_text": "待确认订单已准备好，目前尚未创建，也没有扣减库存，需要你本人在页面上确认。\n\n待确认内容：\n- 商品：Wanderlite 折叠旅行双肩包 35L（石墨黑，P1003-S1）\n- 数量：1\n- 收货人：测试用户，13800000000\n- 地址：中国 北京市 北京市海淀区 测试路1号，邮编 100000\n- 金额：商品 129.00 元 + 运费 25.00 元 + 关税 0.00 元 = **合计 154.00 元**，适用低值免税\n- 确认单状态：pending，有效期约 5 分钟（至 2026-10-30 02:43 UTC）\n\n请在页面确认卡上核对上述信息，并点击确认按钮；只有你点击后，系统才会创建订单。我不能代你确认。",
+      "query": "选择 P1003 的石墨黑 P1003-S1，数量1。收货信息：测试用户，13800000000，中国北京市海淀区测试路1号，邮编100000。请只准备待确认订单，不要替我批准，也不要直接创建订单。",
+      "tools": [
+        "create_order_tool"
+      ]
+    }
+  ]
+}
