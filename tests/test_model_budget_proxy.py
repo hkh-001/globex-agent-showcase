@@ -4,6 +4,7 @@ import threading
 from concurrent.futures import ThreadPoolExecutor
 
 import httpx
+from openai import OpenAI
 import pytest
 
 from scripts.model_budget_proxy import (
@@ -237,6 +238,46 @@ def test_http_handler_accepts_exact_frozen_output(tmp_path):
         assert upstream[0]["max_tokens"] == 1024
     finally:
         proxy.close()
+
+
+def test_openai_sdk_v1_path_reaches_proxy_and_mock_upstream(tmp_path):
+    upstream = []
+
+    def handler(request):
+        upstream.append(json.loads(request.content))
+        return httpx.Response(200, json=complete_response(model="deepseek-chat"))
+
+    transport = httpx.Client(transport=httpx.MockTransport(handler))
+    ledger = FreshLedger(tmp_path / "sdk-ledger.jsonl", 1)
+    server = BudgetProxyServer(
+        ("127.0.0.1", 0), upstream="https://provider.example/v1",
+        ledger=ledger, maximum_output=8192, expected_output=8192,
+        expected_model="deepseek-chat", expected_temperature=0, client=transport,
+    )
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        sdk = OpenAI(
+            api_key="test-only", base_url=f"http://127.0.0.1:{server.server_port}/v1",
+            http_client=httpx.Client(trust_env=False), max_retries=0,
+        )
+        response = sdk.chat.completions.create(
+            model="deepseek-chat", messages=[{"role": "user", "content": "mock"}],
+            max_tokens=8192,
+        )
+        assert response.model == "deepseek-chat"
+        assert len(upstream) == 1
+        assert upstream[0]["max_tokens"] == 8192
+        assert upstream[0]["temperature"] == 0
+        assert validate_successful_ledger(
+            ledger.path, expected_model="deepseek-chat", expected_output=8192,
+            expected_temperature=0, expected_requests=1,
+        ) == []
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=2)
+        transport.close()
 
 
 def test_http_handler_injects_missing_frozen_temperature(tmp_path):

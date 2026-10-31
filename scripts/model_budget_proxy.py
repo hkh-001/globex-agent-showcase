@@ -322,7 +322,7 @@ class BudgetProxyHandler(BaseHTTPRequestHandler):
 
     def do_POST(self) -> None:  # noqa: N802 - BaseHTTPRequestHandler contract
         server: BudgetProxyServer = self.server  # type: ignore[assignment]
-        if self.path.rstrip("/") != "/chat/completions":
+        if self.path.rstrip("/") not in {"/chat/completions", "/v1/chat/completions"}:
             self._json_error(404, "unsupported_path")
             return
         try:

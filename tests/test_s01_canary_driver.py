@@ -2,14 +2,18 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
 import json
+from types import SimpleNamespace
 
+import httpx
 import pytest
 
 from scripts.eval.run_s01_canary import (
     MODEL, OUTPUT_TOKENS, RECEIPT_SCHEMA,
     backend_environment, local_preflight, proxy_command,
-    consume_receipt, validate_receipt,
+    consume_receipt, event_contract, probe_local_embedding,
+    validate_local_embedding, validate_receipt,
 )
+import scripts.eval.run_s01_canary as driver
 
 
 def receipt(source_commit="abc123", **changes):
@@ -36,8 +40,25 @@ def write_receipt(path, value):
     path.chmod(0o600)
 
 
-def test_receipt_requires_exact_frozen_paid_scope(tmp_path):
-    path = tmp_path / "receipt.json"
+@pytest.fixture
+def authorization_root(tmp_path, monkeypatch):
+    root = tmp_path / "authorizations"
+    root.mkdir()
+    monkeypatch.setattr(driver, "AUTHORIZATION_ROOT", root)
+    monkeypatch.setattr(driver, "CONSUMED_ROOT", root / "consumed")
+    original_run = driver.subprocess.run
+
+    def run(command, *args, **kwargs):
+        if command[:2] == ["git", "check-ignore"]:
+            return SimpleNamespace(returncode=0)
+        return original_run(command, *args, **kwargs)
+
+    monkeypatch.setattr(driver.subprocess, "run", run)
+    return root
+
+
+def test_receipt_requires_exact_frozen_paid_scope(authorization_root):
+    path = authorization_root / "receipt.json"
     write_receipt(path, receipt())
     assert validate_receipt(path, "receipt-s01-one", "abc123")["case_id"] == "S01"
     for field, value in (
@@ -52,8 +73,8 @@ def test_receipt_requires_exact_frozen_paid_scope(tmp_path):
             validate_receipt(path, "receipt-s01-one", "abc123")
 
 
-def test_receipt_requires_ack_source_and_future_expiry(tmp_path):
-    path = tmp_path / "receipt.json"
+def test_receipt_requires_ack_source_and_future_expiry(authorization_root):
+    path = authorization_root / "receipt.json"
     write_receipt(path, receipt())
     with pytest.raises(ValueError, match="acknowledgement"):
         validate_receipt(path, "wrong", "abc123")
@@ -64,8 +85,8 @@ def test_receipt_requires_ack_source_and_future_expiry(tmp_path):
         validate_receipt(path, "receipt-s01-one", "abc123")
 
 
-def test_receipt_rejects_group_access_and_cannot_be_consumed_twice(tmp_path):
-    path = tmp_path / "receipt.json"
+def test_receipt_rejects_group_access_and_cannot_be_consumed_twice(authorization_root, tmp_path):
+    path = authorization_root / "receipt.json"
     write_receipt(path, receipt())
     path.chmod(0o640)
     with pytest.raises(ValueError, match="permissions"):
@@ -76,6 +97,22 @@ def test_receipt_rejects_group_access_and_cannot_be_consumed_twice(tmp_path):
     consume_receipt(path, value, output)
     with pytest.raises(FileExistsError):
         consume_receipt(path, value, output)
+
+
+def test_receipt_rejects_symlink_and_copy_with_same_id(authorization_root, tmp_path):
+    path = authorization_root / "receipt.json"
+    write_receipt(path, receipt())
+    link = authorization_root / "linked.json"
+    link.symlink_to(path)
+    with pytest.raises(ValueError, match="symlink"):
+        validate_receipt(link, "receipt-s01-one", "abc123")
+    value = validate_receipt(path, "receipt-s01-one", "abc123")
+    consume_receipt(path, value, tmp_path / "first")
+    copied = authorization_root / "copied.json"
+    write_receipt(copied, receipt())
+    copied_value = validate_receipt(copied, "receipt-s01-one", "abc123")
+    with pytest.raises(FileExistsError):
+        consume_receipt(copied, copied_value, tmp_path / "second")
 
 
 def test_proxy_command_freezes_both_output_arguments(tmp_path):
@@ -94,6 +131,8 @@ def test_backend_environment_disables_retry_fallback_and_budget_cap(tmp_path, mo
     env = backend_environment(
         proxy_port=18091, backend_port=8005,
         data_dir=tmp_path / "runtime", api_key="test-only-secret",
+        embedding={"base_url": "http://127.0.0.1:11434/v1", "model": "bge-m3",
+                   "version": "ollama-bge-m3", "dimension": 1024},
     )
     assert env["LLM_BASE_URL"] == "http://127.0.0.1:18091/v1"
     assert env["LLM_MODEL"] == "deepseek-chat"
@@ -101,7 +140,61 @@ def test_backend_environment_disables_retry_fallback_and_budget_cap(tmp_path, mo
     assert env["LLM_FALLBACK_MODEL"] == ""
     assert env["TOKEN_BUDGET_TOTAL"] == "0"
     assert env["QUEUE_ENABLED"] == "0"
+    assert env["RERANKER_MODE"] == "disabled"
+    assert env["TAVILY_API_KEY"] == ""
+    assert env["MODEL_RECOVERY_MODE"] == "off"
+    assert env["LLM_ENABLE_THINKING"] == "0"
+    assert env["EMBEDDING_BASE_URL"] == "http://127.0.0.1:11434/v1"
     assert "ALL_PROXY" not in env
+
+
+def test_local_embedding_must_be_loopback_bge_m3_1024():
+    valid = SimpleNamespace(
+        embedding_base_url="http://127.0.0.1:11434/v1",
+        embedding_model="bge-m3", embedding_version="ollama", embedding_dim=1024,
+    )
+    assert validate_local_embedding(valid)["dimension"] == 1024
+    for change in (
+        {"embedding_base_url": "https://provider.example/v1"},
+        {"embedding_model": "remote-model"},
+        {"embedding_dim": 512},
+    ):
+        values = vars(valid) | change
+        with pytest.raises(ValueError):
+            validate_local_embedding(SimpleNamespace(**values))
+
+
+def test_local_embedding_probe_requires_expected_dimension():
+    embedding = {
+        "base_url": "http://127.0.0.1:11434/v1", "model": "bge-m3",
+        "version": "ollama", "dimension": 3,
+    }
+
+    def handler(request):
+        assert request.url.path == "/v1/embeddings"
+        return httpx.Response(200, json={"data": [{"embedding": [0.1, 0.2, 0.3]}]})
+
+    client = httpx.Client(transport=httpx.MockTransport(handler))
+    try:
+        assert probe_local_embedding(embedding, client) == {"status_code": 200, "dimension": 3}
+        embedding["dimension"] = 4
+        with pytest.raises(ValueError, match="dimension"):
+            probe_local_embedding(embedding, client)
+    finally:
+        client.close()
+
+
+def test_s01_event_contract_requires_run_text_search_and_result():
+    complete = [
+        {"type": "RUN_STARTED"},
+        {"type": "TOOL_CALL_START", "toolCallName": "product_search_tool"},
+        {"type": "TOOL_CALL_RESULT"},
+        {"type": "TEXT_MESSAGE_CONTENT", "delta": "找到三个背包"},
+        {"type": "RUN_FINISHED"},
+    ]
+    assert event_contract(complete)["passed"] is True
+    for missing in range(1, 4):
+        assert event_contract(complete[:missing] + complete[missing + 1:])["passed"] is False
 
 
 def test_local_preflight_is_mock_only_and_rejects_before_reserve(tmp_path):

@@ -2,7 +2,7 @@
 
 | 层 | 回答的问题 | 当前公开证据 |
 | --- | --- | --- |
-| 单元与契约 | 业务规则、协议和安全门是否保持 | 932 collected；931 passed；1 个显式平台豁免 |
+| 单元与契约 | 业务规则、协议和安全门是否保持 | 937 collected；936 passed；1 个显式平台豁免 |
 | 公开业务基线 | 精选检索与交易链是否实际执行 | 18 / 18 |
 | 真实模型闭环 | 模型能否完成检索和准备订单，确定性批准后状态是否正确 | 4 次物理请求；闭环通过 |
 
@@ -22,7 +22,7 @@ make baseline
 uv run python -m scripts.eval.harness run --suite eval/harness/v1/suite.json --profile contracts --output .globex-runtime/contracts
 ```
 
-当前口径是 932 项被收集，其中 931 项执行并通过，1 项是带精确 nodeid、平台和原因的显式豁免。未声明 skip、原因变化或过期白名单都会失败。
+当前口径是 937 项被收集，其中 936 项执行并通过，1 项是带精确 nodeid、平台和原因的显式豁免。未声明 skip、原因变化或过期白名单都会失败。
 
 ## 真实模型闭环
 
@@ -39,7 +39,7 @@ uv run python -m scripts.eval.run_s01_canary preflight \
   --output .globex-runtime/eval/s01-preflight-<new-id>
 ```
 
-付费 `run` 模式必须额外提供一次性、权限为 `0600`、位于 Git 忽略路径的授权 receipt，并让 `--acknowledge-paid-run` 与其中 `receipt_id` 完全一致。receipt 还必须绑定当前 source commit、S01、`deepseek-chat`、温度 0、每请求 8192 输出 token、最多 4 次物理请求、零自动重试和空 fallback。驱动会消费该 receipt，启动全新账本和隔离数据目录；任何启动、模型身份、cap、usage、账本或副作用故障均保留首次结果并停止，不会自动调参重跑。
+付费 `run` 模式必须额外提供一次性、权限为 `0600`、直接位于 `.globex-runtime/authorizations/` 的授权 receipt，并让 `--acknowledge-paid-run` 与其中 `receipt_id` 完全一致。receipt 还必须绑定当前 source commit、S01、`deepseek-chat`、温度 0、每请求 8192 输出 token、最多 4 次物理请求、零自动重试和空 fallback。驱动按 `receipt_id` 建立全局消费标记，复制或改名不能重复使用；随后启动全新账本和隔离数据目录。它还会强制使用本机回环的 bge-m3 1024 维 embedding，关闭 reranker、Web 搜索、模型恢复和其他外部旁路。任何启动、模型身份、cap、usage、账本、事件合同或副作用故障均保留首次结果并停止，不会自动调参重跑。
 
 驱动明确不调用模型连接探针：现有连接探针固定使用 1024 输出 token，与本批冻结的 8192 合同不同。批前正向验证由 MockTransport 完成；真实供应商的第一次请求就是获得单独授权后的 S01，不额外消耗“连通性探针”调用。
 
