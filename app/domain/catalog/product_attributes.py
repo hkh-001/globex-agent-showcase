@@ -79,3 +79,11 @@ def infer_product_type(title: str, category: str = "") -> str | None:
         return None
     # category 必须完整匹配类型别名，“旅行装备”等一级类目不会命中。
     return normalize_product_type(category)
+
+
+def mentioned_product_types(text: str) -> frozenset[str]:
+    """返回文字中明确出现的已知类型，用于识别跨类型比较，不做近似猜测。"""
+    normalized = _normalized(text)
+    return frozenset(
+        kind for alias, kind in _ALIASES.items() if _contains_alias(normalized, alias)
+    )

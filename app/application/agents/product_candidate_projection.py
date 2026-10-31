@@ -17,6 +17,30 @@ class ProductCandidateProjection:
         self._references: dict[str, list[str]] = {}
         self.has_result = False
         self.result: dict | None = None
+        self._hard_conditions: dict[str, object] = {}
+
+    @staticmethod
+    def _hard_constraints(payload: dict) -> dict[str, object]:
+        conditions = payload.get("query_conditions")
+        if not isinstance(conditions, dict):
+            return {}
+        return {key: conditions[key] for key in (
+            "product_type", "ship_to", "target_currency", "sku_spec", "price_max_major",
+            "max_weight_kg", "excluded_material_tags", "required_material_tags",
+        ) if conditions.get(key) not in (None, "", [])}
+
+    def _drops_hard_constraint(self, current: dict[str, object]) -> bool:
+        for key, old in self._hard_conditions.items():
+            new = current.get(key)
+            if new is None:
+                return True
+            if key in {"price_max_major", "max_weight_kg"} and new > old:
+                return True
+            if key in {"excluded_material_tags", "required_material_tags"} and not set(old) <= set(new):
+                return True
+            if key not in {"price_max_major", "max_weight_kg", "excluded_material_tags", "required_material_tags"} and new != old:
+                return True
+        return False
 
     def _rank(self, card):
         product = card["product_id"].upper()
@@ -39,7 +63,11 @@ class ProductCandidateProjection:
         result = copy.deepcopy(payload)
         result.pop("tool", None)
         if not self._merge_exact or payload.get("recall_strategy") != "exact_id_lookup" or not hits:
-            # 普通检索、改条件和空结果一律替换；不能继承另一阶段或另一轮的候选。
+            current = self._hard_constraints(payload)
+            if self.has_result and self._drops_hard_constraint(current):
+                return False
+            self._hard_conditions = copy.deepcopy(current)
+            # 普通检索在不放宽既有硬约束时替换；空结果仍是有效事实。
             self._cards.clear()
             self._references.clear()
             self.result = result

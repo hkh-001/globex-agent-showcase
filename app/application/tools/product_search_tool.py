@@ -22,6 +22,7 @@ from app.infrastructure.context import ShoppingContext
 from app.infrastructure.eventbus import TradeEventBus
 from app.infrastructure.budget import remember_verified_result
 from app.infrastructure.persistence.context_evidence import product_decision_view
+from app.application.search_constraint_guard import SearchConstraintConflict, SearchConstraintScope
 
 
 _KNOWN_CATEGORIES = (
@@ -163,9 +164,20 @@ def build_product_search_tool(usecase: CatalogSearchUseCase, bus: TradeEventBus,
             "preferred_product_type": preferred_product_type,
             "prefer_lightweight": prefer_lightweight,
         }
+        guard = SearchConstraintScope.current()
+        constraint_continuity = {"inherited": [], "inferred": [], "scope": "none"}
+        if guard is not None:
+            try:
+                args, constraint_continuity = await guard.reconcile(args)
+            except SearchConstraintConflict as err:
+                bus.publish(session_id, "tool.result", {"tool": "product_search_tool", "error": str(err)})
+                return ToolChunk(
+                    content=[TextBlock(type="text", text=f"[error] {err}")],
+                    state=ToolResultState.ERROR,
+                )
         bus.publish(session_id, "tool.invoke", {"tool": "product_search_tool", "args": args})
-        if ship_to and ship_to not in TariffSchedule(ExchangeRateTable()).supported_destinations():
-            error = f"暂不支持的目的国：{ship_to}"
+        if args["ship_to"] and args["ship_to"] not in TariffSchedule(ExchangeRateTable()).supported_destinations():
+            error = f"暂不支持的目的国：{args['ship_to']}"
             bus.publish(session_id, "tool.result", {"tool": "product_search_tool", "error": error})
             return ToolChunk(
                 content=[TextBlock(type="text", text=f"[error] {error}")],
@@ -173,21 +185,21 @@ def build_product_search_tool(usecase: CatalogSearchUseCase, bus: TradeEventBus,
             )
         try:
             spec = ProductSearchSpec(
-                normalized_query=normalized_query,
-                category=category,
-                ship_to=ship_to,
-                top_k=top_k,
-                price_max_major=price_max_major,
-                target_currency=target_currency,
-                excluded_material_tags=excluded_material_tags or [],
-                required_material_tags=required_material_tags or [],
-                product_id=product_id,
-                sku_id=sku_id,
-                sku_spec=sku_spec,
-                product_type=product_type,
-                max_weight_kg=max_weight_kg,
-                preferred_product_type=preferred_product_type,
-                prefer_lightweight=prefer_lightweight,
+                normalized_query=args["normalized_query"],
+                category=args["category"],
+                ship_to=args["ship_to"],
+                top_k=args["top_k"],
+                price_max_major=args["price_max_major"],
+                target_currency=args["target_currency"],
+                excluded_material_tags=args["excluded_material_tags"],
+                required_material_tags=args["required_material_tags"],
+                product_id=args["product_id"],
+                sku_id=args["sku_id"],
+                sku_spec=args["sku_spec"],
+                product_type=args["product_type"],
+                max_weight_kg=args["max_weight_kg"],
+                preferred_product_type=args["preferred_product_type"],
+                prefer_lightweight=args["prefer_lightweight"],
             )
             result = await usecase.execute(spec)
         except ValueError as err:
@@ -197,6 +209,7 @@ def build_product_search_tool(usecase: CatalogSearchUseCase, bus: TradeEventBus,
                 state=ToolResultState.ERROR,
             )
         result["query_conditions"] = args
+        result["constraint_continuity"] = constraint_continuity
         from datetime import datetime, timezone
         result["observed_at"] = datetime.now(timezone.utc).isoformat()
         remember_verified_result("products", result)
@@ -211,6 +224,8 @@ def build_product_search_tool(usecase: CatalogSearchUseCase, bus: TradeEventBus,
                 "recall_strategy": result["recall_strategy"],
                 "total_candidates": result["total_candidates"],
                 "rerank_applied": result["rerank_applied"],
+                "query_conditions": result["query_conditions"],
+                "constraint_continuity": constraint_continuity,
                 # 商品卡随事件下发，前端无需再调接口即可渲染（含 landed_price 到手价）
                 "hits": result["hits"],
                 **({"result_ref": result["result_ref"]} if "result_ref" in result else {}),

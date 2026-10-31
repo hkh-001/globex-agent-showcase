@@ -237,6 +237,8 @@ class MainAgentOrchestrator:
             currency=intent.currency,
         )
         token = ShoppingContext.set(snapshot)
+        from app.application.search_constraint_guard import SearchConstraintScope
+        search_constraint_token = SearchConstraintScope.start(intent.raw_query)
         started_at = time.monotonic()
         # 本轮 Token 预算（TOKEN_BUDGET_TOTAL=0时为 None，不启用四档降级）
         init_budget(self._token_budget_total)
@@ -403,6 +405,7 @@ class MainAgentOrchestrator:
                 if self._drift_detector is not None:
                     self._drift_detector.reset(session_id)
                 ShoppingContext.reset(token)
+                SearchConstraintScope.reset(search_constraint_token)
 
     async def _preference_scope(self, buyer_id: str) -> str | None:
         """买家当前偏好的指纹，作为语义缓存的分桶维度。

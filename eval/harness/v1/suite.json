@@ -176,7 +176,8 @@
     "tests/test_model_selection_runtime.py",
     "tests/test_model_workspace.py",
     "tests/test_model_connection_identity.py",
-    "tests/test_public_business_automation.py"
+    "tests/test_public_business_automation.py",
+    "tests/test_search_constraint_continuity.py"
   ],
   "contract_allowed_skips": [
     {
