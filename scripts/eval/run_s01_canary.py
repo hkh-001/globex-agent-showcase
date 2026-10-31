@@ -215,6 +215,14 @@ def backend_environment(*, proxy_port: int, backend_port: int, data_dir: Path, a
         "TAVILY_API_KEY": "",
         "PREFERENCE_RELEVANCE_ENABLED": "0",
         "DRIFT_DETECT_ENABLED": "0",
+        "OTEL_SDK_DISABLED": "true",
+        "OTEL_EXPORTER_OTLP_ENDPOINT": "",
+        "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT": "",
+        "OTEL_EXPORTER_OTLP_HEADERS": "",
+        "OTEL_EXPORTER_OTLP_TRACES_HEADERS": "",
+        "LANGFUSE_BASE_URL": "",
+        "LANGFUSE_PUBLIC_KEY": "",
+        "LANGFUSE_SECRET_KEY": "",
         "EMBEDDING_BASE_URL": embedding["base_url"],
         "EMBEDDING_API_KEY": "local-only",
         "EMBEDDING_MODEL": embedding["model"],
@@ -227,9 +235,6 @@ def backend_environment(*, proxy_port: int, backend_port: int, data_dir: Path, a
     })
     for name in ("ALL_PROXY", "all_proxy", "HTTP_PROXY", "http_proxy", "HTTPS_PROXY", "https_proxy"):
         env.pop(name, None)
-    for name in tuple(env):
-        if name.startswith(("LANGFUSE_", "OTEL_", "OTLP_")):
-            env.pop(name, None)
     return env
 
 
@@ -369,7 +374,7 @@ def event_contract(events: list[dict[str, Any]]) -> dict[str, Any]:
         event.get("toolCallId"): index for index, event in enumerate(events)
         if event.get("type") == "TOOL_CALL_START"
         and event.get("toolCallName") == "product_search_tool"
-        and isinstance(event.get("toolCallId"), str) and event.get("toolCallId")
+        and isinstance(event.get("toolCallId"), str) and event.get("toolCallId").strip()
     }
     paired_search_results = [
         event for index, event in enumerate(events)

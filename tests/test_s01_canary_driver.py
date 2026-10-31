@@ -3,6 +3,8 @@ from __future__ import annotations
 from datetime import datetime, timedelta, timezone
 import json
 from pathlib import Path
+import subprocess
+import sys
 from types import SimpleNamespace
 
 import httpx
@@ -158,7 +160,23 @@ def test_backend_environment_disables_retry_fallback_and_budget_cap(tmp_path, mo
     assert env["LLM_ENABLE_THINKING"] == "0"
     assert env["EMBEDDING_BASE_URL"] == "http://127.0.0.1:11434/v1"
     assert "ALL_PROXY" not in env
-    assert not any(name.startswith(("LANGFUSE_", "OTEL_", "OTLP_")) for name in env)
+    assert env["OTEL_SDK_DISABLED"] == "true"
+    assert env["LANGFUSE_SECRET_KEY"] == ""
+    assert env["OTEL_EXPORTER_OTLP_ENDPOINT"] == ""
+
+    dotenv = tmp_path / ".env"
+    dotenv.write_text(
+        "LANGFUSE_SECRET_KEY=revived-secret\n"
+        "OTEL_EXPORTER_OTLP_ENDPOINT=https://telemetry.example\n"
+    )
+    probe = subprocess.run(
+        [sys.executable, "-c",
+         "from dotenv import load_dotenv; import os,sys; load_dotenv(sys.argv[1]); "
+         "print(repr((os.getenv('LANGFUSE_SECRET_KEY'), os.getenv('OTEL_EXPORTER_OTLP_ENDPOINT'))))",
+         str(dotenv)],
+        env=env, check=True, capture_output=True, text=True,
+    )
+    assert probe.stdout.strip() == "('', '')"
 
 
 def test_local_embedding_must_be_loopback_bge_m3_1024():
@@ -218,6 +236,11 @@ def test_s01_event_contract_rejects_mismatched_or_out_of_order_tool_result():
     assert event_contract(prefix + [start, wrong, finish])["passed"] is False
     matched = {"type": "TOOL_CALL_RESULT", "toolCallId": "search-A", "content": "{}"}
     assert event_contract(prefix + [matched, start, finish])["passed"] is False
+    whitespace_start = {
+        "type": "TOOL_CALL_START", "toolCallName": "product_search_tool", "toolCallId": "   ",
+    }
+    whitespace_result = {"type": "TOOL_CALL_RESULT", "toolCallId": "   ", "content": "{}"}
+    assert event_contract(prefix + [whitespace_start, whitespace_result, finish])["passed"] is False
 
 
 def test_failure_after_receipt_consumption_still_writes_result_and_manifest(
