@@ -77,6 +77,8 @@ npm --prefix frontend run build
 
 `make baseline` 必须实际执行 18 个场景，每个 nodeid 恰好执行一次；错误、跳过或未执行都会返回非零。公开结论与 SHA-256 清单位于 [eval/verification/public](eval/verification/public)。真实模型评测在 GitHub Actions 中默认关闭，只能手动明确选择。
 
+GitHub Actions 按职责分为两道门：`Harness regression` 运行后端契约、18 场景基线与公开证据哈希校验；`Frontend regression` 运行前端测试、生产构建和依赖审计门。两者都对各自守护的源码、配置、校验器和证据输入设置 push / pull request 路径触发。具体的自动与人工发布边界见 [PUBLIC_RELEASE_RUBRIC.md](PUBLIC_RELEASE_RUBRIC.md)。
+
 ## 一次真实故障如何被门禁发现
 
 私有源仓的首次 Linux CI 因一个仅适用于 Windows 的用例被跳过而失败。修复没有放宽契约门，而是把唯一例外绑定到精确 nodeid、平台和原因；未声明的 skip、原因不符或已经失效的白名单都会继续失败。这段红到绿过程体现了门禁会真实阻断。新公开仓自己的云端结果只在发布后单独验收，不能由这段历史替代。

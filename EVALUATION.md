@@ -33,3 +33,16 @@ uv run python -m scripts.eval.harness run --suite eval/harness/v1/suite.json --p
 ## 证据完整性
 
 [公开证据目录](eval/verification/public)只发布不含本机日志和绝对路径的结论文件。`manifest.json` 为这些公开文件记录 SHA-256。完整原始日志保留在私有源仓的固定 source commit/tree 中，公开仓不声称其完整披露。
+
+## CI 与人工验收边界
+
+| 结论 | 保证方式 |
+| --- | --- |
+| Harness 契约门 | `Harness regression` 对匹配路径的 push / pull request 自动执行 |
+| 18 项公开业务基线 | `Harness regression` 自动执行并保留 report artifact |
+| 9 份公开证据哈希 | `Harness regression` 自动调用 `scripts/verify_public_evidence.py` |
+| 252 项前端测试与生产构建 | `Frontend regression` 对前端源码、测试与配置变更自动执行 |
+| high / critical 依赖例外 | `Frontend regression` 同时运行负向合同与真实 `npm audit` |
+| 真实模型效果 | 不由默认 CI 保证；必须手动选择、单独授权与单独报告 |
+
+路径匹配合同保证守护文件会进入对应 workflow；是否适合公网部署、指标是否被如实表述、仓库是否可匿名访问，仍属于人工发布验收。

@@ -14,7 +14,7 @@
 - 发布范围只允许源码作品集和本机回环演示，不批准把本版本直接暴露为公网服务。
 - CI 运行固定、仓库内输入；真实模型 job 默认关闭。
 - 前端只连接同源后端；公开部署前必须升级到带兼容修复的 AG-UI/Zod 组合，并重新运行完整前端合同。
-- 依赖公告由 CI 强制门禁执行：`scripts/check_npm_audit.py` 运行 `npm audit --json`，只放行 `security/audit-allowlist.json` 中登记且当前仍然成立的 high/critical。出现新公告、严重度升级、受影响包变化，或白名单条目已过期，都会让 CI 失败。
+- 依赖公告由 `Frontend regression` 强制门禁执行：前端源码、依赖文件、审计脚本或白名单的匹配变更会触发 `scripts/check_npm_audit.py`。它运行 `npm audit --json`，只放行 `security/audit-allowlist.json` 中登记且当前仍然成立的 high/critical。出现新公告、严重度升级、受影响包变化，或白名单条目已过期，都会让 CI 失败。
 - 审计请求本身失败（registry 不可达、输出不是合法 JSON）同样按阻塞处理，不降级为通过；不要把它改成非阻塞步骤。
 - 该 AG-UI/Zod 公告未解除前，公网部署门保持阻塞；公告消失后必须删除对应白名单条目，否则门禁会因"过期白名单"失败。
 
