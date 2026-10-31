@@ -30,6 +30,7 @@ WATCHED = ('app/application/agents/', 'app/application/harness/', 'app/applicati
            'app/infrastructure/persistence/context_evidence.py', 'app/infrastructure/persistence/sql/session_store.py',
            'app/infrastructure/security/', 'app/composition.py',
            'scripts/eval/', 'scripts/model_preflight.py', 'eval/harness/v1/', 'tests/test_harness', 'tests/test_context',
+           'scripts/model_budget_proxy.py',
            'tests/test_model_protocol', 'tests/test_visible_evidence',
            'tests/test_layered', 'tests/test_prompt_cache', 'tests/test_native_memory', 'pyproject.toml', 'uv.lock',
            'Makefile', '.github/workflows/harness-eval.yml', 'data/catalog-v1.jsonl')

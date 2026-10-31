@@ -239,6 +239,68 @@ def test_http_handler_accepts_exact_frozen_output(tmp_path):
         proxy.close()
 
 
+def test_http_handler_injects_missing_frozen_temperature(tmp_path):
+    upstream = []
+
+    def handler(request):
+        upstream.append(json.loads(request.content))
+        return httpx.Response(200, json=complete_response())
+
+    client = httpx.Client(transport=httpx.MockTransport(handler))
+    ledger = FreshLedger(tmp_path / "http-ledger.jsonl", 1)
+    server = BudgetProxyServer(
+        ("127.0.0.1", 0), upstream="https://provider.example/v1",
+        ledger=ledger, maximum_output=1024, expected_output=1024,
+        expected_model="m", expected_temperature=0, client=client,
+    )
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        response = httpx.post(
+            f"http://127.0.0.1:{server.server_port}/chat/completions",
+            json={"model": "m", "max_tokens": 1024},
+        )
+        assert response.status_code == 200
+        assert upstream[0]["temperature"] == 0
+        rows = [json.loads(line) for line in ledger.path.read_text().splitlines()]
+        assert next(row for row in rows if row["event"] == "reserved")["temperature"] == 0
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=2)
+
+
+@pytest.mark.parametrize("temperature", [True, "0", 1])
+def test_http_handler_rejects_invalid_or_non_frozen_temperature(tmp_path, temperature):
+    upstream = []
+
+    def handler(request):
+        upstream.append(request)
+        return httpx.Response(200, json=complete_response())
+
+    client = httpx.Client(transport=httpx.MockTransport(handler))
+    ledger = FreshLedger(tmp_path / "http-ledger.jsonl", 1)
+    server = BudgetProxyServer(
+        ("127.0.0.1", 0), upstream="https://provider.example/v1",
+        ledger=ledger, maximum_output=1024, expected_output=1024,
+        expected_model="m", expected_temperature=0, client=client,
+    )
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        response = httpx.post(
+            f"http://127.0.0.1:{server.server_port}/chat/completions",
+            json={"model": "m", "max_tokens": 1024, "temperature": temperature},
+        )
+        assert response.status_code == 400
+        assert upstream == []
+        assert '"event": "reserved"' not in ledger.path.read_text()
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=2)
+
+
 def test_http_handler_concurrent_limit_is_atomic(tmp_path):
     calls = 0
     lock = threading.Lock()

@@ -2,7 +2,7 @@
 
 | 层 | 回答的问题 | 当前公开证据 |
 | --- | --- | --- |
-| 单元与契约 | 业务规则、协议和安全门是否保持 | 880 collected；879 passed；1 个显式平台豁免 |
+| 单元与契约 | 业务规则、协议和安全门是否保持 | 932 collected；931 passed；1 个显式平台豁免 |
 | 公开业务基线 | 精选检索与交易链是否实际执行 | 18 / 18 |
 | 真实模型闭环 | 模型能否完成检索和准备订单，确定性批准后状态是否正确 | 4 次物理请求；闭环通过 |
 
@@ -22,13 +22,26 @@ make baseline
 uv run python -m scripts.eval.harness run --suite eval/harness/v1/suite.json --profile contracts --output .globex-runtime/contracts
 ```
 
-当前口径是 880 项被收集，其中 879 项执行并通过，1 项是带精确 nodeid、平台和原因的显式豁免。未声明 skip、原因变化或过期白名单都会失败。
+当前口径是 932 项被收集，其中 931 项执行并通过，1 项是带精确 nodeid、平台和原因的显式豁免。未声明 skip、原因变化或过期白名单都会失败。
 
 ## 真实模型闭环
 
 公开摘要记录一条隔离 SQLite 上的 DeepSeek 自然语言链：检索商品、准备确认单、人工批准、持久化读取、准备取消和人工批准取消。4/12 次物理请求，单次输出上限 1024 token，零自动重试；库存序列为 `80 → 80 → 79 → 79 → 80`，价格为 `129 + 25 + 0 = 154 CNY`。
 
 该结果只证明固定版本、固定合成场景的一次受控回归，不是统计意义上的模型效果比较。
+
+### S01 单场景诊断驱动
+
+S01 的真实模型重跑使用入库驱动 [`scripts/eval/run_s01_canary.py`](scripts/eval/run_s01_canary.py)。默认的 `preflight` 只使用 `httpx.MockTransport` 和本机回环，不读取模型密钥，也不连接供应商：
+
+```bash
+uv run python -m scripts.eval.run_s01_canary preflight \
+  --output .globex-runtime/eval/s01-preflight-<new-id>
+```
+
+付费 `run` 模式必须额外提供一次性、权限为 `0600`、位于 Git 忽略路径的授权 receipt，并让 `--acknowledge-paid-run` 与其中 `receipt_id` 完全一致。receipt 还必须绑定当前 source commit、S01、`deepseek-chat`、温度 0、每请求 8192 输出 token、最多 4 次物理请求、零自动重试和空 fallback。驱动会消费该 receipt，启动全新账本和隔离数据目录；任何启动、模型身份、cap、usage、账本或副作用故障均保留首次结果并停止，不会自动调参重跑。
+
+驱动明确不调用模型连接探针：现有连接探针固定使用 1024 输出 token，与本批冻结的 8192 合同不同。批前正向验证由 MockTransport 完成；真实供应商的第一次请求就是获得单独授权后的 S01，不额外消耗“连通性探针”调用。
 
 ## 证据完整性
 

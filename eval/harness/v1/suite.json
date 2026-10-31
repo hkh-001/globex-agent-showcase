@@ -177,7 +177,9 @@
     "tests/test_model_workspace.py",
     "tests/test_model_connection_identity.py",
     "tests/test_public_business_automation.py",
-    "tests/test_search_constraint_continuity.py"
+    "tests/test_search_constraint_continuity.py",
+    "tests/test_model_budget_proxy.py",
+    "tests/test_s01_canary_driver.py"
   ],
   "contract_allowed_skips": [
     {

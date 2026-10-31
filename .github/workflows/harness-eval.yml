@@ -5,6 +5,7 @@ on:
     paths:
       - 'app/**'
       - 'scripts/eval/**'
+      - 'scripts/model_budget_proxy.py'
       - 'scripts/verify_public_evidence.py'
       - 'eval/harness/**'
       - 'eval/business/**'
@@ -22,6 +23,7 @@ on:
     paths:
       - 'app/**'
       - 'scripts/eval/**'
+      - 'scripts/model_budget_proxy.py'
       - 'scripts/verify_public_evidence.py'
       - 'eval/harness/**'
       - 'eval/business/**'

@@ -339,9 +339,15 @@ class BudgetProxyHandler(BaseHTTPRequestHandler):
                 raise ValueError("JSON body must be an object")
             requested_model = validated_model_id(payload.get("model"))
             payload, requested, applied = enforce_output_limit(payload, server.maximum_output)
-            temperature = payload.get("temperature")
-            if isinstance(temperature, bool) or not isinstance(temperature, (int, float)):
-                temperature = None
+            raw_temperature = payload.get("temperature")
+            if raw_temperature is not None and (
+                isinstance(raw_temperature, bool) or not isinstance(raw_temperature, (int, float))
+            ):
+                raise ValueError("temperature must be numeric when provided")
+            temperature = raw_temperature
+            if temperature is None and server.expected_temperature is not None:
+                temperature = server.expected_temperature
+                payload["temperature"] = temperature
             if server.expected_model is not None and requested_model != server.expected_model:
                 raise ValueError("requested model does not match the frozen batch model")
             if server.expected_temperature is not None and temperature != server.expected_temperature:

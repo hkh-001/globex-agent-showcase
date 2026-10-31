@@ -1,0 +1,458 @@
+"""Reproducible S01 paid canary driver; defaults to a zero-network preflight.
+
+The ``run`` mode is intentionally difficult to invoke accidentally: it requires
+a fresh human-authorization receipt plus an exact acknowledgement.  It starts a
+fresh budget proxy and an isolated backend, performs exactly one user turn, then
+drains both processes and validates the physical-request ledger.
+"""
+from __future__ import annotations
+
+import argparse
+from datetime import datetime, timezone
+import hashlib
+import json
+import os
+from pathlib import Path
+import socket
+import subprocess
+import sys
+import threading
+import time
+from typing import Any
+from urllib.parse import urlsplit
+
+import httpx
+
+from app.infrastructure.settings import load_settings
+from scripts.eval.harness.contracts import ROOT, assert_output_path, write_json
+from scripts.model_budget_proxy import (
+    BudgetProxyServer,
+    FreshLedger,
+    validate_successful_ledger,
+)
+
+
+CASE_ID = "S01"
+QUERY = "帮我挑一个适合旅行的背包。"
+MODEL = "deepseek-chat"
+OUTPUT_TOKENS = 8192
+TEMPERATURE = 0
+RECEIPT_SCHEMA = "globex-paid-eval-authorization-v1"
+RESULT_SCHEMA = "globex-s01-canary-run-v2"
+
+
+def _sha256(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def _source_commit() -> str:
+    return subprocess.run(
+        ["git", "rev-parse", "HEAD"], cwd=ROOT, check=True,
+        capture_output=True, text=True,
+    ).stdout.strip()
+
+
+def _tracked_clean() -> bool:
+    unstaged = subprocess.run(["git", "diff", "--quiet", "HEAD"], cwd=ROOT).returncode == 0
+    staged = subprocess.run(["git", "diff", "--cached", "--quiet", "HEAD"], cwd=ROOT).returncode == 0
+    return unstaged and staged
+
+
+def _port() -> int:
+    with socket.socket() as sock:
+        sock.bind(("127.0.0.1", 0))
+        return int(sock.getsockname()[1])
+
+
+def _rows(path: Path) -> list[dict[str, Any]]:
+    return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()]
+
+
+def _reserved_count(path: Path) -> int:
+    return sum(row.get("event") == "reserved" for row in _rows(path))
+
+
+def validate_receipt(path: Path, acknowledgement: str, source_commit: str) -> dict[str, Any]:
+    if not path.is_file():
+        raise ValueError("authorization receipt does not exist")
+    resolved = path.resolve()
+    if ROOT in resolved.parents:
+        ignored = subprocess.run(
+            ["git", "check-ignore", "--quiet", str(resolved)], cwd=ROOT,
+        ).returncode == 0
+        if not ignored:
+            raise ValueError("authorization receipt inside the repository must be gitignored")
+    if path.stat().st_mode & 0o077:
+        raise ValueError("authorization receipt permissions must not allow group/other access")
+    receipt = json.loads(path.read_text(encoding="utf-8"))
+    exact = {
+        "schema_version": RECEIPT_SCHEMA,
+        "authorized": True,
+        "case_id": CASE_ID,
+        "source_commit": source_commit,
+        "model": MODEL,
+        "temperature": TEMPERATURE,
+        "max_output_tokens_per_request": OUTPUT_TOKENS,
+        "max_physical_requests": 4,
+        "automatic_retries": 0,
+        "fallback_model": "",
+    }
+    for key, value in exact.items():
+        if receipt.get(key) != value:
+            raise ValueError(f"authorization receipt field mismatch: {key}")
+    receipt_id = receipt.get("receipt_id")
+    if not isinstance(receipt_id, str) or not receipt_id or acknowledgement != receipt_id:
+        raise ValueError("paid-run acknowledgement must exactly match receipt_id")
+    expires_at = receipt.get("expires_at")
+    if not isinstance(expires_at, str):
+        raise ValueError("authorization receipt requires expires_at")
+    expiry = datetime.fromisoformat(expires_at.replace("Z", "+00:00"))
+    if expiry.tzinfo is None or expiry <= datetime.now(timezone.utc):
+        raise ValueError("authorization receipt is expired or timezone-naive")
+    return receipt
+
+
+def consume_receipt(path: Path, receipt: dict[str, Any], output: Path) -> Path:
+    marker = path.with_name(path.name + ".consumed")
+    with marker.open("x", encoding="utf-8") as handle:
+        json.dump({
+            "receipt_id": receipt["receipt_id"],
+            "source_commit": receipt["source_commit"],
+            "output": str(output),
+            "consumed_at": datetime.now(timezone.utc).isoformat(),
+        }, handle, ensure_ascii=False, indent=2)
+        handle.write("\n")
+    return marker
+
+
+def proxy_command(*, port: int, upstream: str, ledger: Path, limit: int) -> list[str]:
+    return [
+        sys.executable, str(ROOT / "scripts/model_budget_proxy.py"),
+        "--listen-port", str(port), "--upstream", upstream,
+        "--ledger", str(ledger), "--limit", str(limit),
+        "--maximum-output", str(OUTPUT_TOKENS),
+        "--expected-output", str(OUTPUT_TOKENS),
+        "--expected-model", MODEL,
+        "--expected-temperature", str(TEMPERATURE),
+    ]
+
+
+def backend_environment(*, proxy_port: int, backend_port: int, data_dir: Path, api_key: str) -> dict[str, str]:
+    env = dict(os.environ)
+    env.update({
+        "PORT": str(backend_port),
+        "DATA_DIR": str(data_dir),
+        "LLM_BASE_URL": f"http://127.0.0.1:{proxy_port}/v1",
+        "LLM_API_KEY": api_key,
+        "LLM_MODEL": MODEL,
+        "LLM_FALLBACK_MODEL": "",
+        "LLM_MAX_RETRIES": "0",
+        "LLM_MAX_CONCURRENCY": "1",
+        "LLM_MIN_INTERVAL_SECONDS": "0",
+        "TOKEN_BUDGET_TOTAL": "0",
+        "REPLY_TOKEN_BUDGET": "0",
+        "QUEUE_ENABLED": "0",
+        "REDIS_URL": "",
+        "SEMANTIC_CACHE_ENABLED": "0",
+        "PROMPT_CACHE_MODE": "passthrough",
+        "DATABASE_URL": "",
+        "MYSQL_URL": "",
+        "IDENTITY_MODE": "demo",
+        "MODEL_ALLOWED_LOCAL_HOSTS": "127.0.0.1,localhost",
+    })
+    for name in ("ALL_PROXY", "all_proxy", "HTTP_PROXY", "http_proxy", "HTTPS_PROXY", "https_proxy"):
+        env.pop(name, None)
+    return env
+
+
+def _complete_mock_response() -> dict[str, Any]:
+    return {
+        "id": "preflight", "model": MODEL,
+        "choices": [{"message": {"content": "ok"}, "finish_reason": "stop"}],
+        "usage": {"prompt_tokens": 2, "completion_tokens": 1, "total_tokens": 3},
+    }
+
+
+def local_preflight(output: Path) -> dict[str, Any]:
+    """Exercise the exact proxy contract through MockTransport; never touches a provider."""
+    output = assert_output_path(output)
+    output.mkdir(parents=True)
+    upstream: list[dict[str, Any]] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        upstream.append(json.loads(request.content))
+        return httpx.Response(200, json=_complete_mock_response())
+
+    client = httpx.Client(transport=httpx.MockTransport(handler))
+    ledger_path = output / "mock-ledger.jsonl"
+    ledger = FreshLedger(ledger_path, 1)
+    server = BudgetProxyServer(
+        ("127.0.0.1", 0), upstream="https://provider.invalid/v1",
+        ledger=ledger, maximum_output=OUTPUT_TOKENS,
+        expected_output=OUTPUT_TOKENS, expected_model=MODEL,
+        expected_temperature=TEMPERATURE, client=client,
+    )
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    url = f"http://127.0.0.1:{server.server_port}/chat/completions"
+    try:
+        rejected = httpx.post(url, json={
+            "model": MODEL + "-x", "max_tokens": OUTPUT_TOKENS,
+        }, timeout=5)
+        rows_after_rejection = _rows(ledger_path)
+        accepted = httpx.post(url, json={
+            "model": MODEL, "max_tokens": OUTPUT_TOKENS,
+            "messages": [{"role": "user", "content": "local mock only"}],
+        }, timeout=5)
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=2)
+    errors = validate_successful_ledger(
+        ledger_path, expected_model=MODEL, expected_output=OUTPUT_TOKENS,
+        expected_temperature=TEMPERATURE, expected_requests=1,
+    )
+    report = {
+        "schema_version": "globex-s01-canary-preflight-v1",
+        "source_commit": _source_commit(),
+        "network": "httpx.MockTransport and local loopback only",
+        "rejected_status": rejected.status_code,
+        "rows_after_rejection": len(rows_after_rejection),
+        "reserved_after_rejection": sum(row.get("event") == "reserved" for row in rows_after_rejection),
+        "accepted_status": accepted.status_code,
+        "upstream_calls": len(upstream),
+        "forwarded_model": upstream[0].get("model") if upstream else None,
+        "forwarded_max_tokens": upstream[0].get("max_tokens") if upstream else None,
+        "forwarded_temperature": upstream[0].get("temperature") if upstream else None,
+        "ledger_errors": errors,
+        "passed": (
+            rejected.status_code == 400 and len(rows_after_rejection) == 1
+            and accepted.status_code == 200 and len(upstream) == 1 and not errors
+        ),
+    }
+    write_json(output / "report.json", report)
+    _write_manifest(output, [output / "report.json", ledger_path], report["source_commit"])
+    return report
+
+
+def _wait_http(url: str, *, timeout: float) -> dict[str, Any]:
+    deadline = time.monotonic() + timeout
+    last = "not_started"
+    with httpx.Client(trust_env=False, timeout=5) as client:
+        while time.monotonic() < deadline:
+            try:
+                response = client.get(url)
+                last = f"http_{response.status_code}"
+                if response.status_code == 200:
+                    return response.json()
+            except (httpx.HTTPError, ValueError) as error:
+                last = type(error).__name__
+            time.sleep(0.5)
+    raise RuntimeError(f"service readiness timeout: {last}")
+
+
+def _wait_proxy_rejection(url: str, ledger: Path, *, timeout: float) -> dict[str, Any]:
+    deadline = time.monotonic() + timeout
+    with httpx.Client(trust_env=False, timeout=5) as client:
+        while time.monotonic() < deadline:
+            try:
+                response = client.post(url, json={
+                    "model": MODEL + "-x", "max_tokens": OUTPUT_TOKENS,
+                })
+                if response.status_code == 400:
+                    rows = _rows(ledger)
+                    if len(rows) != 1 or rows[0].get("event") != "opened":
+                        raise RuntimeError("rejection self-test touched the paid ledger")
+                    return {"status_code": 400, "ledger_rows": 1, "reserved": 0}
+                raise RuntimeError(f"unexpected proxy self-test status: {response.status_code}")
+            except httpx.ConnectError:
+                time.sleep(0.2)
+    raise RuntimeError("budget proxy readiness timeout")
+
+
+def _terminate(process: subprocess.Popen | None, *, timeout: float = 20) -> None:
+    if process is None or process.poll() is not None:
+        return
+    process.terminate()
+    try:
+        process.wait(timeout=timeout)
+    except subprocess.TimeoutExpired:
+        process.kill()
+        process.wait(timeout=5)
+
+
+def _parse_sse(response: httpx.Response) -> list[dict[str, Any]]:
+    events: list[dict[str, Any]] = []
+    for line in response.iter_lines():
+        if line.startswith("data: "):
+            payload = json.loads(line[6:])
+            if isinstance(payload, dict):
+                events.append(payload)
+    return events
+
+
+def _write_manifest(output: Path, files: list[Path], source_commit: str) -> None:
+    manifest = {
+        "schema_version": "globex-s01-canary-evidence-manifest-v2",
+        "source_commit": source_commit,
+        "files": [
+            {"path": str(path.relative_to(output)), "bytes": path.stat().st_size, "sha256": _sha256(path)}
+            for path in files
+        ],
+        "excluded": [
+            {"path": "runtime", "reason": "isolated SQLite/Qdrant runtime; authoritative counts are copied into result.json"},
+            {"path": "backend.log", "reason": "raw local process log is diagnostic-only and may contain machine paths"},
+            {"path": "proxy.log", "reason": "raw local process log is diagnostic-only; the ledger is authoritative"},
+        ],
+    }
+    write_json(output / "manifest.json", manifest)
+
+
+def _safe_upstream(base_url: str) -> str:
+    parsed = urlsplit(base_url)
+    if parsed.scheme != "https" or not parsed.netloc or parsed.username or parsed.password:
+        raise ValueError("paid upstream must be an HTTPS URL without embedded credentials")
+    if parsed.hostname in {"127.0.0.1", "localhost", "::1"}:
+        raise ValueError("paid upstream cannot be the local evaluation proxy")
+    return base_url.rstrip("/")
+
+
+def _ag_ui_request() -> dict[str, Any]:
+    return {
+        "threadId": "eval-s01-deepseek-chat-8192",
+        "runId": "eval-s01-deepseek-chat-8192-run-1",
+        "state": {},
+        "messages": [{"id": "s01-user-1", "role": "user", "content": QUERY}],
+        "tools": [], "context": [],
+        "forwardedProps": {"buyerId": "eval-buyer-s01", "locale": "zh-CN", "currency": "CNY"},
+    }
+
+
+def run_paid(output: Path, receipt_path: Path, acknowledgement: str) -> dict[str, Any]:
+    output = assert_output_path(output)
+    if not _tracked_clean():
+        raise ValueError("tracked worktree must be clean before a paid run")
+    source_commit = _source_commit()
+    receipt = validate_receipt(receipt_path, acknowledgement, source_commit)
+    settings = load_settings()
+    if not settings.llm_api_key:
+        raise ValueError("LLM_API_KEY is missing")
+    upstream = _safe_upstream(settings.llm_base_url)
+    consume_receipt(receipt_path, receipt, output)
+    output.mkdir(parents=True)
+    runtime = output / "runtime"
+    runtime.mkdir()
+    ledger = output / "http-ledger.jsonl"
+    proxy_port, backend_port = _port(), _port()
+    proxy_url = f"http://127.0.0.1:{proxy_port}/chat/completions"
+    backend_url = f"http://127.0.0.1:{backend_port}"
+    proxy_process: subprocess.Popen | None = None
+    backend_process: subprocess.Popen | None = None
+    files: list[Path] = []
+    result: dict[str, Any] = {
+        "schema_version": RESULT_SCHEMA,
+        "source_commit": source_commit,
+        "case_id": CASE_ID,
+        "status": "infrastructure_failure",
+        "paid_request_attempted": False,
+    }
+    try:
+        with (output / "proxy.log").open("wb") as proxy_log:
+            proxy_process = subprocess.Popen(
+                proxy_command(port=proxy_port, upstream=upstream, ledger=ledger,
+                              limit=receipt["max_physical_requests"]),
+                cwd=ROOT, stdout=proxy_log, stderr=subprocess.STDOUT,
+                env={k: v for k, v in os.environ.items() if not k.lower().endswith("proxy")},
+            )
+            result["proxy_negative_self_test"] = _wait_proxy_rejection(proxy_url, ledger, timeout=15)
+            with (output / "backend.log").open("wb") as backend_log:
+                backend_process = subprocess.Popen(
+                    [sys.executable, "-m", "uvicorn", "app.presentation.server:app",
+                     "--host", "127.0.0.1", "--port", str(backend_port), "--workers", "1"],
+                    cwd=ROOT, stdout=backend_log, stderr=subprocess.STDOUT,
+                    env=backend_environment(proxy_port=proxy_port, backend_port=backend_port,
+                                            data_dir=runtime, api_key=settings.llm_api_key),
+                )
+                result["health"] = _wait_http(backend_url + "/health", timeout=300)
+                request_body = _ag_ui_request()
+                write_json(output / "request.json", request_body)
+                files.append(output / "request.json")
+                result["paid_request_attempted"] = True
+                with httpx.Client(trust_env=False, timeout=600) as http:
+                    with http.stream("POST", backend_url + "/commerce/ag-ui/run", json=request_body) as response:
+                        result["http_status"] = response.status_code
+                        events = _parse_sse(response)
+                    response.raise_for_status()
+                    confirmations_response = http.get(
+                        backend_url + "/commerce/confirmations",
+                        params={"buyer_id": "eval-buyer-s01", "session_id": request_body["threadId"]},
+                    )
+                    confirmations_response.raise_for_status()
+                    orders_response = http.get(
+                        backend_url + "/commerce/orders", params={"buyer_id": "eval-buyer-s01"},
+                    )
+                    orders_response.raise_for_status()
+                    side_effects = {
+                        "confirmations": confirmations_response.json(),
+                        "orders": orders_response.json(),
+                    }
+                write_json(output / "events.json", events)
+                write_json(output / "side-effects.json", side_effects)
+                files.extend([output / "events.json", output / "side-effects.json"])
+        _terminate(backend_process)
+        backend_process = None
+        _terminate(proxy_process)
+        proxy_process = None
+        rows = _rows(ledger)
+        request_count = _reserved_count(ledger)
+        ledger_errors = validate_successful_ledger(
+            ledger, expected_model=MODEL, expected_output=OUTPUT_TOKENS,
+            expected_temperature=TEMPERATURE, expected_requests=request_count,
+        )
+        if not 1 <= request_count <= receipt["max_physical_requests"]:
+            ledger_errors.append("physical_request_count_out_of_authorized_range")
+        confirmations = side_effects.get("confirmations", {}).get("confirmations", [])
+        orders = side_effects.get("orders", {}).get("orders", side_effects.get("orders", []))
+        result.update({
+            "physical_requests": request_count,
+            "ledger_errors": ledger_errors,
+            "event_count": len(events),
+            "no_trade_side_effects": not confirmations and not orders,
+            "status": "captured" if not ledger_errors and not confirmations and not orders else "failed_contract",
+        })
+        files.append(ledger)
+    except Exception as error:  # preserve first failure; never retry the user turn
+        result["error_type"] = type(error).__name__
+        result["error"] = str(error)[:500]
+    finally:
+        _terminate(backend_process)
+        _terminate(proxy_process)
+        result["finished_at"] = datetime.now(timezone.utc).isoformat()
+        write_json(output / "result.json", result)
+        files.append(output / "result.json")
+        existing = list(dict.fromkeys(path for path in files if path.is_file()))
+        _write_manifest(output, existing, source_commit)
+    return result
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    sub = parser.add_subparsers(dest="mode", required=True)
+    preflight = sub.add_parser("preflight", help="local MockTransport only; zero provider calls")
+    preflight.add_argument("--output", type=Path, required=True)
+    run = sub.add_parser("run", help="one authorized paid S01 turn")
+    run.add_argument("--output", type=Path, required=True)
+    run.add_argument("--authorization-receipt", type=Path, required=True)
+    run.add_argument("--acknowledge-paid-run", required=True)
+    args = parser.parse_args()
+    if args.mode == "preflight":
+        report = local_preflight(args.output)
+        print(json.dumps(report, ensure_ascii=False, indent=2))
+        return 0 if report["passed"] else 2
+    result = run_paid(args.output, args.authorization_receipt, args.acknowledge_paid_run)
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+    return 0 if result["status"] == "captured" else 2
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
