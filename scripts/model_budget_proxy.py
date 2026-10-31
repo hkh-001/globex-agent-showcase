@@ -9,6 +9,7 @@ from __future__ import annotations
 import argparse
 import codecs
 import json
+import re
 import threading
 import time
 import uuid
@@ -20,6 +21,7 @@ import httpx
 
 
 MAX_BODY_BYTES = 2 * 1024 * 1024
+MODEL_ID_RE = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:/-]{0,199}\Z")
 
 
 class BudgetExhausted(RuntimeError):
@@ -45,7 +47,7 @@ class FreshLedger:
             handle.write(json.dumps({"event": "opened", "limit": limit}) + "\n")
 
     def reserve(
-        self, *, model: str, requested_output: int | None, applied_output: int,
+        self, *, requested_model: str, requested_output: int | None, applied_output: int,
         temperature: int | float | None = None,
     ) -> tuple[int, str]:
         with self._lock:
@@ -58,7 +60,7 @@ class FreshLedger:
             try:
                 self._append({
                     "event": "reserved", "sequence": self._count,
-                    "request_id": request_id, "model": model,
+                    "request_id": request_id, "requested_model": requested_model,
                     "requested_output": requested_output, "applied_output": applied_output,
                     "temperature": temperature,
                     "at_unix_ns": time.time_ns(),
@@ -95,6 +97,67 @@ class FreshLedger:
             handle.flush()
 
 
+def validate_successful_ledger(
+    path: Path, *, expected_model: str, expected_output: int,
+    expected_temperature: int | float | None = None,
+    allowed_served_models: set[str] | None = None,
+) -> list[str]:
+    """Return reproducible integrity errors for a completed paid diagnostic ledger."""
+    requested_model = validated_model_id(expected_model)
+    allowed = {requested_model} if allowed_served_models is None else set(allowed_served_models)
+    if not allowed or any(not MODEL_ID_RE.fullmatch(item) for item in allowed):
+        raise ValueError("allowed served models must contain valid model identifiers")
+    try:
+        rows = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()]
+    except (OSError, json.JSONDecodeError) as error:
+        return [f"ledger_unreadable:{type(error).__name__}"]
+    errors: list[str] = []
+    if not rows or rows[0].get("event") != "opened":
+        errors.append("missing_opened_event")
+    reserves = [row for row in rows if row.get("event") == "reserved"]
+    finishes = [row for row in rows if row.get("event") == "finished"]
+    sequences = [row.get("sequence") for row in reserves]
+    if sequences != list(range(1, len(reserves) + 1)):
+        errors.append("non_contiguous_sequences")
+    finished_by_id: dict[str, list[dict]] = {}
+    for row in finishes:
+        finished_by_id.setdefault(str(row.get("request_id")), []).append(row)
+    reserve_ids = {str(row.get("request_id")) for row in reserves}
+    if any(str(row.get("request_id")) not in reserve_ids for row in finishes):
+        errors.append("orphan_finished_event")
+    for row in reserves:
+        sequence = row.get("sequence")
+        prefix = f"sequence_{sequence}"
+        request_id = str(row.get("request_id"))
+        matched = finished_by_id.get(request_id, [])
+        if len(matched) != 1:
+            errors.append(f"{prefix}:finished_count_{len(matched)}")
+            continue
+        finished = matched[0]
+        if row.get("requested_model") != requested_model:
+            errors.append(f"{prefix}:requested_model_mismatch")
+        if row.get("applied_output") != expected_output:
+            errors.append(f"{prefix}:applied_output_mismatch")
+        if expected_temperature is not None and row.get("temperature") != expected_temperature:
+            errors.append(f"{prefix}:temperature_mismatch")
+        if finished.get("status_code") != 200 or finished.get("outcome") != "response":
+            errors.append(f"{prefix}:unsuccessful_outcome")
+        metadata = finished.get("response_metadata")
+        if not isinstance(metadata, dict) or metadata.get("metadata_complete") is not True:
+            errors.append(f"{prefix}:metadata_incomplete")
+            continue
+        if metadata.get("served_model") not in allowed:
+            errors.append(f"{prefix}:served_model_mismatch")
+        if not isinstance(metadata.get("finish_reason"), str):
+            errors.append(f"{prefix}:missing_finish_reason")
+        usage = metadata.get("usage")
+        if not isinstance(usage, dict) or "total_tokens" not in usage or not (
+            "completion_tokens" in usage or "output_tokens" in usage
+        ):
+            errors.append(f"{prefix}:usage_incomplete")
+    return errors
+
+
 def enforce_output_limit(payload: dict, maximum: int) -> tuple[dict, int | None, int]:
     if maximum < 1:
         raise ValueError("maximum output must be positive")
@@ -111,6 +174,12 @@ def enforce_output_limit(payload: dict, maximum: int) -> tuple[dict, int | None,
     copied.pop("max_completion_tokens", None)
     copied["max_tokens"] = applied
     return copied, requested, applied
+
+
+def validated_model_id(value: object) -> str:
+    if not isinstance(value, str) or not MODEL_ID_RE.fullmatch(value):
+        raise ValueError("model must be a non-empty model identifier of at most 200 characters")
+    return value
 
 
 class ResponseMetadataObserver:
@@ -172,13 +241,23 @@ class ResponseMetadataObserver:
                     self._sse_line(self._text.rstrip("\r\n"))
             except UnicodeDecodeError:
                 self.parse_error = True
+        usage_complete = (
+            "total_tokens" in self.usage
+            and ("completion_tokens" in self.usage or "output_tokens" in self.usage)
+        )
+        metadata_complete = (
+            not self.parse_error
+            and len(self.models) == 1
+            and len(self.finish_reasons) == 1
+            and usage_complete
+        )
         return {
             "content_type": self.content_type.split(";", 1)[0].strip(),
             "events_seen": self.events_seen,
-            "models": sorted(self.models),
-            "finish_reasons": sorted(self.finish_reasons),
+            "served_model": next(iter(self.models)) if len(self.models) == 1 else None,
+            "finish_reason": next(iter(self.finish_reasons)) if len(self.finish_reasons) == 1 else None,
             "usage": dict(sorted(self.usage.items())),
-            "metadata_complete": not self.parse_error and bool(self.finish_reasons),
+            "metadata_complete": metadata_complete,
         }
 
     def _sse_line(self, line: str) -> None:
@@ -238,20 +317,15 @@ class BudgetProxyHandler(BaseHTTPRequestHandler):
             payload = json.loads(self.rfile.read(length))
             if not isinstance(payload, dict):
                 raise ValueError("JSON body must be an object")
+            requested_model = validated_model_id(payload.get("model"))
             payload, requested, applied = enforce_output_limit(payload, server.maximum_output)
             temperature = payload.get("temperature")
             if isinstance(temperature, bool) or not isinstance(temperature, (int, float)):
                 temperature = None
-            _, request_id = server.ledger.reserve(
-                model=str(payload.get("model", "")), requested_output=requested,
-                applied_output=applied, temperature=temperature,
-            )
-        except BudgetExhausted:
-            self._json_error(429, "physical_request_budget_exhausted")
-            return
-        except LedgerUnavailable:
-            self._json_error(503, "request_ledger_unavailable_batch_halted")
-            return
+            if server.expected_model is not None and requested_model != server.expected_model:
+                raise ValueError("requested model does not match the frozen batch model")
+            if server.expected_temperature is not None and temperature != server.expected_temperature:
+                raise ValueError("temperature does not match the frozen batch temperature")
         except (json.JSONDecodeError, ValueError) as error:
             self._json_error(400, str(error))
             return
@@ -260,49 +334,74 @@ class BudgetProxyHandler(BaseHTTPRequestHandler):
         authorization = self.headers.get("Authorization")
         if authorization:
             headers["authorization"] = authorization
-        status = None
-        try:
-            with server.client.stream("POST", server.upstream, headers=headers, json=payload) as response:
-                status = response.status_code
-                observer = ResponseMetadataObserver(response.headers.get("content-type", ""))
-                self.close_connection = True
-                self.send_response(status)
-                self.send_header("Content-Type", response.headers.get("content-type", "application/json"))
-                self.send_header("Cache-Control", "no-store")
-                self.send_header("Transfer-Encoding", "chunked")
-                self.send_header("Connection", "close")
-                self.end_headers()
-                # httpx decodes gzip/br here.  Forwarding raw compressed bytes without
-                # Content-Encoding would corrupt the downstream JSON/SSE stream.
-                for chunk in response.iter_bytes():
-                    if not chunk:
-                        continue
-                    observer.feed(chunk)
-                    self.wfile.write(f"{len(chunk):X}\r\n".encode("ascii"))
-                    self.wfile.write(chunk)
-                    self.wfile.write(b"\r\n")
-                    self.wfile.flush()
-                self.wfile.write(b"0\r\n\r\n")
-                self.wfile.flush()
-                response_metadata = observer.finish()
-            server.ledger.finish(
-                request_id, status_code=status, outcome="response",
-                response_metadata=response_metadata,
-                halt=status >= 400,
-            )
-        except LedgerUnavailable:
-            # The response may already be complete, but no later request may start.
-            self.close_connection = True
-        except Exception:  # the ledger must retain an unknown paid outcome
+        # Paid diagnostic batches are deliberately serialized.  The lock spans
+        # reserve -> upstream -> durable finish so a failure cannot race a later call.
+        with server.request_lock:
             try:
+                _, request_id = server.ledger.reserve(
+                    requested_model=requested_model, requested_output=requested,
+                    applied_output=applied, temperature=temperature,
+                )
+            except BudgetExhausted:
+                self._json_error(429, "physical_request_budget_exhausted")
+                return
+            except LedgerUnavailable:
+                self._json_error(503, "request_ledger_unavailable_batch_halted")
+                return
+
+            status = None
+            try:
+                with server.client.stream("POST", server.upstream, headers=headers, json=payload) as response:
+                    status = response.status_code
+                    observer = ResponseMetadataObserver(response.headers.get("content-type", ""))
+                    self.close_connection = True
+                    self.send_response(status)
+                    self.send_header("Content-Type", response.headers.get("content-type", "application/json"))
+                    self.send_header("Cache-Control", "no-store")
+                    self.send_header("Transfer-Encoding", "chunked")
+                    self.send_header("Connection", "close")
+                    self.end_headers()
+                    # httpx decodes gzip/br here.  Forwarding raw compressed bytes without
+                    # Content-Encoding would corrupt the downstream JSON/SSE stream.
+                    for chunk in response.iter_bytes():
+                        if not chunk:
+                            continue
+                        observer.feed(chunk)
+                        self.wfile.write(f"{len(chunk):X}\r\n".encode("ascii"))
+                        self.wfile.write(chunk)
+                        self.wfile.write(b"\r\n")
+                        self.wfile.flush()
+                    self.wfile.write(b"0\r\n\r\n")
+                    self.wfile.flush()
+                    response_metadata = observer.finish()
+                metadata_incomplete = status < 400 and not response_metadata["metadata_complete"]
+                model_mismatch = (
+                    status < 400 and response_metadata["metadata_complete"]
+                    and response_metadata["served_model"] != requested_model
+                )
                 server.ledger.finish(
-                    request_id, status_code=status, outcome="transport_unknown", halt=True,
+                    request_id, status_code=status,
+                    outcome=(
+                        "response_metadata_incomplete" if metadata_incomplete
+                        else "served_model_mismatch" if model_mismatch
+                        else "response"
+                    ),
+                    response_metadata=response_metadata,
+                    halt=status >= 400 or metadata_incomplete or model_mismatch,
                 )
             except LedgerUnavailable:
-                pass
-            self.close_connection = True
-            if status is None and not self.wfile.closed:
-                self._json_error(502, "upstream_transport_unknown_batch_halted")
+                # The response may already be complete, but no later request may start.
+                self.close_connection = True
+            except Exception:  # the ledger must retain an unknown paid outcome
+                try:
+                    server.ledger.finish(
+                        request_id, status_code=status, outcome="transport_unknown", halt=True,
+                    )
+                except LedgerUnavailable:
+                    pass
+                self.close_connection = True
+                if status is None and not self.wfile.closed:
+                    self._json_error(502, "upstream_transport_unknown_batch_halted")
 
     def _json_error(self, status: int, code: str) -> None:
         body = json.dumps({"error": {"code": code}}, ensure_ascii=False).encode()
@@ -319,6 +418,8 @@ class BudgetProxyServer(ThreadingHTTPServer):
 
     def __init__(
         self, address, *, upstream: str, ledger: FreshLedger, maximum_output: int,
+        expected_model: str | None = None,
+        expected_temperature: int | float | None = None,
         client: httpx.Client | None = None,
     ) -> None:
         parsed = urlsplit(upstream)
@@ -327,6 +428,13 @@ class BudgetProxyServer(ThreadingHTTPServer):
         self.upstream = upstream.rstrip("/") + "/chat/completions"
         self.ledger = ledger
         self.maximum_output = maximum_output
+        self.expected_model = validated_model_id(expected_model) if expected_model is not None else None
+        if isinstance(expected_temperature, bool) or (
+            expected_temperature is not None and not isinstance(expected_temperature, (int, float))
+        ):
+            raise ValueError("expected temperature must be numeric")
+        self.expected_temperature = expected_temperature
+        self.request_lock = threading.Lock()
         self.client = client or httpx.Client(timeout=120.0, follow_redirects=False, trust_env=False)
         self._owns_client = client is None
         super().__init__(address, BudgetProxyHandler)
@@ -345,11 +453,14 @@ def main() -> None:
     parser.add_argument("--ledger", type=Path, required=True)
     parser.add_argument("--limit", type=int, required=True)
     parser.add_argument("--maximum-output", type=int, default=1024)
+    parser.add_argument("--expected-model", required=True)
+    parser.add_argument("--expected-temperature", type=float, default=0)
     args = parser.parse_args()
     ledger = FreshLedger(args.ledger, args.limit)
     server = BudgetProxyServer(
         (args.listen_host, args.listen_port), upstream=args.upstream,
         ledger=ledger, maximum_output=args.maximum_output,
+        expected_model=args.expected_model, expected_temperature=args.expected_temperature,
     )
     try:
         server.serve_forever()

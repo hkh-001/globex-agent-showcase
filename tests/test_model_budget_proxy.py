@@ -9,7 +9,7 @@ import pytest
 from scripts.model_budget_proxy import (
     BudgetExhausted, BudgetProxyServer, FreshLedger, LedgerUnavailable,
     enforce_output_limit,
-    ResponseMetadataObserver,
+    ResponseMetadataObserver, validate_successful_ledger,
 )
 
 
@@ -31,13 +31,22 @@ class RunningProxy:
         self.thread.join(timeout=2)
 
 
+def complete_response(response_id="ok", *, model="m", finish_reason="stop"):
+    return {
+        "id": response_id,
+        "model": model,
+        "choices": [{"message": {"content": "ok"}, "finish_reason": finish_reason}],
+        "usage": {"prompt_tokens": 2, "completion_tokens": 1, "total_tokens": 3},
+    }
+
+
 def test_fresh_ledger_hard_stops_before_limit_plus_one(tmp_path):
     path = tmp_path / "ledger.jsonl"
     ledger = FreshLedger(path, 2)
-    ledger.reserve(model="m", requested_output=2048, applied_output=1024)
-    ledger.reserve(model="m", requested_output=1024, applied_output=1024)
+    ledger.reserve(requested_model="m", requested_output=2048, applied_output=1024)
+    ledger.reserve(requested_model="m", requested_output=1024, applied_output=1024)
     with pytest.raises(BudgetExhausted):
-        ledger.reserve(model="m", requested_output=1, applied_output=1)
+        ledger.reserve(requested_model="m", requested_output=1, applied_output=1)
     rows = [json.loads(line) for line in path.read_text().splitlines()]
     assert [row["sequence"] for row in rows if row["event"] == "reserved"] == [1, 2]
 
@@ -47,7 +56,7 @@ def test_concurrent_reservations_never_exceed_limit(tmp_path):
 
     def reserve_once(_):
         try:
-            return ledger.reserve(model="m", requested_output=1024, applied_output=1024)[0]
+            return ledger.reserve(requested_model="m", requested_output=1024, applied_output=1024)[0]
         except BudgetExhausted:
             return None
 
@@ -59,7 +68,7 @@ def test_concurrent_reservations_never_exceed_limit(tmp_path):
 def test_ledger_is_fresh_only_and_contains_no_request_body(tmp_path):
     path = tmp_path / "ledger.jsonl"
     ledger = FreshLedger(path, 1)
-    _, request_id = ledger.reserve(model="m", requested_output=None, applied_output=1024)
+    _, request_id = ledger.reserve(requested_model="m", requested_output=None, applied_output=1024)
     ledger.finish(request_id, status_code=200, outcome="response")
     with pytest.raises(FileExistsError):
         FreshLedger(path, 1)
@@ -78,8 +87,8 @@ def test_response_metadata_observer_reads_json_without_content():
     assert metadata == {
         "content_type": "application/json",
         "events_seen": 1,
-        "models": ["served-model"],
-        "finish_reasons": ["stop"],
+        "served_model": "served-model",
+        "finish_reason": "stop",
         "usage": {"completion_tokens": 7, "prompt_tokens": 11, "total_tokens": 18},
         "metadata_complete": True,
     }
@@ -98,11 +107,25 @@ def test_response_metadata_observer_reads_split_sse_and_usage():
     for start in range(0, len(payload), 17):
         observer.feed(payload[start:start + 17])
     metadata = observer.finish()
-    assert metadata["finish_reasons"] == ["length"]
-    assert metadata["models"] == ["served-model"]
+    assert metadata["finish_reason"] == "length"
+    assert metadata["served_model"] == "served-model"
     assert metadata["usage"]["completion_tokens"] == 1024
     assert metadata["metadata_complete"] is True
     assert "secret" not in json.dumps(metadata)
+
+
+def test_response_metadata_observer_handles_split_multibyte_utf8():
+    observer = ResponseMetadataObserver("text/event-stream")
+    payload = (
+        'data: {"model":"served-model","choices":[{"delta":{"content":"中"},'
+        '"finish_reason":"stop"}],"usage":{"completion_tokens":1,"total_tokens":3}}\n\n'
+    ).encode()
+    for byte in payload:
+        observer.feed(bytes([byte]))
+    metadata = observer.finish()
+    assert metadata["served_model"] == "served-model"
+    assert metadata["finish_reason"] == "stop"
+    assert metadata["metadata_complete"] is True
 
 
 def test_response_metadata_observer_bounds_malformed_stream_without_leaking_content():
@@ -141,7 +164,7 @@ def test_http_handler_rejects_thirteenth_before_upstream(tmp_path):
 
     def handler(request):
         upstream.append(json.loads(request.content))
-        return httpx.Response(200, json={"id": "ok", "choices": []})
+        return httpx.Response(200, json=complete_response())
 
     proxy = RunningProxy(tmp_path, handler)
     try:
@@ -154,6 +177,30 @@ def test_http_handler_rejects_thirteenth_before_upstream(tmp_path):
         proxy.close()
 
 
+@pytest.mark.parametrize("bad_model", [None, True, {"private_prompt": "LEAK-ME"}, ["m"], "", "a b", "a\ncontrol", "x" * 201])
+def test_http_handler_rejects_unsafe_model_before_reserve_or_upstream(tmp_path, bad_model):
+    upstream = []
+
+    def handler(request):
+        upstream.append(request)
+        return httpx.Response(200, json=complete_response())
+
+    proxy = RunningProxy(tmp_path, handler, limit=1)
+    try:
+        response = httpx.post(proxy.url, json={
+            "model": bad_model,
+            "messages": [{"role": "user", "content": "private prompt"}],
+        })
+        assert response.status_code == 400
+        assert upstream == []
+        ledger_text = proxy.ledger.path.read_text()
+        assert '"event": "reserved"' not in ledger_text
+        assert "LEAK-ME" not in ledger_text
+        assert "private prompt" not in ledger_text
+    finally:
+        proxy.close()
+
+
 def test_http_handler_concurrent_limit_is_atomic(tmp_path):
     calls = 0
     lock = threading.Lock()
@@ -162,7 +209,7 @@ def test_http_handler_concurrent_limit_is_atomic(tmp_path):
         nonlocal calls
         with lock:
             calls += 1
-        return httpx.Response(200, json={"id": "ok", "choices": []})
+        return httpx.Response(200, json=complete_response())
 
     proxy = RunningProxy(tmp_path, handler)
     try:
@@ -177,8 +224,101 @@ def test_http_handler_concurrent_limit_is_atomic(tmp_path):
         proxy.close()
 
 
+def test_incomplete_success_metadata_halts_before_next_upstream(tmp_path):
+    calls = 0
+
+    def handler(_request):
+        nonlocal calls
+        calls += 1
+        return httpx.Response(200, json={"id": "missing-metadata", "choices": []})
+
+    proxy = RunningProxy(tmp_path, handler, limit=3)
+    try:
+        first = httpx.post(proxy.url, json={"model": "m"})
+        second = httpx.post(proxy.url, json={"model": "m"})
+        assert first.status_code == 200
+        assert second.status_code == 429
+        assert calls == 1
+        rows = [json.loads(line) for line in proxy.ledger.path.read_text().splitlines()]
+        assert rows[-1]["outcome"] == "response_metadata_incomplete"
+        assert rows[-1]["batch_halted"] is True
+        assert rows[-1]["response_metadata"]["metadata_complete"] is False
+    finally:
+        proxy.close()
+
+
+def test_served_model_mismatch_halts_before_next_upstream(tmp_path):
+    calls = 0
+
+    def handler(_request):
+        nonlocal calls
+        calls += 1
+        return httpx.Response(200, json=complete_response(model="unexpected-model"))
+
+    proxy = RunningProxy(tmp_path, handler, limit=3)
+    try:
+        first = httpx.post(proxy.url, json={"model": "requested-model"})
+        second = httpx.post(proxy.url, json={"model": "requested-model"})
+        assert first.status_code == 200
+        assert second.status_code == 429
+        assert calls == 1
+        rows = [json.loads(line) for line in proxy.ledger.path.read_text().splitlines()]
+        assert rows[-1]["outcome"] == "served_model_mismatch"
+        assert rows[-1]["batch_halted"] is True
+    finally:
+        proxy.close()
+
+
+def test_oversized_metadata_observation_does_not_truncate_response_and_halts_batch(tmp_path):
+    calls = 0
+    body = json.dumps({
+        **complete_response(),
+        "padding": "x" * (2 * 1024 * 1024),
+    }).encode()
+
+    def handler(_request):
+        nonlocal calls
+        calls += 1
+        return httpx.Response(200, content=body, headers={"content-type": "application/json"})
+
+    proxy = RunningProxy(tmp_path, handler, limit=3)
+    try:
+        first = httpx.post(proxy.url, json={"model": "m"}, timeout=10)
+        second = httpx.post(proxy.url, json={"model": "m"})
+        assert first.status_code == 200
+        assert first.content == body
+        assert second.status_code == 429
+        assert calls == 1
+        rows = [json.loads(line) for line in proxy.ledger.path.read_text().splitlines()]
+        assert rows[-1]["outcome"] == "response_metadata_incomplete"
+        assert rows[-1]["response_metadata"]["metadata_complete"] is False
+        assert "padding" not in proxy.ledger.path.read_text()
+    finally:
+        proxy.close()
+
+
+def test_concurrent_incomplete_response_serially_halts_second_request(tmp_path):
+    calls = 0
+    lock = threading.Lock()
+
+    def handler(_request):
+        nonlocal calls
+        with lock:
+            calls += 1
+        return httpx.Response(200, json={"id": "missing-metadata", "choices": []})
+
+    proxy = RunningProxy(tmp_path, handler, limit=3)
+    try:
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            statuses = list(pool.map(lambda _: httpx.post(proxy.url, json={"model": "m"}).status_code, range(2)))
+        assert sorted(statuses) == [200, 429]
+        assert calls == 1
+    finally:
+        proxy.close()
+
+
 def test_compressed_upstream_is_decoded_for_downstream(tmp_path):
-    encoded = gzip.compress(b'{"id":"compressed","choices":[]}')
+    encoded = gzip.compress(json.dumps(complete_response("compressed")).encode())
 
     def handler(_request):
         return httpx.Response(200, content=encoded, headers={"content-encoding": "gzip", "content-type": "application/json"})
@@ -215,11 +355,13 @@ def test_http_ledger_records_cap_temperature_and_response_metadata_only(tmp_path
         reserved = next(row for row in rows if row["event"] == "reserved")
         finished = next(row for row in rows if row["event"] == "finished")
         assert reserved["sequence"] == 1
+        assert reserved["requested_model"] == "requested-model"
+        assert "model" not in reserved
         assert reserved["requested_output"] == 8192
         assert reserved["applied_output"] == 1024
         assert reserved["temperature"] == 0
-        assert finished["response_metadata"]["models"] == ["served-model"]
-        assert finished["response_metadata"]["finish_reasons"] == ["stop"]
+        assert finished["response_metadata"]["served_model"] == "served-model"
+        assert finished["response_metadata"]["finish_reason"] == "stop"
         assert finished["response_metadata"]["usage"]["total_tokens"] == 6
         ledger_text = proxy.ledger.path.read_text()
         assert "private prompt" not in ledger_text
@@ -283,9 +425,45 @@ def test_reservation_ledger_failure_stops_before_upstream_and_stays_halted(tmp_p
 
 def test_finish_ledger_failure_makes_future_reservations_sticky_halted(tmp_path, monkeypatch):
     ledger = FreshLedger(tmp_path / "ledger.jsonl", 3)
-    _, request_id = ledger.reserve(model="m", requested_output=1, applied_output=1)
+    _, request_id = ledger.reserve(requested_model="m", requested_output=1, applied_output=1)
     monkeypatch.setattr(ledger, "_append", lambda _row: (_ for _ in ()).throw(OSError("disk unavailable")))
     with pytest.raises(LedgerUnavailable):
         ledger.finish(request_id, status_code=200, outcome="response")
     with pytest.raises(BudgetExhausted, match="batch halted"):
-        ledger.reserve(model="m", requested_output=1, applied_output=1)
+        ledger.reserve(requested_model="m", requested_output=1, applied_output=1)
+
+
+def test_successful_ledger_validator_binds_request_and_response_identity(tmp_path):
+    path = tmp_path / "ledger.jsonl"
+    ledger = FreshLedger(path, 1)
+    _, request_id = ledger.reserve(
+        requested_model="deepseek-chat", requested_output=8192,
+        applied_output=8192, temperature=0,
+    )
+    ledger.finish(request_id, status_code=200, outcome="response", response_metadata={
+        "content_type": "application/json", "events_seen": 1,
+        "served_model": "deepseek-chat", "finish_reason": "stop",
+        "usage": {"completion_tokens": 12, "total_tokens": 30},
+        "metadata_complete": True,
+    })
+    assert validate_successful_ledger(
+        path, expected_model="deepseek-chat", expected_output=8192,
+        expected_temperature=0,
+    ) == []
+    assert "sequence_1:served_model_mismatch" in validate_successful_ledger(
+        path, expected_model="deepseek-chat", expected_output=8192,
+        allowed_served_models={"provider-alias"},
+    )
+
+
+def test_ledger_validator_rejects_missing_finish_and_wrong_cap(tmp_path):
+    path = tmp_path / "ledger.jsonl"
+    ledger = FreshLedger(path, 1)
+    ledger.reserve(
+        requested_model="deepseek-chat", requested_output=8192,
+        applied_output=1024, temperature=0,
+    )
+    errors = validate_successful_ledger(
+        path, expected_model="deepseek-chat", expected_output=8192,
+    )
+    assert "sequence_1:finished_count_0" in errors
