@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
 import json
+from pathlib import Path
 from types import SimpleNamespace
 
 import httpx
@@ -11,7 +12,7 @@ from scripts.eval.run_s01_canary import (
     MODEL, OUTPUT_TOKENS, RECEIPT_SCHEMA,
     backend_environment, local_preflight, proxy_command,
     consume_receipt, event_contract, probe_local_embedding,
-    validate_local_embedding, validate_receipt,
+    run_paid, validate_local_embedding, validate_receipt,
 )
 import scripts.eval.run_s01_canary as driver
 
@@ -107,6 +108,14 @@ def test_receipt_rejects_symlink_and_copy_with_same_id(authorization_root, tmp_p
     with pytest.raises(ValueError, match="symlink"):
         validate_receipt(link, "receipt-s01-one", "abc123")
     value = validate_receipt(path, "receipt-s01-one", "abc123")
+    outside = tmp_path / "outside-consumption"
+    outside.mkdir()
+    symlinked_consumed = authorization_root / "symlinked-consumed"
+    symlinked_consumed.symlink_to(outside, target_is_directory=True)
+    driver.CONSUMED_ROOT = symlinked_consumed
+    with pytest.raises(ValueError, match="directories must not be symlinks"):
+        consume_receipt(path, value, tmp_path / "blocked")
+    driver.CONSUMED_ROOT = authorization_root / "consumed"
     consume_receipt(path, value, tmp_path / "first")
     copied = authorization_root / "copied.json"
     write_receipt(copied, receipt())
@@ -128,6 +137,9 @@ def test_proxy_command_freezes_both_output_arguments(tmp_path):
 
 def test_backend_environment_disables_retry_fallback_and_budget_cap(tmp_path, monkeypatch):
     monkeypatch.setenv("ALL_PROXY", "socks5://127.0.0.1:9999")
+    monkeypatch.setenv("LANGFUSE_SECRET_KEY", "must-not-survive")
+    monkeypatch.setenv("OTEL_EXPORTER_OTLP_ENDPOINT", "https://telemetry.example")
+    monkeypatch.setenv("OTEL_EXPORTER_OTLP_HEADERS", "authorization=secret")
     env = backend_environment(
         proxy_port=18091, backend_port=8005,
         data_dir=tmp_path / "runtime", api_key="test-only-secret",
@@ -146,6 +158,7 @@ def test_backend_environment_disables_retry_fallback_and_budget_cap(tmp_path, mo
     assert env["LLM_ENABLE_THINKING"] == "0"
     assert env["EMBEDDING_BASE_URL"] == "http://127.0.0.1:11434/v1"
     assert "ALL_PROXY" not in env
+    assert not any(name.startswith(("LANGFUSE_", "OTEL_", "OTLP_")) for name in env)
 
 
 def test_local_embedding_must_be_loopback_bge_m3_1024():
@@ -187,14 +200,57 @@ def test_local_embedding_probe_requires_expected_dimension():
 def test_s01_event_contract_requires_run_text_search_and_result():
     complete = [
         {"type": "RUN_STARTED"},
-        {"type": "TOOL_CALL_START", "toolCallName": "product_search_tool"},
-        {"type": "TOOL_CALL_RESULT"},
+        {"type": "TOOL_CALL_START", "toolCallName": "product_search_tool", "toolCallId": "search-1"},
+        {"type": "TOOL_CALL_RESULT", "toolCallId": "search-1", "content": "{\"hits\": []}"},
         {"type": "TEXT_MESSAGE_CONTENT", "delta": "找到三个背包"},
         {"type": "RUN_FINISHED"},
     ]
     assert event_contract(complete)["passed"] is True
     for missing in range(1, 4):
         assert event_contract(complete[:missing] + complete[missing + 1:])["passed"] is False
+
+
+def test_s01_event_contract_rejects_mismatched_or_out_of_order_tool_result():
+    prefix = [{"type": "RUN_STARTED"}, {"type": "TEXT_MESSAGE_CONTENT", "delta": "回答"}]
+    start = {"type": "TOOL_CALL_START", "toolCallName": "product_search_tool", "toolCallId": "search-A"}
+    wrong = {"type": "TOOL_CALL_RESULT", "toolCallId": "other-B", "content": "{}"}
+    finish = {"type": "RUN_FINISHED"}
+    assert event_contract(prefix + [start, wrong, finish])["passed"] is False
+    matched = {"type": "TOOL_CALL_RESULT", "toolCallId": "search-A", "content": "{}"}
+    assert event_contract(prefix + [matched, start, finish])["passed"] is False
+
+
+def test_failure_after_receipt_consumption_still_writes_result_and_manifest(
+    tmp_path, monkeypatch, authorization_root,
+):
+    fake_root = tmp_path / "repo"
+    output = fake_root / ".globex-runtime" / "eval" / "failed-after-consume"
+    receipt_path = authorization_root / "receipt.json"
+    write_receipt(receipt_path, receipt())
+    monkeypatch.setattr(driver, "ROOT", fake_root)
+    monkeypatch.setattr(driver, "_tracked_clean", lambda: True)
+    monkeypatch.setattr(driver, "_source_commit", lambda: "abc123")
+    settings = SimpleNamespace(
+        llm_api_key="test-only", llm_base_url="https://provider.example/v1",
+        embedding_base_url="http://127.0.0.1:11434/v1", embedding_model="bge-m3",
+        embedding_version="ollama", embedding_dim=1024,
+    )
+    monkeypatch.setattr(driver, "load_settings", lambda: settings)
+    monkeypatch.setattr(driver, "probe_local_embedding", lambda value: {"status_code": 200, "dimension": 1024})
+    original_mkdir = Path.mkdir
+
+    def fail_runtime(path, *args, **kwargs):
+        if path.name == "runtime":
+            raise OSError("injected runtime mkdir failure")
+        return original_mkdir(path, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "mkdir", fail_runtime)
+    result = run_paid(output, receipt_path, "receipt-s01-one")
+    assert result["authorization"]["consumed"] is True
+    assert result["error_type"] == "OSError"
+    assert (output / "result.json").is_file()
+    manifest = json.loads((output / "manifest.json").read_text())
+    assert any(item["path"] == "result.json" for item in manifest["files"])
 
 
 def test_local_preflight_is_mock_only_and_rejects_before_reserve(tmp_path):

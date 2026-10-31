@@ -120,10 +120,14 @@ def validate_receipt(path: Path, acknowledgement: str, source_commit: str) -> di
 
 
 def consume_receipt(path: Path, receipt: dict[str, Any], output: Path) -> Path:
+    if AUTHORIZATION_ROOT.is_symlink() or CONSUMED_ROOT.is_symlink():
+        raise ValueError("authorization directories must not be symlinks")
     CONSUMED_ROOT.mkdir(parents=True, exist_ok=True)
+    CONSUMED_ROOT.chmod(0o700)
     marker_name = hashlib.sha256(receipt["receipt_id"].encode("utf-8")).hexdigest() + ".json"
     marker = CONSUMED_ROOT / marker_name
-    with marker.open("x", encoding="utf-8") as handle:
+    descriptor = os.open(marker, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+    with os.fdopen(descriptor, "w", encoding="utf-8") as handle:
         json.dump({
             "receipt_id": receipt["receipt_id"],
             "receipt_sha256": _sha256(path),
@@ -132,7 +136,6 @@ def consume_receipt(path: Path, receipt: dict[str, Any], output: Path) -> Path:
             "consumed_at": datetime.now(timezone.utc).isoformat(),
         }, handle, ensure_ascii=False, indent=2)
         handle.write("\n")
-    marker.chmod(0o600)
     return marker
 
 
@@ -224,6 +227,9 @@ def backend_environment(*, proxy_port: int, backend_port: int, data_dir: Path, a
     })
     for name in ("ALL_PROXY", "all_proxy", "HTTP_PROXY", "http_proxy", "HTTPS_PROXY", "https_proxy"):
         env.pop(name, None)
+    for name in tuple(env):
+        if name.startswith(("LANGFUSE_", "OTEL_", "OTLP_")):
+            env.pop(name, None)
     return env
 
 
@@ -359,20 +365,25 @@ def event_contract(events: list[dict[str, Any]]) -> dict[str, Any]:
         str(event.get("delta", "")) for event in events
         if event.get("type") == "TEXT_MESSAGE_CONTENT"
     ).strip()
-    search_started = any(
-        event.get("type") == "TOOL_CALL_START"
+    search_starts = {
+        event.get("toolCallId"): index for index, event in enumerate(events)
+        if event.get("type") == "TOOL_CALL_START"
         and event.get("toolCallName") == "product_search_tool"
-        for event in events
-    )
-    search_result = any(
-        event.get("type") == "TOOL_CALL_RESULT" for event in events
-    )
+        and isinstance(event.get("toolCallId"), str) and event.get("toolCallId")
+    }
+    paired_search_results = [
+        event for index, event in enumerate(events)
+        if event.get("type") == "TOOL_CALL_RESULT"
+        and event.get("toolCallId") in search_starts
+        and index > search_starts[event.get("toolCallId")]
+        and bool(str(event.get("content", "")).strip())
+    ]
     checks = {
         "run_started": bool(types) and types[0] == "RUN_STARTED",
         "run_finished": bool(types) and types[-1] == "RUN_FINISHED",
         "assistant_text_present": bool(text),
-        "product_search_started": search_started,
-        "tool_result_present": search_result,
+        "product_search_started": bool(search_starts),
+        "product_search_result_paired": bool(paired_search_results),
     }
     return {"checks": checks, "passed": all(checks.values()), "assistant_text_chars": len(text)}
 
@@ -427,10 +438,8 @@ def run_paid(output: Path, receipt_path: Path, acknowledgement: str) -> dict[str
     embedding = validate_local_embedding(settings)
     embedding_probe = probe_local_embedding(embedding)
     receipt_sha256 = _sha256(receipt_path)
-    marker = consume_receipt(receipt_path, receipt, output)
     output.mkdir(parents=True)
     runtime = output / "runtime"
-    runtime.mkdir()
     ledger = output / "http-ledger.jsonl"
     proxy_port, backend_port = _port(), _port()
     while backend_port == proxy_port:
@@ -439,6 +448,7 @@ def run_paid(output: Path, receipt_path: Path, acknowledgement: str) -> dict[str
     backend_url = f"http://127.0.0.1:{backend_port}"
     proxy_process: subprocess.Popen | None = None
     backend_process: subprocess.Popen | None = None
+    marker: Path | None = None
     files: list[Path] = []
     result: dict[str, Any] = {
         "schema_version": RESULT_SCHEMA,
@@ -449,7 +459,8 @@ def run_paid(output: Path, receipt_path: Path, acknowledgement: str) -> dict[str
         "authorization": {
             "receipt_id": receipt["receipt_id"],
             "receipt_sha256": receipt_sha256,
-            "consumed_marker_sha256": _sha256(marker),
+            "consumed": False,
+            "consumed_marker_sha256": None,
             "contract": {key: receipt[key] for key in (
                 "case_id", "source_commit", "model", "temperature",
                 "max_output_tokens_per_request", "max_physical_requests",
@@ -460,6 +471,12 @@ def run_paid(output: Path, receipt_path: Path, acknowledgement: str) -> dict[str
         "local_embedding_probe": embedding_probe,
     }
     try:
+        marker = consume_receipt(receipt_path, receipt, output)
+        result["authorization"].update({
+            "consumed": True,
+            "consumed_marker_sha256": _sha256(marker),
+        })
+        runtime.mkdir()
         with (output / "proxy.log").open("wb") as proxy_log:
             proxy_process = subprocess.Popen(
                 proxy_command(port=proxy_port, upstream=upstream, ledger=ledger,
