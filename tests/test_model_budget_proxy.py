@@ -9,6 +9,7 @@ import pytest
 from scripts.model_budget_proxy import (
     BudgetExhausted, BudgetProxyServer, FreshLedger, LedgerUnavailable,
     enforce_output_limit,
+    ResponseMetadataObserver,
 )
 
 
@@ -64,6 +65,53 @@ def test_ledger_is_fresh_only_and_contains_no_request_body(tmp_path):
         FreshLedger(path, 1)
     text = path.read_text()
     assert "messages" not in text and "authorization" not in text and "api_key" not in text
+
+
+def test_response_metadata_observer_reads_json_without_content():
+    observer = ResponseMetadataObserver("application/json")
+    observer.feed(json.dumps({
+        "model": "served-model",
+        "choices": [{"message": {"content": "private answer"}, "finish_reason": "stop"}],
+        "usage": {"prompt_tokens": 11, "completion_tokens": 7, "total_tokens": 18},
+    }).encode())
+    metadata = observer.finish()
+    assert metadata == {
+        "content_type": "application/json",
+        "events_seen": 1,
+        "models": ["served-model"],
+        "finish_reasons": ["stop"],
+        "usage": {"completion_tokens": 7, "prompt_tokens": 11, "total_tokens": 18},
+        "metadata_complete": True,
+    }
+    assert "private answer" not in json.dumps(metadata)
+
+
+def test_response_metadata_observer_reads_split_sse_and_usage():
+    observer = ResponseMetadataObserver("text/event-stream; charset=utf-8")
+    stream = (
+        'data: {"model":"served-model","choices":[{"delta":{"content":"secret"},"finish_reason":null}]}\n\n'
+        'data: {"model":"served-model","choices":[{"delta":{},"finish_reason":"length"}],'
+        '"usage":{"prompt_tokens":20,"completion_tokens":1024,"total_tokens":1044}}\n\n'
+        'data: [DONE]\n\n'
+    )
+    payload = stream.encode()
+    for start in range(0, len(payload), 17):
+        observer.feed(payload[start:start + 17])
+    metadata = observer.finish()
+    assert metadata["finish_reasons"] == ["length"]
+    assert metadata["models"] == ["served-model"]
+    assert metadata["usage"]["completion_tokens"] == 1024
+    assert metadata["metadata_complete"] is True
+    assert "secret" not in json.dumps(metadata)
+
+
+def test_response_metadata_observer_bounds_malformed_stream_without_leaking_content():
+    observer = ResponseMetadataObserver("text/event-stream")
+    observer.feed(b"data: " + b"private" * 400_000)
+    metadata = observer.finish()
+    assert metadata["metadata_complete"] is False
+    assert metadata["events_seen"] == 0
+    assert "private" not in json.dumps(metadata)
 
 
 @pytest.mark.parametrize(
@@ -141,6 +189,42 @@ def test_compressed_upstream_is_decoded_for_downstream(tmp_path):
         assert response.status_code == 200
         assert response.json()["id"] == "compressed"
         assert "content-encoding" not in response.headers
+        rows = [json.loads(line) for line in proxy.ledger.path.read_text().splitlines()]
+        assert rows[-1]["response_metadata"]["content_type"] == "application/json"
+    finally:
+        proxy.close()
+
+
+def test_http_ledger_records_cap_temperature_and_response_metadata_only(tmp_path):
+    def handler(_request):
+        return httpx.Response(200, json={
+            "model": "served-model",
+            "choices": [{"message": {"content": "private answer"}, "finish_reason": "stop"}],
+            "usage": {"prompt_tokens": 4, "completion_tokens": 2, "total_tokens": 6},
+        })
+
+    proxy = RunningProxy(tmp_path, handler, limit=1)
+    try:
+        response = httpx.post(proxy.url, json={
+            "model": "requested-model", "temperature": 0,
+            "max_completion_tokens": 8192,
+            "messages": [{"role": "user", "content": "private prompt"}],
+        })
+        assert response.status_code == 200
+        rows = [json.loads(line) for line in proxy.ledger.path.read_text().splitlines()]
+        reserved = next(row for row in rows if row["event"] == "reserved")
+        finished = next(row for row in rows if row["event"] == "finished")
+        assert reserved["sequence"] == 1
+        assert reserved["requested_output"] == 8192
+        assert reserved["applied_output"] == 1024
+        assert reserved["temperature"] == 0
+        assert finished["response_metadata"]["models"] == ["served-model"]
+        assert finished["response_metadata"]["finish_reasons"] == ["stop"]
+        assert finished["response_metadata"]["usage"]["total_tokens"] == 6
+        ledger_text = proxy.ledger.path.read_text()
+        assert "private prompt" not in ledger_text
+        assert "private answer" not in ledger_text
+        assert "messages" not in ledger_text
     finally:
         proxy.close()
 

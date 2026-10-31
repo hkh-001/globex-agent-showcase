@@ -7,6 +7,7 @@ are deliberately excluded from the ledger.
 from __future__ import annotations
 
 import argparse
+import codecs
 import json
 import threading
 import time
@@ -43,7 +44,10 @@ class FreshLedger:
         with path.open("x", encoding="utf-8") as handle:
             handle.write(json.dumps({"event": "opened", "limit": limit}) + "\n")
 
-    def reserve(self, *, model: str, requested_output: int | None, applied_output: int) -> tuple[int, str]:
+    def reserve(
+        self, *, model: str, requested_output: int | None, applied_output: int,
+        temperature: int | float | None = None,
+    ) -> tuple[int, str]:
         with self._lock:
             if self._halted:
                 raise BudgetExhausted("batch halted after an upstream failure")
@@ -56,6 +60,7 @@ class FreshLedger:
                     "event": "reserved", "sequence": self._count,
                     "request_id": request_id, "model": model,
                     "requested_output": requested_output, "applied_output": applied_output,
+                    "temperature": temperature,
                     "at_unix_ns": time.time_ns(),
                 })
             except OSError as error:
@@ -63,17 +68,23 @@ class FreshLedger:
                 raise LedgerUnavailable("request ledger write failed; batch halted") from error
             return self._count, request_id
 
-    def finish(self, request_id: str, *, status_code: int | None, outcome: str, halt: bool = False) -> None:
+    def finish(
+        self, request_id: str, *, status_code: int | None, outcome: str,
+        response_metadata: dict | None = None, halt: bool = False,
+    ) -> None:
         with self._lock:
             if halt:
                 self._halted = True
             try:
-                self._append({
+                row = {
                     "event": "finished", "request_id": request_id,
                     "status_code": status_code, "outcome": outcome,
                     "batch_halted": halt,
                     "at_unix_ns": time.time_ns(),
-                })
+                }
+                if response_metadata is not None:
+                    row["response_metadata"] = response_metadata
+                self._append(row)
             except OSError as error:
                 self._halted = True
                 raise LedgerUnavailable("request ledger write failed; batch halted") from error
@@ -102,6 +113,107 @@ def enforce_output_limit(payload: dict, maximum: int) -> tuple[dict, int | None,
     return copied, requested, applied
 
 
+class ResponseMetadataObserver:
+    """Extract non-content response facts while the proxy forwards bytes unchanged."""
+
+    _USAGE_FIELDS = {
+        "prompt_tokens", "completion_tokens", "total_tokens",
+        "input_tokens", "output_tokens",
+        "prompt_cache_hit_tokens", "prompt_cache_miss_tokens",
+    }
+
+    def __init__(self, content_type: str) -> None:
+        self.content_type = content_type.lower()
+        self._json = bytearray()
+        self._decoder = codecs.getincrementaldecoder("utf-8")()
+        self._text = ""
+        self.models: set[str] = set()
+        self.finish_reasons: set[str] = set()
+        self.usage: dict[str, int] = {}
+        self.parse_error = False
+        self.events_seen = 0
+        self._observed_bytes = 0
+
+    def feed(self, chunk: bytes) -> None:
+        self._observed_bytes += len(chunk)
+        if self._observed_bytes > MAX_BODY_BYTES:
+            self.parse_error = True
+            self._json.clear()
+            self._text = ""
+            return
+        if self.parse_error:
+            return
+        if "application/json" in self.content_type:
+            self._json.extend(chunk)
+            return
+        try:
+            self._text += self._decoder.decode(chunk)
+            while "\n" in self._text:
+                line, self._text = self._text.split("\n", 1)
+                self._sse_line(line.rstrip("\r"))
+        except UnicodeDecodeError:
+            self.parse_error = True
+
+    def finish(self) -> dict:
+        if "application/json" in self.content_type:
+            if self._json and not self.parse_error:
+                try:
+                    payload = json.loads(self._json)
+                    if isinstance(payload, dict):
+                        self._observe(payload)
+                    else:
+                        self.parse_error = True
+                except (UnicodeDecodeError, json.JSONDecodeError):
+                    self.parse_error = True
+        else:
+            try:
+                self._text += self._decoder.decode(b"", final=True)
+                if self._text:
+                    self._sse_line(self._text.rstrip("\r\n"))
+            except UnicodeDecodeError:
+                self.parse_error = True
+        return {
+            "content_type": self.content_type.split(";", 1)[0].strip(),
+            "events_seen": self.events_seen,
+            "models": sorted(self.models),
+            "finish_reasons": sorted(self.finish_reasons),
+            "usage": dict(sorted(self.usage.items())),
+            "metadata_complete": not self.parse_error and bool(self.finish_reasons),
+        }
+
+    def _sse_line(self, line: str) -> None:
+        if not line.startswith("data:"):
+            return
+        data = line[5:].strip()
+        if not data or data == "[DONE]":
+            return
+        try:
+            payload = json.loads(data)
+        except json.JSONDecodeError:
+            self.parse_error = True
+            return
+        if isinstance(payload, dict):
+            self._observe(payload)
+
+    def _observe(self, payload: dict) -> None:
+        self.events_seen += 1
+        model = payload.get("model")
+        if isinstance(model, str) and 0 < len(model) <= 200:
+            self.models.add(model)
+        choices = payload.get("choices")
+        if isinstance(choices, list):
+            for choice in choices:
+                reason = choice.get("finish_reason") if isinstance(choice, dict) else None
+                if isinstance(reason, str) and 0 < len(reason) <= 80:
+                    self.finish_reasons.add(reason)
+        usage = payload.get("usage")
+        if isinstance(usage, dict):
+            for key in self._USAGE_FIELDS:
+                value = usage.get(key)
+                if isinstance(value, int) and not isinstance(value, bool) and value >= 0:
+                    self.usage[key] = value
+
+
 class BudgetProxyHandler(BaseHTTPRequestHandler):
     protocol_version = "HTTP/1.1"
     server_version = "GlobexBudgetProxy/1"
@@ -127,9 +239,12 @@ class BudgetProxyHandler(BaseHTTPRequestHandler):
             if not isinstance(payload, dict):
                 raise ValueError("JSON body must be an object")
             payload, requested, applied = enforce_output_limit(payload, server.maximum_output)
+            temperature = payload.get("temperature")
+            if isinstance(temperature, bool) or not isinstance(temperature, (int, float)):
+                temperature = None
             _, request_id = server.ledger.reserve(
                 model=str(payload.get("model", "")), requested_output=requested,
-                applied_output=applied,
+                applied_output=applied, temperature=temperature,
             )
         except BudgetExhausted:
             self._json_error(429, "physical_request_budget_exhausted")
@@ -149,6 +264,7 @@ class BudgetProxyHandler(BaseHTTPRequestHandler):
         try:
             with server.client.stream("POST", server.upstream, headers=headers, json=payload) as response:
                 status = response.status_code
+                observer = ResponseMetadataObserver(response.headers.get("content-type", ""))
                 self.close_connection = True
                 self.send_response(status)
                 self.send_header("Content-Type", response.headers.get("content-type", "application/json"))
@@ -161,14 +277,17 @@ class BudgetProxyHandler(BaseHTTPRequestHandler):
                 for chunk in response.iter_bytes():
                     if not chunk:
                         continue
+                    observer.feed(chunk)
                     self.wfile.write(f"{len(chunk):X}\r\n".encode("ascii"))
                     self.wfile.write(chunk)
                     self.wfile.write(b"\r\n")
                     self.wfile.flush()
                 self.wfile.write(b"0\r\n\r\n")
                 self.wfile.flush()
+                response_metadata = observer.finish()
             server.ledger.finish(
                 request_id, status_code=status, outcome="response",
+                response_metadata=response_metadata,
                 halt=status >= 400,
             )
         except LedgerUnavailable:
