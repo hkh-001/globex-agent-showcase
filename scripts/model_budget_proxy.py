@@ -101,6 +101,8 @@ def validate_successful_ledger(
     path: Path, *, expected_model: str, expected_output: int,
     expected_temperature: int | float | None = None,
     allowed_served_models: set[str] | None = None,
+    minimum_requests: int = 1,
+    expected_requests: int | None = None,
 ) -> list[str]:
     """Return reproducible integrity errors for a completed paid diagnostic ledger."""
     requested_model = validated_model_id(expected_model)
@@ -112,13 +114,21 @@ def validate_successful_ledger(
     except (OSError, json.JSONDecodeError) as error:
         return [f"ledger_unreadable:{type(error).__name__}"]
     errors: list[str] = []
-    if not rows or rows[0].get("event") != "opened":
+    opened = [row for row in rows if row.get("event") == "opened"]
+    if len(opened) != 1 or not rows or rows[0].get("event") != "opened":
         errors.append("missing_opened_event")
     reserves = [row for row in rows if row.get("event") == "reserved"]
     finishes = [row for row in rows if row.get("event") == "finished"]
+    if len(reserves) < minimum_requests:
+        errors.append("insufficient_reserved_requests")
+    if expected_requests is not None and len(reserves) != expected_requests:
+        errors.append("unexpected_reserved_request_count")
     sequences = [row.get("sequence") for row in reserves]
     if sequences != list(range(1, len(reserves) + 1)):
         errors.append("non_contiguous_sequences")
+    request_ids = [row.get("request_id") for row in reserves]
+    if any(not isinstance(item, str) or not item for item in request_ids) or len(set(request_ids)) != len(request_ids):
+        errors.append("invalid_or_duplicate_request_ids")
     finished_by_id: dict[str, list[dict]] = {}
     for row in finishes:
         finished_by_id.setdefault(str(row.get("request_id")), []).append(row)
@@ -138,23 +148,33 @@ def validate_successful_ledger(
             errors.append(f"{prefix}:requested_model_mismatch")
         if row.get("applied_output") != expected_output:
             errors.append(f"{prefix}:applied_output_mismatch")
+        if row.get("requested_output") != expected_output:
+            errors.append(f"{prefix}:requested_output_mismatch")
         if expected_temperature is not None and row.get("temperature") != expected_temperature:
             errors.append(f"{prefix}:temperature_mismatch")
         if finished.get("status_code") != 200 or finished.get("outcome") != "response":
             errors.append(f"{prefix}:unsuccessful_outcome")
+        if finished.get("batch_halted") is not False:
+            errors.append(f"{prefix}:unexpected_batch_halt")
         metadata = finished.get("response_metadata")
         if not isinstance(metadata, dict) or metadata.get("metadata_complete") is not True:
             errors.append(f"{prefix}:metadata_incomplete")
             continue
-        if metadata.get("served_model") not in allowed:
+        served_model = metadata.get("served_model")
+        if not isinstance(served_model, str) or not MODEL_ID_RE.fullmatch(served_model):
+            errors.append(f"{prefix}:invalid_served_model")
+        elif served_model not in allowed:
             errors.append(f"{prefix}:served_model_mismatch")
-        if not isinstance(metadata.get("finish_reason"), str):
+        finish_reason = metadata.get("finish_reason")
+        if not isinstance(finish_reason, str) or not finish_reason:
             errors.append(f"{prefix}:missing_finish_reason")
         usage = metadata.get("usage")
         if not isinstance(usage, dict) or "total_tokens" not in usage or not (
             "completion_tokens" in usage or "output_tokens" in usage
         ):
             errors.append(f"{prefix}:usage_incomplete")
+        elif any(isinstance(value, bool) or not isinstance(value, int) or value < 0 for value in usage.values()):
+            errors.append(f"{prefix}:usage_invalid")
     return errors
 
 
@@ -277,7 +297,7 @@ class ResponseMetadataObserver:
     def _observe(self, payload: dict) -> None:
         self.events_seen += 1
         model = payload.get("model")
-        if isinstance(model, str) and 0 < len(model) <= 200:
+        if isinstance(model, str) and MODEL_ID_RE.fullmatch(model):
             self.models.add(model)
         choices = payload.get("choices")
         if isinstance(choices, list):
@@ -326,6 +346,10 @@ class BudgetProxyHandler(BaseHTTPRequestHandler):
                 raise ValueError("requested model does not match the frozen batch model")
             if server.expected_temperature is not None and temperature != server.expected_temperature:
                 raise ValueError("temperature does not match the frozen batch temperature")
+            if server.expected_output is not None and (
+                requested != server.expected_output or applied != server.expected_output
+            ):
+                raise ValueError("requested output does not match the frozen batch output")
         except (json.JSONDecodeError, ValueError) as error:
             self._json_error(400, str(error))
             return
@@ -418,8 +442,9 @@ class BudgetProxyServer(ThreadingHTTPServer):
 
     def __init__(
         self, address, *, upstream: str, ledger: FreshLedger, maximum_output: int,
-        expected_model: str | None = None,
+        expected_model: str,
         expected_temperature: int | float | None = None,
+        expected_output: int | None = None,
         client: httpx.Client | None = None,
     ) -> None:
         parsed = urlsplit(upstream)
@@ -428,12 +453,19 @@ class BudgetProxyServer(ThreadingHTTPServer):
         self.upstream = upstream.rstrip("/") + "/chat/completions"
         self.ledger = ledger
         self.maximum_output = maximum_output
-        self.expected_model = validated_model_id(expected_model) if expected_model is not None else None
+        self.expected_model = validated_model_id(expected_model)
         if isinstance(expected_temperature, bool) or (
             expected_temperature is not None and not isinstance(expected_temperature, (int, float))
         ):
             raise ValueError("expected temperature must be numeric")
         self.expected_temperature = expected_temperature
+        if expected_output is not None and (
+            isinstance(expected_output, bool) or not isinstance(expected_output, int) or expected_output < 1
+        ):
+            raise ValueError("expected output must be a positive integer")
+        if expected_output is not None and expected_output > maximum_output:
+            raise ValueError("expected output cannot exceed maximum output")
+        self.expected_output = expected_output
         self.request_lock = threading.Lock()
         self.client = client or httpx.Client(timeout=120.0, follow_redirects=False, trust_env=False)
         self._owns_client = client is None
@@ -455,12 +487,14 @@ def main() -> None:
     parser.add_argument("--maximum-output", type=int, default=1024)
     parser.add_argument("--expected-model", required=True)
     parser.add_argument("--expected-temperature", type=float, default=0)
+    parser.add_argument("--expected-output", type=int, required=True)
     args = parser.parse_args()
     ledger = FreshLedger(args.ledger, args.limit)
     server = BudgetProxyServer(
         (args.listen_host, args.listen_port), upstream=args.upstream,
         ledger=ledger, maximum_output=args.maximum_output,
         expected_model=args.expected_model, expected_temperature=args.expected_temperature,
+        expected_output=args.expected_output,
     )
     try:
         server.serve_forever()

@@ -14,12 +14,13 @@ from scripts.model_budget_proxy import (
 
 
 class RunningProxy:
-    def __init__(self, tmp_path, handler, *, limit=12):
+    def __init__(self, tmp_path, handler, *, limit=12, expected_model="m", expected_output=None):
         client = httpx.Client(transport=httpx.MockTransport(handler))
         self.ledger = FreshLedger(tmp_path / "http-ledger.jsonl", limit)
         self.server = BudgetProxyServer(
             ("127.0.0.1", 0), upstream="https://provider.example/v1",
-            ledger=self.ledger, maximum_output=1024, client=client,
+            ledger=self.ledger, maximum_output=1024,
+            expected_model=expected_model, expected_output=expected_output, client=client,
         )
         self.thread = threading.Thread(target=self.server.serve_forever, daemon=True)
         self.thread.start()
@@ -201,6 +202,43 @@ def test_http_handler_rejects_unsafe_model_before_reserve_or_upstream(tmp_path, 
         proxy.close()
 
 
+@pytest.mark.parametrize("requested_output", [None, 100, 1023])
+def test_http_handler_rejects_non_frozen_output_before_reserve_or_upstream(tmp_path, requested_output):
+    upstream = []
+
+    def handler(request):
+        upstream.append(request)
+        return httpx.Response(200, json=complete_response())
+
+    proxy = RunningProxy(tmp_path, handler, limit=1, expected_output=1024)
+    try:
+        payload = {"model": "m"}
+        if requested_output is not None:
+            payload["max_tokens"] = requested_output
+        response = httpx.post(proxy.url, json=payload)
+        assert response.status_code == 400
+        assert upstream == []
+        assert '"event": "reserved"' not in proxy.ledger.path.read_text()
+    finally:
+        proxy.close()
+
+
+def test_http_handler_accepts_exact_frozen_output(tmp_path):
+    upstream = []
+
+    def handler(request):
+        upstream.append(json.loads(request.content))
+        return httpx.Response(200, json=complete_response())
+
+    proxy = RunningProxy(tmp_path, handler, limit=1, expected_output=1024)
+    try:
+        response = httpx.post(proxy.url, json={"model": "m", "max_tokens": 1024})
+        assert response.status_code == 200
+        assert upstream[0]["max_tokens"] == 1024
+    finally:
+        proxy.close()
+
+
 def test_http_handler_concurrent_limit_is_atomic(tmp_path):
     calls = 0
     lock = threading.Lock()
@@ -255,7 +293,7 @@ def test_served_model_mismatch_halts_before_next_upstream(tmp_path):
         calls += 1
         return httpx.Response(200, json=complete_response(model="unexpected-model"))
 
-    proxy = RunningProxy(tmp_path, handler, limit=3)
+    proxy = RunningProxy(tmp_path, handler, limit=3, expected_model="requested-model")
     try:
         first = httpx.post(proxy.url, json={"model": "requested-model"})
         second = httpx.post(proxy.url, json={"model": "requested-model"})
@@ -343,7 +381,7 @@ def test_http_ledger_records_cap_temperature_and_response_metadata_only(tmp_path
             "usage": {"prompt_tokens": 4, "completion_tokens": 2, "total_tokens": 6},
         })
 
-    proxy = RunningProxy(tmp_path, handler, limit=1)
+    proxy = RunningProxy(tmp_path, handler, limit=1, expected_model="requested-model")
     try:
         response = httpx.post(proxy.url, json={
             "model": "requested-model", "temperature": 0,
@@ -467,3 +505,33 @@ def test_ledger_validator_rejects_missing_finish_and_wrong_cap(tmp_path):
         path, expected_model="deepseek-chat", expected_output=8192,
     )
     assert "sequence_1:finished_count_0" in errors
+
+
+def test_ledger_validator_rejects_empty_ledger(tmp_path):
+    path = tmp_path / "ledger.jsonl"
+    FreshLedger(path, 1)
+    errors = validate_successful_ledger(
+        path, expected_model="deepseek-chat", expected_output=8192,
+        expected_temperature=0,
+    )
+    assert "insufficient_reserved_requests" in errors
+
+
+def test_ledger_validator_rejects_requested_cap_mismatch(tmp_path):
+    path = tmp_path / "ledger.jsonl"
+    ledger = FreshLedger(path, 1)
+    _, request_id = ledger.reserve(
+        requested_model="deepseek-chat", requested_output=100,
+        applied_output=8192, temperature=0,
+    )
+    ledger.finish(request_id, status_code=200, outcome="response", response_metadata={
+        "content_type": "application/json", "events_seen": 1,
+        "served_model": "deepseek-chat", "finish_reason": "stop",
+        "usage": {"completion_tokens": 12, "total_tokens": 30},
+        "metadata_complete": True,
+    })
+    errors = validate_successful_ledger(
+        path, expected_model="deepseek-chat", expected_output=8192,
+        expected_temperature=0,
+    )
+    assert "sequence_1:requested_output_mismatch" in errors
