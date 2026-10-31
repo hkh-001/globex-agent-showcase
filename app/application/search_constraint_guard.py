@@ -88,6 +88,8 @@ class SearchConstraintGuard:
                 "product_type", "ship_to", "target_currency", "sku_spec",
                 "price_max_major", "max_weight_kg", "excluded_material_tags", "required_material_tags",
             ):
+                if exact_id and key == "product_type":
+                    continue
                 value = args.get(key)
                 if value not in (None, [], ""):
                     self._constraints[key] = value

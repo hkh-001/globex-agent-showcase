@@ -5,6 +5,8 @@ from __future__ import annotations
 import copy
 import re
 
+from app.domain.catalog.product_attributes import mentioned_product_types
+
 _IDENTIFIER = re.compile(r"(?<![A-Za-z0-9])P\d{4,}(?:-S\d+)?(?![A-Za-z0-9-])")
 
 
@@ -13,6 +15,7 @@ class ProductCandidateProjection:
         self.identifiers = list(dict.fromkeys(_IDENTIFIER.findall(raw_query.upper())))
         self._product_order = list(dict.fromkeys(identifier.split("-S", 1)[0] for identifier in self.identifiers))
         self._merge_exact = len(self._product_order) > 1
+        self._turn_types = mentioned_product_types(raw_query)
         self._cards: dict[str, dict] = {}
         self._references: dict[str, list[str]] = {}
         self.has_result = False
@@ -38,6 +41,8 @@ class ProductCandidateProjection:
                 return True
             if key in {"excluded_material_tags", "required_material_tags"} and not set(old) <= set(new):
                 return True
+            if key == "product_type" and new != old and len(self._turn_types) > 1 and {old, new} <= self._turn_types:
+                continue
             if key not in {"price_max_major", "max_weight_kg", "excluded_material_tags", "required_material_tags"} and new != old:
                 return True
         return False

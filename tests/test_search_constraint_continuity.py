@@ -78,6 +78,14 @@ async def test_explicit_cross_type_comparison_is_allowed_and_exact_ids_are_exemp
     assert exact["ship_to"] == "CN" and exact["price_max_major"] == 300.0
 
 
+async def test_exact_id_type_does_not_pollute_following_ordinary_search_baseline():
+    guard = SearchConstraintGuard("找背包并核对 P1001")
+    await guard.reconcile(_args(product_type="背包"))
+    await guard.reconcile(_args(normalized_query="", product_id="P1001", product_type="颈枕"))
+    following, _ = await guard.reconcile(_args(normalized_query="换一组背包", product_type="背包"))
+    assert following["product_type"] == "背包"
+
+
 async def test_unannounced_type_switch_in_same_turn_is_rejected_instead_of_broadening():
     guard = SearchConstraintGuard("找一个背包")
     await guard.reconcile(_args(product_type="背包"))
@@ -95,6 +103,37 @@ def test_projection_rejects_later_batch_that_drops_hard_type():
     assert projection.apply(first) is True
     assert projection.apply(broad) is False
     assert projection.result["hits"][0]["product_id"] == "P1"
+
+
+def test_projection_accepts_explicit_cross_type_comparison():
+    projection = ProductCandidateProjection("比较背包和颈枕")
+    backpack = {"tool": "product_search_tool", "hits": [{"product_id": "P1"}],
+                "recall_strategy": "keyword_2gram", "query_conditions": {"product_type": "背包"}}
+    pillow = {"tool": "product_search_tool", "hits": [{"product_id": "P2"}],
+              "recall_strategy": "keyword_2gram", "query_conditions": {"product_type": "颈枕"}}
+    assert projection.apply(backpack) is True
+    assert projection.apply(pillow) is True
+    assert projection.result["hits"][0]["product_id"] == "P2"
+
+
+async def test_tool_events_and_projection_share_cross_type_policy():
+    class UseCase:
+        async def execute(self, spec):
+            return {"hits": [{"product_id": "P1" if spec.product_type == "背包" else "P2"}],
+                    "recall_strategy": "keyword_2gram", "total_candidates": 1, "rerank_applied": False}
+    projection = ProductCandidateProjection("比较背包和颈枕")
+    bus = TradeEventBus()
+    tool = build_product_search_tool(UseCase(), bus)
+    context_token = ShoppingContext.set(ShoppingContextSnapshot("s", "b", "zh-CN", "CNY"))
+    guard_token = SearchConstraintScope.start("比较背包和颈枕")
+    try:
+        with observe_run_events(lambda event: projection.apply(event.payload) if event.type == "tool.result" else None):
+            await tool(normalized_query="背包", product_type="背包")
+            await tool(normalized_query="颈枕", product_type="颈枕")
+    finally:
+        SearchConstraintScope.reset(guard_token)
+        ShoppingContext.reset(context_token)
+    assert projection.result["hits"][0]["product_id"] == "P2"
 
 
 async def test_tool_publishes_effective_conditions_and_does_not_pad_to_top_k():
