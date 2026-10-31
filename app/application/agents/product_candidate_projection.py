@@ -51,8 +51,10 @@ class ProductCandidateProjection:
 
     def _tightens_hard_constraint(self, current: dict[str, object], *, exempt: frozenset[str] = frozenset()) -> bool:
         for key, new in current.items():
-            if key in exempt or key not in self._hard_conditions:
+            if key in exempt:
                 continue
+            if key not in self._hard_conditions:
+                return True
             old = self._hard_conditions[key]
             if key in {"price_max_major", "max_weight_kg"} and new < old:
                 return True

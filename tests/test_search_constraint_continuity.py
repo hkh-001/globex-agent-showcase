@@ -178,6 +178,21 @@ def test_multi_exact_merge_rejects_broader_late_result_and_clears_cards_when_tig
     assert projection.apply(payload("P1001", 100, ship=None)) is False
 
 
+def test_multi_exact_first_new_constraint_clears_unverified_old_cards():
+    projection = ProductCandidateProjection("比较 P1001 和 P1002")
+    unconstrained = {"tool": "product_search_tool", "hits": [{"product_id": "P1001"}],
+                     "recall_strategy": "exact_id_lookup", "query_conditions": {"product_id": "P1001"}}
+    constrained = {"tool": "product_search_tool", "hits": [{"product_id": "P1002"}],
+                   "recall_strategy": "exact_id_lookup",
+                   "query_conditions": {"product_id": "P1002", "price_max_major": 100,
+                                        "max_weight_kg": 0.5, "required_material_tags": ["棉"]}}
+    assert projection.apply(unconstrained) is True
+    assert projection.apply(constrained) is True
+    assert [hit["product_id"] for hit in projection.result["hits"]] == ["P1002"]
+    # 无约束的旧并行结果迟到时不能恢复。
+    assert projection.apply(unconstrained) is False
+
+
 async def test_tool_publishes_effective_conditions_and_does_not_pad_to_top_k():
     seen_specs = []
     class UseCase:
