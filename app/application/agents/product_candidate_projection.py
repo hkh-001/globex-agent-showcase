@@ -32,8 +32,10 @@ class ProductCandidateProjection:
             "max_weight_kg", "excluded_material_tags", "required_material_tags",
         ) if conditions.get(key) not in (None, "", [])}
 
-    def _drops_hard_constraint(self, current: dict[str, object]) -> bool:
+    def _drops_hard_constraint(self, current: dict[str, object], *, exempt: frozenset[str] = frozenset()) -> bool:
         for key, old in self._hard_conditions.items():
+            if key in exempt:
+                continue
             new = current.get(key)
             if new is None:
                 return True
@@ -69,9 +71,19 @@ class ProductCandidateProjection:
         result.pop("tool", None)
         if not self._merge_exact or payload.get("recall_strategy") != "exact_id_lookup" or not hits:
             current = self._hard_constraints(payload)
-            if self.has_result and self._drops_hard_constraint(current):
+            conditions = payload.get("query_conditions") if isinstance(payload.get("query_conditions"), dict) else {}
+            exact_id = payload.get("recall_strategy") == "exact_id_lookup" or bool(
+                conditions.get("product_id") or conditions.get("sku_id")
+            )
+            if self.has_result and self._drops_hard_constraint(
+                current, exempt=frozenset({"product_type"}) if exact_id else frozenset(),
+            ):
                 return False
-            self._hard_conditions = copy.deepcopy(current)
+            # 单精确 ID 只豁免类型连续性，不得改写普通检索的类型基线。
+            if exact_id:
+                self._hard_conditions.update({key: copy.deepcopy(value) for key, value in current.items() if key != "product_type"})
+            else:
+                self._hard_conditions = copy.deepcopy(current)
             # 普通检索在不放宽既有硬约束时替换；空结果仍是有效事实。
             self._cards.clear()
             self._references.clear()

@@ -136,6 +136,32 @@ async def test_tool_events_and_projection_share_cross_type_policy():
     assert projection.result["hits"][0]["product_id"] == "P2"
 
 
+async def test_tool_projection_accepts_single_exact_id_without_losing_ordinary_type_baseline():
+    class UseCase:
+        async def execute(self, spec):
+            product = spec.product_id or "P-BACKPACK"
+            hits = [] if spec.product_id == "P9999" else [{"product_id": product}]
+            return {"hits": hits, "recall_strategy": "exact_id_lookup" if spec.product_id else "keyword_2gram",
+                    "total_candidates": len(hits), "rerank_applied": False}
+    projection = ProductCandidateProjection("找背包并核对 P1001，再确认 P9999 是否存在")
+    bus = TradeEventBus()
+    tool = build_product_search_tool(UseCase(), bus)
+    context_token = ShoppingContext.set(ShoppingContextSnapshot("s", "b", "zh-CN", "CNY"))
+    guard_token = SearchConstraintScope.start("找背包并核对 P1001，再确认 P9999 是否存在")
+    try:
+        with observe_run_events(lambda event: projection.apply(event.payload) if event.type == "tool.result" else None):
+            await tool(normalized_query="背包", product_type="背包", ship_to="CN")
+            await tool(normalized_query="", product_id="P1001")
+            assert projection.result["hits"][0]["product_id"] == "P1001"
+            await tool(normalized_query="", product_id="P9999")
+            assert projection.result["hits"] == []
+            await tool(normalized_query="换一组背包", product_type="背包")
+    finally:
+        SearchConstraintScope.reset(guard_token)
+        ShoppingContext.reset(context_token)
+    assert projection.result["hits"][0]["product_id"] == "P-BACKPACK"
+
+
 async def test_tool_publishes_effective_conditions_and_does_not_pad_to_top_k():
     seen_specs = []
     class UseCase:
