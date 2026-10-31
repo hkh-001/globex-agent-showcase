@@ -162,6 +162,22 @@ async def test_tool_projection_accepts_single_exact_id_without_losing_ordinary_t
     assert projection.result["hits"][0]["product_id"] == "P-BACKPACK"
 
 
+def test_multi_exact_merge_rejects_broader_late_result_and_clears_cards_when_tightened():
+    projection = ProductCandidateProjection("比较 P1001 和 P1002")
+    def payload(product, budget, ship="CN"):
+        return {"tool": "product_search_tool", "hits": [{"product_id": product}],
+                "recall_strategy": "exact_id_lookup",
+                "query_conditions": {"product_id": product, "price_max_major": budget, "ship_to": ship}}
+    assert projection.apply(payload("P1001", 300)) is True
+    assert projection.apply(payload("P1002", 100)) is True
+    assert [hit["product_id"] for hit in projection.result["hits"]] == ["P1002"]
+    # 并行中较宽的旧调用后完成时不得把已收紧的结果重新放宽。
+    assert projection.apply(payload("P1001", 300)) is False
+    assert [hit["product_id"] for hit in projection.result["hits"]] == ["P1002"]
+    # 丢掉目的国同样不能合并。
+    assert projection.apply(payload("P1001", 100, ship=None)) is False
+
+
 async def test_tool_publishes_effective_conditions_and_does_not_pad_to_top_k():
     seen_specs = []
     class UseCase:

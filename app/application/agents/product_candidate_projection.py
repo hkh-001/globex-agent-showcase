@@ -49,6 +49,17 @@ class ProductCandidateProjection:
                 return True
         return False
 
+    def _tightens_hard_constraint(self, current: dict[str, object], *, exempt: frozenset[str] = frozenset()) -> bool:
+        for key, new in current.items():
+            if key in exempt or key not in self._hard_conditions:
+                continue
+            old = self._hard_conditions[key]
+            if key in {"price_max_major", "max_weight_kg"} and new < old:
+                return True
+            if key in {"excluded_material_tags", "required_material_tags"} and set(new) > set(old):
+                return True
+        return False
+
     def _rank(self, card):
         product = card["product_id"].upper()
         identifiers = [identifier for identifier in self.identifiers if identifier.split("-S", 1)[0] == product]
@@ -90,6 +101,15 @@ class ProductCandidateProjection:
             self.result = result
             return True
 
+        current = self._hard_constraints(payload)
+        exempt = frozenset({"product_type"})
+        if self._hard_conditions and self._drops_hard_constraint(current, exempt=exempt):
+            return False
+        if self._tightens_hard_constraint(current, exempt=exempt):
+            # 旧卡片是在较宽约束下取得，不能与收紧后的证据混在同一批展示。
+            self._cards.clear()
+            self._references.clear()
+        self._hard_conditions.update({key: copy.deepcopy(value) for key, value in current.items() if key != "product_type"})
         accepted = [card for card in hits if self._rank(card) is not None]
         if not accepted:
             self._cards.clear()
