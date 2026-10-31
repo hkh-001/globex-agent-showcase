@@ -1,0 +1,52 @@
+name: Frontend regression
+
+on:
+  pull_request:
+    paths:
+      - 'frontend/**'
+      - 'scripts/check_npm_audit.py'
+      - 'security/audit-allowlist.json'
+      - 'tests/test_npm_audit_gate.py'
+      - '.github/workflows/frontend-ci.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'frontend/**'
+      - 'scripts/check_npm_audit.py'
+      - 'security/audit-allowlist.json'
+      - 'tests/test_npm_audit_gate.py'
+      - '.github/workflows/frontend-ci.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: frontend-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  frontend:
+    name: Frontend tests, build, and dependency audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: python -m pip install pytest
+      - run: npm --prefix frontend ci --no-audit --no-fund
+      - name: Audit gate contracts
+        run: python -m pytest -q tests/test_npm_audit_gate.py
+      - name: Reject new or stale high-severity dependency exceptions
+        run: python scripts/check_npm_audit.py
+      - name: Frontend tests
+        run: npm --prefix frontend test -- --run
+      - name: Frontend production build
+        run: npm --prefix frontend run build
