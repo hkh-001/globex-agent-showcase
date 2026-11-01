@@ -11,10 +11,11 @@ ROOT = pathlib.Path(__file__).resolve().parents[1]
 MATRIX = ROOT / "eval/agent/v1/capability-matrix.json"
 UNSUPPORTED = ROOT / "eval/agent/v1/unsupported-capabilities.json"
 CATALOG = ROOT / "eval/agent/v1/template-catalog.json"
+EVIDENCE = ROOT / "eval/agent/v1/evidence-probe.json"
 
 
 def test_capability_audit_passes_on_repo_files():
-    assert capability_audit.audit(MATRIX, UNSUPPORTED, CATALOG) == []
+    assert capability_audit.audit(MATRIX, UNSUPPORTED, CATALOG, None, EVIDENCE) == []
 
 
 def test_supported_capability_without_fields_fails(tmp_path):

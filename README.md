@@ -7,7 +7,7 @@ Globex Agent 是一个基于 **AgentScope 2.x、FastAPI、AG-UI、React 与 SQLi
 | 可复现结果 | 当前公开结果 | 边界 |
 | --- | ---: | --- |
 | 业务合同基线 | **18 / 18** | 人工精选的确定性场景，不代表业务覆盖率或模型能力 |
-| Harness 契约门 | **1033 collected；1032 passed；1 个显式平台豁免** | 无模型凭据的安全、协议和工程合同 |
+| Harness 契约门 | **1036 collected；1035 passed；1 个显式平台豁免** | 无模型凭据的安全、协议和工程合同 |
 | 前端回归 | **252 passed + production build** | React 组件与页面状态合同 |
 
 ## 30 秒理解项目
