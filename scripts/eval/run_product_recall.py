@@ -494,9 +494,12 @@ async def main(argv: list[str] | None = None) -> None:
         print(f"\n[{strategy}] 装配中…")
         observations[strategy] = []
         try:
-            usecase, repo, _ = await build_usecase(
-                strategy, field_lexical=args.field_lexical, recall_candidates=args.recall_candidates,
-            )
+            switches = {}
+            if args.field_lexical:
+                switches["field_lexical"] = True
+            if args.recall_candidates is not None:
+                switches["recall_candidates"] = args.recall_candidates
+            usecase, repo, _ = await build_usecase(strategy, **switches)
             agg = await run_dataset(usecase, repo, cases, args.top_k, observations=observations[strategy])
         except Exception as err:  # 保留失败证据，不把初始化异常或部分执行算作通过
             errors[strategy] = f"{type(err).__name__}: {err}"
