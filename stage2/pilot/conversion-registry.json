@@ -1,0 +1,86 @@
+{
+  "schema_version": "agentbench-conversion-registry-v1",
+  "adapters": {
+    "identity": {"version": "v1", "description": "prompt is already a user string"},
+    "join-list": {"version": "v1", "separator": "；", "description": "join a list of user queries into one string"}
+  },
+  "entries": [
+    {
+      "registry_id": "search-trailox-landed",
+      "source_asset": "eval/v1/product_retrieval.jsonl",
+      "source_record_id": "prod-010",
+      "source_leakage_group_id": "prompt:b31d07353ad7e94d8377ec30d02669e9b18ffc944e08aa1985a4a993d99f472f",
+      "source_prompt_sha256": "b31d07353ad7e94d8377ec30d02669e9b18ffc944e08aa1985a4a993d99f472f",
+      "capability_id": "search.catalog",
+      "adapter_id": "identity",
+      "adapter_version": "v1",
+      "oracle_id": "search-landed-v1",
+      "conversion_reason": "原始请求是明确的商品检索，含具体型号，适合 search.catalog",
+      "expected_execution_plans": [
+        ["main_agent", "search_agent", "product_search_tool"],
+        ["main_agent", "product_search_tool"]
+      ],
+      "expected_tool_parameters": {"normalized_query": "TrailOx 24寸托运行李箱 铝框款", "ship_to": null, "top_k": 5},
+      "task_oracle": {
+        "checks": [
+          {"kind": "value", "field": "hit_count", "operator": "gt", "expected": 0},
+          {"kind": "value", "field": "hits", "operator": "nonempty", "expected": true},
+          {"kind": "value", "field": "hits[].landed_price.subtotal_major", "operator": "gt", "expected": 0}
+        ],
+        "forbidden_capabilities": ["search.web"],
+        "side_effects": "none",
+        "data_limitations": "single query, no budget filter; 不外推到多轮"
+      }
+    },
+    {
+      "registry_id": "knowledge-policy-fields",
+      "source_asset": "eval/v1/knowledge_retrieval.jsonl",
+      "source_record_id": "kb-009",
+      "source_leakage_group_id": "prompt:94788f6bcf739fc5439c2addd39c7c8f098c94ff54a5059e97923c61ea2bc7fc",
+      "source_prompt_sha256": "94788f6bcf739fc5439c2addd39c7c8f098c94ff54a5059e97923c61ea2bc7fc",
+      "capability_id": "search.category_insight",
+      "adapter_id": "identity",
+      "adapter_version": "v1",
+      "oracle_id": "knowledge-fields-v1",
+      "conversion_reason": "原始请求是明确的品类/政策知识问题，适合 category_insight 的有据回答",
+      "expected_execution_plans": [
+        ["main_agent", "search_agent", "category_insight_tool"],
+        ["main_agent", "category_insight_tool"]
+      ],
+      "expected_tool_parameters": {"question": "选购数码配件 价格与预算时，应该优先核对哪些可验证字段？", "top_k": 2},
+      "task_oracle": {
+        "checks": [
+          {"kind": "value", "field": "hit_count", "operator": "gt", "expected": 0},
+          {"kind": "value", "field": "abstained", "operator": "equals", "expected": false},
+          {"kind": "value", "field": "insights[].source", "operator": "nonempty", "expected": true}
+        ],
+        "forbidden_capabilities": ["search.web"],
+        "side_effects": "none",
+        "data_limitations": "local deterministic KB; 不代表真实向量库召回率"
+      }
+    },
+    {
+      "registry_id": "routing-compare-two",
+      "source_asset": "eval/v1/agent_cases.yaml",
+      "source_record_id": "agent-026",
+      "source_leakage_group_id": "shared-template:agent-cases-v1:agent-compare_price-dev-0",
+      "source_prompt_sha256": "9a5a604dc28b9fe8e901eef0494799b6f084224adb7a7b079bdf000638aa9f03",
+      "capability_id": "dispatch.search",
+      "adapter_id": "join-list",
+      "adapter_version": "v1",
+      "oracle_id": "routing-compare-v1",
+      "conversion_reason": "原始 queries 列表是同一用户的一次比较请求；join-list 适配为单个字符串",
+      "expected_execution_plans": [["main_agent", "search_agent"]],
+      "expected_tool_parameters": {"agent": "search_agent", "demands": "比较 Atlas 便携餐盒 165 和 Atlas 旅行洗护套装 188 寄到 JP 的到手价。"},
+      "task_oracle": {
+        "checks": [
+          {"kind": "value", "field": "agent", "operator": "equals", "expected": "search_agent"},
+          {"kind": "value", "field": "status", "operator": "equals", "expected": "completed"}
+        ],
+        "forbidden_capabilities": ["search.web"],
+        "side_effects": "none",
+        "data_limitations": "只测一次 dispatch，不测多轮比较"
+      }
+    }
+  ]
+}

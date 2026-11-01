@@ -1,15 +1,27 @@
-"""Structural validator for pilot candidates (no model calls)."""
+"""Structural and provenance validator for registry-backed pilot drafts."""
 from __future__ import annotations
 
+import hashlib
 import json
 import pathlib
 
+from scripts.eval.agentbench import inventory
+
 ROOT = pathlib.Path(__file__).resolve().parents[3]
+TOOL = {"search.catalog": "product_search_tool", "search.category_insight": "category_insight_tool",
+        "memory.remember": "remember_preference_tool", "state.constraint_carry": "product_search_tool",
+        "dispatch.search": "search_agent", "trade.prepare": "create_order_tool"}
+
+
+def _sha(value) -> str:
+    return hashlib.sha256(json.dumps(value, ensure_ascii=False, sort_keys=True).encode()).hexdigest()
 
 
 def validate(path: pathlib.Path) -> list[str]:
     errors = []
     data = json.loads(path.read_text(encoding="utf-8"))
+    registry = json.loads((ROOT / "stage2/pilot/conversion-registry.json").read_text(encoding="utf-8"))
+    entries = {entry["registry_id"]: entry for entry in registry["entries"]}
     catalog = {item["leakage_group_id"]: item for item in
                json.loads((ROOT / "eval/agent/v1/template-catalog.json").read_text(encoding="utf-8"))["templates"]}
     matrix = {item["capability_id"]: item for item in
@@ -19,32 +31,52 @@ def validate(path: pathlib.Path) -> list[str]:
                if line.strip()]
     if data.get("candidate_count") != len(data.get("tasks") or []):
         errors.append("candidate_count does not match tasks")
+    if len(data.get("tasks") or []) != len(entries):
+        errors.append("pilot tasks do not match registry entries")
     for task in data.get("tasks") or []:
         tid = task.get("task_id", "<missing>")
+        entry = entries.get(task.get("registry_id"))
+        if entry is None:
+            errors.append(f"{tid}: no registry entry")
+            continue
         group = catalog.get(task.get("leakage_group_id"))
         if group is None or group.get("evaluation_split") != "dev":
             errors.append(f"{tid}: leakage group is not Dev")
-        if not task.get("turns"):
-            errors.append(f"{tid}: no user turns")
+        if task.get("source_splits") and set(task["source_splits"]) - {"dev"}:
+            errors.append(f"{tid}: source split is not Dev")
         record = next((row for row in records
                        if row.get("record_id") == task.get("source_record_id")
+                       and row.get("asset_path") == task.get("source_asset")
                        and row.get("leakage_group_id") == task.get("leakage_group_id")), None)
         if record is None:
-            errors.append(f"{tid}: source record does not belong to the group")
-        capability = task.get("capability")
-        entry = matrix.get(capability)
-        if entry is None or entry.get("verification_status") != "verified":
-            errors.append(f"{tid}: capability is not verified")
+            errors.append(f"{tid}: source record does not match asset/group")
+        if not task.get("turns") or not isinstance(task["turns"][0].get("content"), str):
+            errors.append(f"{tid}: turn content must be a string")
+        if _sha(task.get("turns")) != task.get("converted_turns_sha256"):
+            errors.append(f"{tid}: converted turns hash mismatch")
+        spec = next((item for item in inventory.SPECS if item["path"] == task.get("source_asset")), None)
+        if spec is None:
+            errors.append(f"{tid}: unknown source asset")
         else:
-            declared = {(obs["source_type"], obs["selector"], tuple(obs["fields"]))
-                        for obs in entry["observations"]}
-            for check in task.get("deterministic_checks") or []:
-                key = (check.get("source_type"), check.get("selector"), tuple(check.get("fields") or []))
-                if key not in declared:
-                    errors.append(f"{tid}: check does not match a declared observation")
-        plans = task.get("acceptable_execution_plans") or []
-        if not plans or any(not plan for plan in plans):
-            errors.append(f"{tid}: empty execution plan")
+            rows, _ = inventory.load_rows(ROOT / task["source_asset"])
+            raw = next((row.get(spec["prompt_field"]) for row in rows
+                        if inventory.canonical_id(row, spec) == task["source_record_id"]), None)
+            if raw is None:
+                errors.append(f"{tid}: source payload not found")
+            else:
+                if _sha(raw) != task.get("source_payload_sha256"):
+                    errors.append(f"{tid}: source payload hash mismatch")
+                if inventory.prompt_hashes(raw)[1] != task.get("source_prompt_sha256"):
+                    errors.append(f"{tid}: source prompt hash mismatch")
+        capability = task.get("capability")
+        if matrix.get(capability, {}).get("verification_status") != "verified":
+            errors.append(f"{tid}: capability is not verified")
+        if TOOL.get(capability) not in {step for plan in task.get("acceptable_execution_plans") or []
+                                        for step in plan}:
+            errors.append(f"{tid}: execution plan does not cover the capability tool")
+        for check in task.get("deterministic_checks") or []:
+            if not {"kind", "field", "operator", "expected"} <= set(check):
+                errors.append(f"{tid}: check lacks task-level expected")
         if task.get("automatic_scoring") is not False:
             errors.append(f"{tid}: automatic_scoring must be false until a dry-run exists")
     return errors

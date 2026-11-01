@@ -1,31 +1,34 @@
 {
-  "schema_version": "agentbench-pilot-candidates-v2",
-  "candidate_count": 5,
+  "schema_version": "agentbench-pilot-candidates-v3",
+  "candidate_count": 3,
   "formal_eval_size": false,
   "holdout_used": false,
   "executable": false,
-  "note": "source-backed pilot drafts; not the formal 60-task suite",
+  "note": "registry-backed pilot drafts; not the formal 60-task suite",
   "tasks": [
     {
-      "task_id": "pilot-search-083fd298",
+      "task_id": "pilot-search-trailox-landed",
+      "registry_id": "search-trailox-landed",
       "module": "search",
       "capability": "search.catalog",
       "source_asset": "eval/v1/product_retrieval.jsonl",
-      "source_record_id": "prod-104",
-      "source_prompt_sha256": "042ad79899c3ff7b3c6c4d1f2c68c81988843b0c131f4d91c3423a2ddb744455",
-      "leakage_group_id": "prompt:042ad79899c3ff7b3c6c4d1f2c68c81988843b0c131f4d91c3423a2ddb744455",
-      "split": "dev",
+      "source_record_id": "prod-010",
+      "source_prompt_sha256": "b31d07353ad7e94d8377ec30d02669e9b18ffc944e08aa1985a4a993d99f472f",
+      "source_payload_sha256": "b31d07353ad7e94d8377ec30d02669e9b18ffc944e08aa1985a4a993d99f472f",
       "source_splits": [],
+      "converted_turns_sha256": "7d4dfeea4e57028bc8d19dbc9f1c0d4b857ea990ad45c8bacb9a7abf11d29ad7",
+      "leakage_group_id": "prompt:b31d07353ad7e94d8377ec30d02669e9b18ffc944e08aa1985a4a993d99f472f",
+      "split": "dev",
       "conversion": {
-        "method": "prompt-hash-match",
-        "asset": "eval/v1/product_retrieval.jsonl",
-        "group": "prompt:042ad79899c3ff7b3c6c4d1f2c68c81988843b0c131f4d91c3423a2ddb744455",
-        "generator": "generate_pilot-v2"
+        "adapter_id": "identity",
+        "adapter_version": "v1",
+        "reason": "原始请求是明确的商品检索，含具体型号，适合 search.catalog",
+        "registry_id": "search-trailox-landed"
       },
       "turns": [
         {
           "role": "user",
-          "content": "预算 1854 JPY 以内，寄到 US 的陶瓷户外运动，要有现货。"
+          "content": "TrailOx 24寸托运行李箱 铝框款"
         }
       ],
       "acceptable_execution_plans": [
@@ -70,30 +73,39 @@
         ]
       ],
       "expected_tool_parameters": {
-        "tool": "product_search_tool"
+        "normalized_query": "TrailOx 24寸托运行李箱 铝框款",
+        "ship_to": null,
+        "top_k": 5
       },
       "deterministic_checks": [
         {
-          "source_type": "event",
-          "selector": "tool.result:product_search_tool",
-          "fields": [
-            "tool",
-            "hit_count",
-            "recall_strategy",
-            "total_candidates",
-            "query_conditions",
-            "hits",
-            "result_ref"
-          ]
+          "kind": "value",
+          "field": "hit_count",
+          "operator": "gt",
+          "expected": 0
+        },
+        {
+          "kind": "value",
+          "field": "hits",
+          "operator": "nonempty",
+          "expected": true
+        },
+        {
+          "kind": "value",
+          "field": "hits[].landed_price.subtotal_major",
+          "operator": "gt",
+          "expected": 0
         }
       ],
-      "oracle_type": "deterministic",
+      "oracle_id": "search-landed-v1",
+      "oracle_version": "v1",
       "side_effect_policy": {
-        "before_after_snapshot": "none"
+        "before_after_snapshot": "none",
+        "expected": "none"
       },
       "isolation": {
-        "buyer_id": "pilot-search-buyer",
-        "session_id": "pilot-search-session",
+        "buyer_id": "pilot-search-trailox-landed-buyer",
+        "session_id": "pilot-search-trailox-landed-session",
         "database": "fresh_per_task"
       },
       "max_turns": 2,
@@ -104,30 +116,33 @@
       },
       "automatic_scoring": false,
       "execution_ready": false,
-      "blocked_reason": "dry-run scorer not implemented; pilot is not executable yet",
-      "data_limits": "dev-only; holdout locked; one leakage group per task",
+      "blocked_reason": "dry-run scorer not implemented; draft only",
+      "data_limitations": "single query, no budget filter; 不外推到多轮",
       "power_note": "pilot only; not powered for a module-level success claim"
     },
     {
-      "task_id": "pilot-knowledge-125bb9df",
+      "task_id": "pilot-knowledge-policy-fields",
+      "registry_id": "knowledge-policy-fields",
       "module": "knowledge",
       "capability": "search.category_insight",
       "source_asset": "eval/v1/knowledge_retrieval.jsonl",
-      "source_record_id": "kb-050",
-      "source_prompt_sha256": "067f86f9887ed34c2e4cd932afe727bf25152e365c39b1e897a56919455b5ec2",
-      "leakage_group_id": "prompt:067f86f9887ed34c2e4cd932afe727bf25152e365c39b1e897a56919455b5ec2",
-      "split": "dev",
+      "source_record_id": "kb-009",
+      "source_prompt_sha256": "94788f6bcf739fc5439c2addd39c7c8f098c94ff54a5059e97923c61ea2bc7fc",
+      "source_payload_sha256": "41695cedae24e1a5abfd2997d7cd7aacb86c3204ebc88cf7f8d11bdd18de6016",
       "source_splits": [],
+      "converted_turns_sha256": "63aa8176493a60ddbe473b034b865f80e31871ffaf9e1c82342d7fb075c83693",
+      "leakage_group_id": "prompt:94788f6bcf739fc5439c2addd39c7c8f098c94ff54a5059e97923c61ea2bc7fc",
+      "split": "dev",
       "conversion": {
-        "method": "prompt-hash-match",
-        "asset": "eval/v1/knowledge_retrieval.jsonl",
-        "group": "prompt:067f86f9887ed34c2e4cd932afe727bf25152e365c39b1e897a56919455b5ec2",
-        "generator": "generate_pilot-v2"
+        "adapter_id": "identity",
+        "adapter_version": "v1",
+        "reason": "原始请求是明确的品类/政策知识问题，适合 category_insight 的有据回答",
+        "registry_id": "knowledge-policy-fields"
       },
       "turns": [
         {
           "role": "user",
-          "content": "US 的政策快照若没有权威来源或已经超过有效期，还能当作确定事实回答吗？"
+          "content": "选购数码配件 价格与预算时，应该优先核对哪些可验证字段？"
         }
       ],
       "acceptable_execution_plans": [
@@ -172,35 +187,38 @@
         ]
       ],
       "expected_tool_parameters": {
-        "tool": "category_insight_tool"
+        "question": "选购数码配件 价格与预算时，应该优先核对哪些可验证字段？",
+        "top_k": 2
       },
       "deterministic_checks": [
         {
-          "source_type": "event",
-          "selector": "tool.result:category_insight_tool",
-          "fields": [
-            "hit_count",
-            "abstained",
-            "policy_fact_statuses"
-          ]
+          "kind": "value",
+          "field": "hit_count",
+          "operator": "gt",
+          "expected": 0
         },
         {
-          "source_type": "tool_result",
-          "selector": "category_insight_tool",
-          "fields": [
-            "insights[].source",
-            "insights[].metadata.source_reference",
-            "insights[].metadata.source_type"
-          ]
+          "kind": "value",
+          "field": "abstained",
+          "operator": "equals",
+          "expected": false
+        },
+        {
+          "kind": "value",
+          "field": "insights[].source",
+          "operator": "nonempty",
+          "expected": true
         }
       ],
-      "oracle_type": "deterministic",
+      "oracle_id": "knowledge-fields-v1",
+      "oracle_version": "v1",
       "side_effect_policy": {
-        "before_after_snapshot": "none"
+        "before_after_snapshot": "none",
+        "expected": "none"
       },
       "isolation": {
-        "buyer_id": "pilot-knowledge-buyer",
-        "session_id": "pilot-knowledge-session",
+        "buyer_id": "pilot-knowledge-policy-fields-buyer",
+        "session_id": "pilot-knowledge-policy-fields-session",
         "database": "fresh_per_task"
       },
       "max_turns": 2,
@@ -211,217 +229,35 @@
       },
       "automatic_scoring": false,
       "execution_ready": false,
-      "blocked_reason": "dry-run scorer not implemented; pilot is not executable yet",
-      "data_limits": "dev-only; holdout locked; one leakage group per task",
+      "blocked_reason": "dry-run scorer not implemented; draft only",
+      "data_limitations": "local deterministic KB; 不代表真实向量库召回率",
       "power_note": "pilot only; not powered for a module-level success claim"
     },
     {
-      "task_id": "pilot-memory-9700ee10",
-      "module": "memory",
-      "capability": "memory.remember",
-      "source_asset": "eval/learning/skill-cases-v2.json",
-      "source_record_id": "skill-v2-negative-different-category-05",
-      "source_prompt_sha256": "011c5d6df3a50c3b815b06a248e48e56867e0c2da6bf163ecca354e37be186ad",
-      "leakage_group_id": "prompt:011c5d6df3a50c3b815b06a248e48e56867e0c2da6bf163ecca354e37be186ad",
-      "split": "dev",
-      "source_splits": [
-        "dev"
-      ],
-      "conversion": {
-        "method": "prompt-hash-match",
-        "asset": "eval/learning/skill-cases-v2.json",
-        "group": "prompt:011c5d6df3a50c3b815b06a248e48e56867e0c2da6bf163ecca354e37be186ad",
-        "generator": "generate_pilot-v2"
-      },
-      "turns": [
-        {
-          "role": "user",
-          "content": "找行李箱，送SG，按SGD检索，商品单价最多180。不是去徒步，没有防水材质要求。"
-        }
-      ],
-      "acceptable_execution_plans": [
-        [
-          "main_agent",
-          "remember_preference_tool"
-        ]
-      ],
-      "required_capabilities": [
-        "memory.remember"
-      ],
-      "forbidden_capabilities": [
-        "search.web"
-      ],
-      "allowed_agents": [
-        "main_agent"
-      ],
-      "allowed_edges": [
-        [
-          "main_agent",
-          "remember_preference_tool"
-        ]
-      ],
-      "forbidden_edges": [
-        [
-          "main_agent",
-          "web_search_tool"
-        ]
-      ],
-      "expected_tool_parameters": {
-        "tool": "remember_preference_tool"
-      },
-      "deterministic_checks": [
-        {
-          "source_type": "event",
-          "selector": "tool.result:remember_preference_tool",
-          "fields": [
-            "saved"
-          ]
-        },
-        {
-          "source_type": "verified_result",
-          "selector": "memory_write",
-          "fields": [
-            "action",
-            "statement"
-          ]
-        }
-      ],
-      "oracle_type": "deterministic",
-      "side_effect_policy": {
-        "before_after_snapshot": "none"
-      },
-      "isolation": {
-        "buyer_id": "pilot-memory-buyer",
-        "session_id": "pilot-memory-session",
-        "database": "fresh_per_task"
-      },
-      "max_turns": 2,
-      "max_model_calls": 2,
-      "human_review": {
-        "required": false,
-        "scope": "none"
-      },
-      "automatic_scoring": false,
-      "execution_ready": false,
-      "blocked_reason": "dry-run scorer not implemented; pilot is not executable yet",
-      "data_limits": "dev-only; holdout locked; one leakage group per task",
-      "power_note": "pilot only; not powered for a module-level success claim"
-    },
-    {
-      "task_id": "pilot-context-507ea688",
-      "module": "context",
-      "capability": "state.constraint_carry",
-      "source_asset": "eval/context/cases.json",
-      "source_record_id": "dev-cost",
-      "source_prompt_sha256": "1552959e39d51ebdc3ae55c804c49e69eabfc51032178773d3213eb5b8340c3c",
-      "leakage_group_id": "prompt:1552959e39d51ebdc3ae55c804c49e69eabfc51032178773d3213eb5b8340c3c",
-      "split": "dev",
-      "source_splits": [
-        "dev"
-      ],
-      "conversion": {
-        "method": "prompt-hash-match",
-        "asset": "eval/context/cases.json",
-        "group": "prompt:1552959e39d51ebdc3ae55c804c49e69eabfc51032178773d3213eb5b8340c3c",
-        "generator": "generate_pilot-v2"
-      },
-      "turns": [
-        {
-          "role": "user",
-          "content": "第一批P1003的到手价和运费分别是多少？用元回答。"
-        },
-        {
-          "role": "user",
-          "content": "那就按这些条件再帮我找一下"
-        }
-      ],
-      "acceptable_execution_plans": [
-        [
-          "main_agent",
-          "product_search_tool"
-        ]
-      ],
-      "required_capabilities": [
-        "state.constraint_carry"
-      ],
-      "forbidden_capabilities": [
-        "search.web"
-      ],
-      "allowed_agents": [
-        "main_agent"
-      ],
-      "allowed_edges": [
-        [
-          "main_agent",
-          "product_search_tool"
-        ]
-      ],
-      "forbidden_edges": [
-        [
-          "main_agent",
-          "web_search_tool"
-        ]
-      ],
-      "expected_tool_parameters": {
-        "tool": "product_search_tool"
-      },
-      "deterministic_checks": [
-        {
-          "source_type": "event",
-          "selector": "tool.result:product_search_tool",
-          "fields": [
-            "constraint_continuity.inherited",
-            "query_conditions.price_max_major",
-            "query_conditions.ship_to",
-            "query_conditions.sku_spec"
-          ]
-        }
-      ],
-      "oracle_type": "deterministic",
-      "side_effect_policy": {
-        "before_after_snapshot": "none"
-      },
-      "isolation": {
-        "buyer_id": "pilot-context-buyer",
-        "session_id": "pilot-context-session",
-        "database": "fresh_per_task"
-      },
-      "max_turns": 3,
-      "max_model_calls": 3,
-      "human_review": {
-        "required": false,
-        "scope": "none"
-      },
-      "automatic_scoring": false,
-      "execution_ready": false,
-      "blocked_reason": "dry-run scorer not implemented; pilot is not executable yet",
-      "data_limits": "dev-only; holdout locked; one leakage group per task",
-      "power_note": "pilot only; not powered for a module-level success claim"
-    },
-    {
-      "task_id": "pilot-routing-270392cd",
+      "task_id": "pilot-routing-compare-two",
+      "registry_id": "routing-compare-two",
       "module": "routing",
       "capability": "dispatch.search",
       "source_asset": "eval/v1/agent_cases.yaml",
       "source_record_id": "agent-026",
       "source_prompt_sha256": "9a5a604dc28b9fe8e901eef0494799b6f084224adb7a7b079bdf000638aa9f03",
-      "leakage_group_id": "shared-template:agent-cases-v1:agent-compare_price-dev-0",
-      "split": "dev",
+      "source_payload_sha256": "9a5a604dc28b9fe8e901eef0494799b6f084224adb7a7b079bdf000638aa9f03",
       "source_splits": [
         "dev"
       ],
+      "converted_turns_sha256": "61d60bc4c8807b1a904a09cd9e3b0ae9fb4456076d85830f7a3cda1528b469ff",
+      "leakage_group_id": "shared-template:agent-cases-v1:agent-compare_price-dev-0",
+      "split": "dev",
       "conversion": {
-        "method": "prompt-hash-match",
-        "asset": "eval/v1/agent_cases.yaml",
-        "group": "shared-template:agent-cases-v1:agent-compare_price-dev-0",
-        "generator": "generate_pilot-v2"
+        "adapter_id": "join-list",
+        "adapter_version": "v1",
+        "reason": "原始 queries 列表是同一用户的一次比较请求；join-list 适配为单个字符串",
+        "registry_id": "routing-compare-two"
       },
       "turns": [
         {
           "role": "user",
-          "content": [
-            "比较 Atlas 便携餐盒 165 和 Atlas 旅行洗护套装 188 寄到 JP 的到手价。"
-          ]
+          "content": "比较 Atlas 便携餐盒 165 和 Atlas 旅行洗护套装 188 寄到 JP 的到手价。"
         }
       ],
       "acceptable_execution_plans": [
@@ -453,35 +289,32 @@
         ]
       ],
       "expected_tool_parameters": {
-        "tool": "search_agent"
+        "agent": "search_agent",
+        "demands": "比较 Atlas 便携餐盒 165 和 Atlas 旅行洗护套装 188 寄到 JP 的到手价。"
       },
       "deterministic_checks": [
         {
-          "source_type": "event",
-          "selector": "tool.result:task_dispatch",
-          "fields": [
-            "tool",
-            "agent",
-            "dispatch_id",
-            "status"
-          ]
+          "kind": "value",
+          "field": "agent",
+          "operator": "equals",
+          "expected": "search_agent"
         },
         {
-          "source_type": "tool_result",
-          "selector": "task_dispatch",
-          "fields": [
-            "verified_product_ids",
-            "unverified_product_ids"
-          ]
+          "kind": "value",
+          "field": "status",
+          "operator": "equals",
+          "expected": "completed"
         }
       ],
-      "oracle_type": "deterministic",
+      "oracle_id": "routing-compare-v1",
+      "oracle_version": "v1",
       "side_effect_policy": {
-        "before_after_snapshot": "none"
+        "before_after_snapshot": "none",
+        "expected": "none"
       },
       "isolation": {
-        "buyer_id": "pilot-routing-buyer",
-        "session_id": "pilot-routing-session",
+        "buyer_id": "pilot-routing-compare-two-buyer",
+        "session_id": "pilot-routing-compare-two-session",
         "database": "fresh_per_task"
       },
       "max_turns": 2,
@@ -492,8 +325,8 @@
       },
       "automatic_scoring": false,
       "execution_ready": false,
-      "blocked_reason": "dry-run scorer not implemented; pilot is not executable yet",
-      "data_limits": "dev-only; holdout locked; one leakage group per task",
+      "blocked_reason": "dry-run scorer not implemented; draft only",
+      "data_limitations": "只测一次 dispatch，不测多轮比较",
       "power_note": "pilot only; not powered for a module-level success claim"
     }
   ]

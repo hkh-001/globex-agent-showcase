@@ -1,4 +1,4 @@
-"""Generate a small, source-backed, single-capability Dev pilot."""
+"""Generate pilot drafts strictly from the conversion registry."""
 from __future__ import annotations
 
 import argparse
@@ -9,115 +9,108 @@ import pathlib
 from scripts.eval.agentbench import inventory
 
 ROOT = pathlib.Path(__file__).resolve().parents[3]
-MODULE_CAPABILITY = {
-    "search": "search.catalog",
-    "knowledge": "search.category_insight",
-    "memory": "memory.remember",
-    "context": "state.constraint_carry",
-    "routing": "dispatch.search",
-    "transaction": "trade.prepare",
-}
-PLANS = {
-    "search.catalog": [["main_agent", "search_agent", "product_search_tool"],
-                       ["main_agent", "product_search_tool"]],
-    "search.category_insight": [["main_agent", "search_agent", "category_insight_tool"],
-                                ["main_agent", "category_insight_tool"]],
-    "memory.remember": [["main_agent", "remember_preference_tool"]],
-    "state.constraint_carry": [["main_agent", "product_search_tool"]],
-    "dispatch.search": [["main_agent", "search_agent"]],
-    "trade.prepare": [["main_agent", "trade_agent", "create_order_tool"],
-                      ["main_agent", "create_order_tool"]],
-}
+REGISTRY = ROOT / "stage2/pilot/conversion-registry.json"
 TOOL = {"search.catalog": "product_search_tool", "search.category_insight": "category_insight_tool",
         "memory.remember": "remember_preference_tool", "state.constraint_carry": "product_search_tool",
         "dispatch.search": "search_agent", "trade.prepare": "create_order_tool"}
 
 
-def _catalog() -> dict:
-    return json.loads((ROOT / "eval/agent/v1/template-catalog.json").read_text(encoding="utf-8"))
+def _sha(value) -> str:
+    return hashlib.sha256(json.dumps(value, ensure_ascii=False, sort_keys=True).encode()).hexdigest()
 
 
-def _records() -> list[dict]:
-    return [json.loads(line) for line in
-            (ROOT / "eval/agent/v1/inventory/record-index.jsonl").read_text(encoding="utf-8").splitlines()
-            if line.strip()]
-
-
-def _source_prompt(record: dict):
-    spec = next((item for item in inventory.SPECS if item["path"] == record["asset_path"]), None)
-    if spec is None or not spec.get("prompt_field"):
-        return None
-    rows, _ = inventory.load_rows(ROOT / record["asset_path"])
-    for row, group in zip(rows, inventory.prompt_groups(rows, spec)):
-        if group["leakage_group_id"] == record["leakage_group_id"]:
-            return row.get(spec["prompt_field"])
-    return None
+def _resolve(entry: dict):
+    path = entry["source_asset"]
+    spec = next((item for item in inventory.SPECS if item["path"] == path), None)
+    if spec is None:
+        raise SystemExit(f"{entry['registry_id']}: unknown source asset")
+    rows, _ = inventory.load_rows(ROOT / path)
+    for row in rows:
+        if inventory.canonical_id(row, spec) != entry["source_record_id"]:
+            continue
+        raw = row.get(spec["prompt_field"])
+        adapter = entry["adapter_id"]
+        if adapter == "identity":
+            if not isinstance(raw, str):
+                raise SystemExit(f"{entry['registry_id']}: identity adapter needs a string")
+            content = raw
+        elif adapter == "join-list":
+            if not isinstance(raw, list) or not all(isinstance(item, str) for item in raw):
+                raise SystemExit(f"{entry['registry_id']}: join-list adapter needs a list of strings")
+            content = "；".join(raw)
+        else:
+            raise SystemExit(f"{entry['registry_id']}: unknown adapter")
+        _, normalized, _ = inventory.prompt_hashes(raw)
+        if normalized != entry["source_prompt_sha256"]:
+            raise SystemExit(f"{entry['registry_id']}: source prompt hash mismatch")
+        return raw, normalized, content
+    raise SystemExit(f"{entry['registry_id']}: record not found")
 
 
 def build() -> dict:
-    catalog = _catalog()
-    matrix = json.loads((ROOT / "eval/agent/v1/capability-matrix.json").read_text(encoding="utf-8"))
-    by_cap = {item["capability_id"]: item for item in matrix["capabilities"]}
-    records = _records()
+    registry = json.loads(REGISTRY.read_text(encoding="utf-8"))
+    catalog = {item["leakage_group_id"]: item for item in
+               json.loads((ROOT / "eval/agent/v1/template-catalog.json").read_text(encoding="utf-8"))["templates"]}
+    matrix = {item["capability_id"]: item for item in
+              json.loads((ROOT / "eval/agent/v1/capability-matrix.json").read_text(encoding="utf-8"))["capabilities"]}
     tasks = []
-    for module, capability in MODULE_CAPABILITY.items():
-        entry = by_cap[capability]
-        families = set(entry.get("candidate_asset_families") or [])
-        group = next((item for item in sorted(catalog["templates"], key=lambda row: row["leakage_group_id"])
-                      if item["module"] == module and item["evaluation_split"] == "dev"
-                      and set(item["families"]) & families), None)
-        if group is None:
-            continue
-        record = next((row for row in records if row["leakage_group_id"] == group["leakage_group_id"]), None)
-        prompt = _source_prompt(record) if record else None
-        if record is None or prompt is None:
-            continue
-        checks = [{"source_type": obs["source_type"], "selector": obs["selector"],
-                   "fields": obs["fields"]} for obs in entry["observations"]]
-        turns = [{"role": "user", "content": prompt}]
-        if capability == "state.constraint_carry":
-            turns.append({"role": "user", "content": "那就按这些条件再帮我找一下"})
+    for entry in registry["entries"]:
+        group = catalog[entry["source_leakage_group_id"]]
+        if group["evaluation_split"] != "dev":
+            raise SystemExit(f"{entry['registry_id']}: evaluation split is not Dev")
+        entry_capability = matrix[entry["capability_id"]]
+        if entry_capability.get("verification_status") != "verified":
+            raise SystemExit(f"{entry['registry_id']}: capability is not verified")
+        raw, normalized, content = _resolve(entry)
+        turns = [{"role": "user", "content": content}]
         tasks.append({
-            "task_id": f"pilot-{module}-{hashlib.sha256(group['leakage_group_id'].encode()).hexdigest()[:8]}",
-            "module": module,
-            "capability": capability,
-            "source_asset": record["asset_path"],
-            "source_record_id": record["record_id"],
-            "source_prompt_sha256": record["normalized_prompt_sha256"],
+            "task_id": f"pilot-{entry['registry_id']}",
+            "registry_id": entry["registry_id"],
+            "module": group["module"],
+            "capability": entry["capability_id"],
+            "source_asset": entry["source_asset"],
+            "source_record_id": entry["source_record_id"],
+            "source_prompt_sha256": normalized,
+            "source_payload_sha256": _sha(raw),
+            "source_splits": group["source_splits"],
+            "converted_turns_sha256": _sha(turns),
             "leakage_group_id": group["leakage_group_id"],
-            "split": "dev", "source_splits": group["source_splits"],
-            "conversion": {"method": "prompt-hash-match", "asset": record["asset_path"],
-                           "group": group["leakage_group_id"], "generator": "generate_pilot-v2"},
+            "split": group["evaluation_split"],
+            "conversion": {"adapter_id": entry["adapter_id"], "adapter_version": entry["adapter_version"],
+                           "reason": entry["conversion_reason"], "registry_id": entry["registry_id"]},
             "turns": turns,
-            "acceptable_execution_plans": PLANS[capability],
-            "required_capabilities": [capability],
-            "forbidden_capabilities": ["search.web"],
-            "allowed_agents": sorted({agent for plan in PLANS[capability] for agent in plan if agent.endswith("_agent")}),
-            "allowed_edges": [[left, right] for plan in PLANS[capability]
+            "acceptable_execution_plans": entry["expected_execution_plans"],
+            "required_capabilities": [entry["capability_id"]],
+            "forbidden_capabilities": entry["task_oracle"]["forbidden_capabilities"],
+            "allowed_agents": sorted({agent for plan in entry["expected_execution_plans"]
+                                      for agent in plan if agent.endswith("_agent")}),
+            "allowed_edges": [[left, right] for plan in entry["expected_execution_plans"]
                               for left, right in zip(plan, plan[1:])],
             "forbidden_edges": [["main_agent", "web_search_tool"]],
-            "expected_tool_parameters": {"tool": TOOL[capability]},
-            "deterministic_checks": checks,
-            "oracle_type": "deterministic",
-            "side_effect_policy": {"before_after_snapshot": "none"},
-            "isolation": {"buyer_id": f"pilot-{module}-buyer", "session_id": f"pilot-{module}-session",
+            "expected_tool_parameters": entry["expected_tool_parameters"],
+            "deterministic_checks": entry["task_oracle"]["checks"],
+            "oracle_id": entry["oracle_id"],
+            "oracle_version": "v1",
+            "side_effect_policy": {"before_after_snapshot": "none", "expected": entry["task_oracle"]["side_effects"]},
+            "isolation": {"buyer_id": f"pilot-{entry['registry_id']}-buyer",
+                          "session_id": f"pilot-{entry['registry_id']}-session",
                           "database": "fresh_per_task"},
-            "max_turns": len(turns) + 1,
-            "max_model_calls": len(turns) + 1,
+            "max_turns": 2,
+            "max_model_calls": 2,
             "human_review": {"required": False, "scope": "none"},
             "automatic_scoring": False,
             "execution_ready": False,
-            "blocked_reason": "dry-run scorer not implemented; pilot is not executable yet",
-            "data_limits": "dev-only; holdout locked; one leakage group per task",
+            "blocked_reason": "dry-run scorer not implemented; draft only",
+            "data_limitations": entry["task_oracle"]["data_limitations"],
             "power_note": "pilot only; not powered for a module-level success claim",
         })
     return {
-        "schema_version": "agentbench-pilot-candidates-v2",
+        "schema_version": "agentbench-pilot-candidates-v3",
         "candidate_count": len(tasks),
         "formal_eval_size": False,
         "holdout_used": False,
         "executable": False,
-        "note": "source-backed pilot drafts; not the formal 60-task suite",
+        "note": "registry-backed pilot drafts; not the formal 60-task suite",
         "tasks": tasks,
     }
 
