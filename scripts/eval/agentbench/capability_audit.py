@@ -9,6 +9,7 @@ from __future__ import annotations
 import argparse
 import ast
 import hashlib
+import subprocess
 import json
 import pathlib
 import re
@@ -75,6 +76,47 @@ def _observation_errors(cid: str, observations) -> list[str]:
         fields = observation.get("fields")
         if not isinstance(fields, list) or not fields:
             errors.append(f"{cid}: observation fields are empty")
+    return errors
+
+
+def _git(*args: str) -> tuple[int, str]:
+    process = subprocess.run(["git", *args], cwd=ROOT, text=True, capture_output=True)
+    return process.returncode, process.stdout.strip()
+
+
+def _probe_integrity_errors(probe: dict) -> list[str]:
+    errors = []
+    records = probe.get("records") or []
+    expected = hashlib.sha256(json.dumps(records, ensure_ascii=False, sort_keys=True).encode()).hexdigest()
+    if probe.get("records_sha256") != expected:
+        errors.append("probe records_sha256 does not match records")
+    if probe.get("tracked_worktree_clean") is not True:
+        errors.append("probe was not generated from a clean tracked worktree")
+    if probe.get("external_connect_attempts") != 0:
+        errors.append("probe recorded external connections")
+    if probe.get("paid_requests") != 0 or probe.get("external_model_requests") != 0:
+        errors.append("probe paid/external request counts are not zero")
+    source = probe.get("source_commit") or ""
+    if not source:
+        errors.append("probe source_commit is missing")
+        return errors
+    code, _ = _git("cat-file", "-e", f"{source}^{{commit}}")
+    if code != 0:
+        errors.append(f"probe source_commit {source} does not exist")
+        return errors
+    code, _ = _git("merge-base", "--is-ancestor", source, "HEAD")
+    if code != 0:
+        errors.append(f"probe source_commit {source} is not an ancestor of HEAD")
+    code, blob = _git("show", f"{source}:scripts/eval/agentbench/probes.py")
+    if code != 0:
+        errors.append(f"cannot read probes.py at {source}")
+    elif hashlib.sha256(blob.encode()).hexdigest() != probe.get("scanner_sha256"):
+        errors.append("probe scanner_sha256 does not match the source commit blob")
+    for row in records:
+        if row.get("run_id") != probe.get("run_id"):
+            errors.append(f"record {row.get('capability_id')} has a different run_id")
+        if row.get("source_commit") != source:
+            errors.append(f"record {row.get('capability_id')} has a different source_commit")
     return errors
 
 
@@ -150,6 +192,7 @@ def audit(matrix_path: pathlib.Path, unsupported_path: pathlib.Path,
 
     if probe_path is not None:
         probe = json.loads(probe_path.read_text(encoding="utf-8"))
+        errors.extend(_probe_integrity_errors(probe))
         records = probe.get("records") or []
         if probe.get("paid_requests") != 0 or probe.get("external_model_requests") != 0:
             errors.append("probe evidence must record zero paid/external requests")

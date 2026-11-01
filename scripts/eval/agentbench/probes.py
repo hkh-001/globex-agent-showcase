@@ -259,7 +259,7 @@ def run_all() -> dict:
 
 
 def main() -> None:
-    result = asyncio.run(run_all())
+    result = run_all()
     print(json.dumps(result, ensure_ascii=False, indent=2))
 
 

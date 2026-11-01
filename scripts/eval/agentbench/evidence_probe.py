@@ -42,8 +42,11 @@ def main() -> None:
     try:
         result["source_commit"] = subprocess.run(
             ["git", "rev-parse", "HEAD"], cwd=ROOT, text=True, capture_output=True, check=True).stdout.strip()
+        result["tracked_worktree_clean"] = subprocess.run(
+            ["git", "diff", "--quiet", "HEAD", "--"], cwd=ROOT).returncode == 0
     except Exception:
         result["source_commit"] = "unknown"
+        result["tracked_worktree_clean"] = False
     result["scanner_sha256"] = _sha(pathlib.Path(probes.__file__).read_bytes())
     for row in result["records"]:
         row["run_id"] = result["run_id"]
