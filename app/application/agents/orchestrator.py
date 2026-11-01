@@ -190,18 +190,21 @@ class MainAgentOrchestrator:
         if not text:
             return text
         products = verified_result("products")
-        trade_write = verified_result("trade") or verified_result("confirmation")
+        turn_trade = verified_result("turn_trade")
+        confirmation = verified_result("confirmation")
         # 商品推荐采用结构化白名单：只要本轮拿到商品结果，就由服务端依据 hits
         # 确定性生成最终摘要。模型文本不负责声明商品属性，彻底避免同义改写和
         # 跨商品证据嫁接；交易写操作仍由独立确认/订单合同负责输出。
-        if products is not None and not trade_write:
+        if products is not None:
             violations = product_claim_violations(text, products)
             logger.info("商品最终回复已由结构化工具事实生成（会话 %s）", session_id)
             self._bus.publish(session_id, "error", {
                 "message": "商品摘要已按目录工具事实生成",
                 "claim_guard": violations,
             })
-            text = grounded_product_fallback(products)
+            text = grounded_product_fallback(
+                products, turn_trade=turn_trade, confirmation=confirmation,
+            )
         elif products is None and has_concrete_product_claim(text):
             logger.warning("回复声明具体商品但本轮没有已校验商品证据（会话 %s）", session_id)
             self._bus.publish(session_id, "error", {
@@ -320,7 +323,10 @@ class MainAgentOrchestrator:
             has_trade_state = bool(trade_state.get("orders") or trade_state.get("pending_confirmations"))
             private_store = getattr(getattr(self._sessions, "_main_factory", None), "buyer_skill_store", None)
             has_private_skills = bool(await asyncio.to_thread(private_store.list, intent.buyer_id)) if private_store is not None else False
-            use_semantic_cache = use_semantic_cache and not has_trade_state and intent.selected_skill is None and not has_private_skills
+            # 旧语义缓存只保存自由文本，没有结构化商品证据与 grounding schema。
+            # 在缓存升级为“结构化证据 + 服务端重新渲染”前一律 fail-closed：
+            # 不读也不写，确保 24h 内旧文本不能绕过当前商品事实门。
+            use_semantic_cache = False
             cached = await self._lookup_cache(intent, has_history) if use_semantic_cache else None
             if cached is not None:
                 final_text = self._guard_final_text(session_id, cached)

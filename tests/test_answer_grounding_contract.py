@@ -37,6 +37,13 @@ def test_orchestrator_replaces_unsupported_claims_with_verified_catalog_facts():
     )
     assert "P2" not in crossed and "工艺精良" not in crossed and crossed == guarded
 
+    # 历史订单或历史待确认不能关闭新一轮商品 grounding。
+    remember_verified_result("trade", {"orders": [{"order_id": "OLD"}]})
+    assert orchestrator._guard_final_text("s1", "城市漫步 20L 很适合你，工艺精良。") == guarded
+    remember_verified_result("confirmation", {"pending": True})
+    pending = orchestrator._guard_final_text("s1", "首选城市漫步系列，背负系统很好。")
+    assert "背负系统" not in pending and "本轮已生成待确认操作" in pending
+
 
 def test_orchestrator_fails_closed_for_concrete_product_claim_without_tool_evidence():
     init_budget(0)

@@ -49,12 +49,17 @@ def has_concrete_product_claim(text: str) -> bool:
     return bool(text and _CONCRETE_PRODUCT_REFERENCE.search(text))
 
 
-def grounded_product_fallback(product_result: dict[str, Any] | None) -> str:
+def grounded_product_fallback(
+    product_result: dict[str, Any] | None,
+    *,
+    turn_trade: dict[str, Any] | None = None,
+    confirmation: dict[str, Any] | None = None,
+) -> str:
     """Render only authoritative search fields after an unsupported-claim failure."""
     hits = (product_result or {}).get("hits") or []
     if not hits:
         return "本轮没有足够的可核验商品结果，请调整筛选条件后再试。"
-    lines = ["部分推荐理由缺少商品证据，以下仅保留目录中可核验的信息："]
+    lines = ["以下为目录工具返回的可核验商品信息："]
     for hit in hits[:5]:
         title = str(hit.get("title") or "未命名商品")
         product_id = str(hit.get("product_id") or "未知编号")
@@ -63,4 +68,9 @@ def grounded_product_fallback(product_result: dict[str, Any] | None) -> str:
         price_text = f"，商品价 {price} {currency}" if price is not None else ""
         lines.append(f"• {title}（{product_id}）{price_text}。")
     lines.append("如需比较容量、重量或是否适合登机，请以商品详情和承运方规则为准。")
+    for order in (turn_trade or {}).get("orders", []):
+        if order.get("order_id"):
+            lines.append(f"本轮订单 {order['order_id']}：{order.get('status', '状态待核验')}。")
+    if (confirmation or {}).get("pending"):
+        lines.append("本轮已生成待确认操作；尚未执行，请在页面确认卡核对并选择。")
     return "\n".join(lines)

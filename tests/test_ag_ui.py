@@ -157,7 +157,10 @@ async def test_real_search_projects_cards_and_preserves_message_history():
     assert final_state["progress"][0]["status"] == "completed"
     final_messages = next(event["messages"] for event in events if event["type"] == "MESSAGES_SNAPSHOT")
     assert [message["id"] for message in final_messages[:3]] == ["old-user", "old-assistant", "new-user"]
-    assert final_messages[-1]["content"] == "这是根据商品库找到的结果。"
+    # 最终商品文字由工具 hits 确定性生成，模型自由文本不得越过商品事实边界。
+    assert final_messages[-1]["content"].startswith("以下为目录工具返回的可核验商品信息：")
+    assert "P1011" in final_messages[-1]["content"]
+    assert "这是根据商品库找到的结果。" not in final_messages[-1]["content"]
     assert sessions.persisted == 1
 
 
@@ -169,7 +172,7 @@ async def test_empty_search_clears_client_products():
     assert snapshots[-1]["products"] == [] and snapshots[-1]["searchCompleted"] is True
 
 
-async def test_ag_ui_bypasses_text_only_semantic_cache_but_legacy_keeps_it():
+async def test_all_entrypoints_reject_legacy_text_only_semantic_cache():
     orchestrator, agent, _ = make_orchestrator()
     cache = SimpleNamespace(
         lookup=AsyncMock(return_value=SimpleNamespace(reply="缓存推荐文本", similarity=1.0, matched_query="旅行三件套")),
@@ -183,8 +186,9 @@ async def test_ag_ui_bypasses_text_only_semantic_cache_but_legacy_keeps_it():
     cache.remember.assert_not_awaited()
     body = RunAgentInput.model_validate(request_data())
     result = await orchestrator.handle_intent(parse_intent(body))
-    assert result.final_text == "缓存推荐文本" and agent.calls == 1
-    cache.lookup.assert_awaited_once()
+    assert result.final_text != "缓存推荐文本" and agent.calls == 2
+    cache.lookup.assert_not_awaited()
+    cache.remember.assert_not_awaited()
 
 
 @pytest.mark.parametrize("reason", list(ReplyFinishedReason))

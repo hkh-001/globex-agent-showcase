@@ -26,7 +26,9 @@ def _ok(payload: dict) -> ToolChunk:
     if payload.get("confirmation_required"):
         remember_verified_result("confirmation", {"pending": True})
     elif payload.get("order_id"):
-        remember_verified_result("trade", {"orders": [payload]})
+        # 与 orchestrator 注入的历史交易快照分开；最终输出只能把本轮工具结果
+        # 当成本轮交易事实，不能因存在旧订单而关闭商品 grounding。
+        remember_verified_result("turn_trade", {"orders": [payload]})
     return ToolChunk(
         content=[TextBlock(type="text", text=json.dumps(payload, ensure_ascii=False))],
         state=ToolResultState.SUCCESS,
