@@ -77,3 +77,11 @@ def test_manifest_hashes_can_be_recomputed(tmp_path):
     manifest = json.loads((tmp_path / "out" / "manifest.json").read_text(encoding="utf-8"))
     for name, expected in manifest["outputs"].items():
         assert hashlib.sha256((tmp_path / "out" / name).read_bytes()).hexdigest() == expected
+
+
+def test_derived_paraphrases_bind_to_referenced_v2_group(tmp_path):
+    result = _scan(tmp_path)
+    entry = next(row for row in result["assets"] if row["path"] == "eval/v3/semantic_paraphrases.jsonl")
+    assert entry["derived_from"] == "retrieval-v2"
+    assert entry["unresolved_references"] == 0
+    assert entry["leakage_group_count"] == 24

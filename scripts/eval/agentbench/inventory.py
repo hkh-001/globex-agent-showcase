@@ -86,6 +86,11 @@ KEYS = ("path", "kind", "id_field", "id_normalization", "family", "version", "ve
         "deterministic", "prompt_dependent", "allowed_usage")
 SPECS = [dict(zip(KEYS, row)) for row in ASSETS]
 REGISTERED = {spec["path"] for spec in SPECS}
+# Derived assets: (source family, reference field).  Their leakage group is
+# bound to the referenced record's group instead of their own prompt hash.
+DERIVED_ASSETS = {
+    "eval/v3/semantic_paraphrases.jsonl": ("retrieval-v2", "reference_case_id"),
+}
 IGNORE_RULES = [
     (re.compile(r"eval/agent/v1-spike/.*\.json$"), "stage0_spec"),
     (re.compile(r"eval/harness/.*-suite\.json$|eval/harness/v1/suite\.json$"), "suite_config"),
@@ -207,6 +212,7 @@ def discover() -> dict:
 
 def scan(out: pathlib.Path) -> dict:
     assets, families, prompt_index = [], {}, {}
+    rows_by_asset, groups_by_asset = {}, {}
     inputs = []
     for spec in SPECS:
         path = ROOT / spec["path"]
@@ -214,6 +220,7 @@ def scan(out: pathlib.Path) -> dict:
             assets.append({"path": spec["path"], "status": "missing"})
             continue
         rows, raw = load_rows(path)
+        rows_by_asset[spec["path"]] = rows
         inputs.append({"path": spec["path"], "sha256": digest(raw), "records": len(rows)})
         canonical, duplicates, prompt_rows, splits = {}, [], [], {}
         for row in rows:
@@ -228,6 +235,7 @@ def scan(out: pathlib.Path) -> dict:
             if spec["split_field"]:
                 value = str(row.get(spec["split_field"]))
                 splits[value] = splits.get(value, 0) + 1
+        groups_by_asset[spec["path"]] = prompt_rows
         resolution, reusable = (fixture_resolution(rows) if spec["kind"] == "task_candidate"
                                 else ("not_applicable", True))
         assets.append({
@@ -242,6 +250,7 @@ def scan(out: pathlib.Path) -> dict:
             "fixture_resolution": resolution, "directly_reusable": reusable,
             "prompt_count": sum(1 for item in prompt_rows if item["normalized"]),
             "leakage_group_count": len({item["leakage_group_id"] for item in prompt_rows}),
+            "derived_from": None, "unresolved_references": 0,
             "status": "ok",
         })
         state = families.setdefault(spec["family"], {"versions": [], "effective_ids": set(),
@@ -252,6 +261,27 @@ def scan(out: pathlib.Path) -> dict:
         state["effective_ids"].update(canonical)
         if spec["version_order"] >= state["latest_order"]:
             state["latest"], state["latest_order"] = spec["version"], spec["version_order"]
+
+    reference_index = {}
+    for spec in SPECS:
+        if spec["family"] == "retrieval-v2" and spec["path"] in groups_by_asset:
+            reference_index = {group["id"]: group["leakage_group_id"]
+                               for group in groups_by_asset[spec["path"]]}
+            break
+    for path, (source_family, reference_field) in DERIVED_ASSETS.items():
+        if path not in groups_by_asset:
+            continue
+        unresolved = 0
+        for row, group in zip(rows_by_asset[path], groups_by_asset[path]):
+            target = reference_index.get(str(row.get(reference_field) or ""))
+            if target:
+                group["leakage_group_id"] = target
+            else:
+                unresolved += 1
+        entry = next(item for item in assets if item["path"] == path)
+        entry["derived_from"] = source_family
+        entry["unresolved_references"] = unresolved
+        entry["leakage_group_count"] = len({item["leakage_group_id"] for item in groups_by_asset[path]})
 
     family_rows = [{"family": name, "latest_version": state["latest"],
                     "versions": state["versions"], "raw_total": state["raw_total"],
