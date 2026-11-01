@@ -266,6 +266,8 @@ async def test_identical_effective_request_reuses_previous_result_within_turn():
     assert len(with_results) == 3
     # 复用必须原样返回同一批候选，不能丢 hits 或换商品
     assert with_results[0].payload["hits"] == with_results[1].payload["hits"]
+    # 复用不刷新观测时间：它是首次观测的时刻
+    assert with_results[0].payload.get("observed_at") == with_results[1].payload.get("observed_at")
     assert with_results[1].payload["reused_duplicate"] is True
     assert with_results[2].payload["reused_duplicate"] is False
 
@@ -293,11 +295,21 @@ async def test_new_turn_does_not_reuse_previous_result():
     assert calls == ["背包", "背包"]
 
 
-def test_request_fingerprint_covers_every_search_spec_field():
-    from dataclasses import fields
+def test_request_fingerprint_is_derived_from_the_normalized_spec():
+    from dataclasses import fields, replace
 
     from app.application.tools.product_search_tool import request_fingerprint
     from app.domain.catalog.product_search_spec import ProductSearchSpec
 
-    covered = set(json.loads(request_fingerprint(_args())))
+    base = ProductSearchSpec(normalized_query="背包")
+    covered = set(json.loads(request_fingerprint(base)))
     assert covered == {spec_field.name for spec_field in fields(ProductSearchSpec)}
+    # locale 不再恒为 null：它来自 spec，而不是工具 args
+    assert json.loads(request_fingerprint(base))["locale"] == "zh-CN"
+    # 归一化后再取指纹：大小写不同的 product_id 视为同一请求
+    assert request_fingerprint(
+        ProductSearchSpec(normalized_query="", product_id="p1001")
+    ) == request_fingerprint(ProductSearchSpec(normalized_query="", product_id="P1001"))
+    # 任一约束变化必须改变指纹
+    assert request_fingerprint(replace(base, ship_to="US")) != request_fingerprint(base)
+    assert request_fingerprint(replace(base, top_k=4)) != request_fingerprint(base)

@@ -1,4 +1,5 @@
 """最终商品回复只能使用已校验工具事实的强制契约。"""
+import re
 from types import SimpleNamespace
 
 from app.application.agents.orchestrator import MainAgentOrchestrator
@@ -101,8 +102,11 @@ def test_product_fallback_reports_landed_price_with_fee_breakdown():
     assert "商品价 39 CNY" in text
     assert "到手价 64 CNY" in text
     assert "商品 39" in text and "运费 25" in text and "关税 0" in text
-    # 明细必须与总额自洽：39 + 25 + 0 == 64
-    assert 39 + 25 + 0 == 64
+    # 明细必须与总额自洽（从渲染结果解析，而不是断言常量）
+    parts = re.search(r"商品 (\d+) \+ 运费 (\d+) \+ 关税 (\d+)", text)
+    total = re.search(r"到手价 (\d+)", text)
+    assert parts and total
+    assert int(parts.group(1)) + int(parts.group(2)) + int(parts.group(3)) == int(total.group(1))
 
 
 def test_product_fallback_does_not_invent_landed_price_without_evidence():
@@ -176,3 +180,20 @@ def test_product_fallback_ignores_landed_price_without_a_total():
 
     assert "商品价 129 CNY" in text
     assert "到手价" not in text
+
+
+def test_trade_fact_exemption_requires_an_actual_trade_reference():
+    init_budget(0)
+    remember_verified_result("trade", {"orders": [{"order_id": "order-test", "status": "CANCELLED"}]})
+    orchestrator = object.__new__(MainAgentOrchestrator)
+    orchestrator._bus = SimpleNamespace(publish=lambda *args, **kwargs: None)
+    orchestrator._output_guard_enabled = False
+
+    # 没有交易引用、只是在讲商品：必须照常拦截（fail closed）
+    plain = orchestrator._guard_final_text("s1", "城市漫步 20L 很适合你", require_product_evidence=True)
+    assert "城市漫步" not in plain
+    assert "本轮没有足够的可核验商品结果" in plain
+
+    # 有交易引用：放行
+    trade = orchestrator._guard_final_text("s1", "背包订单已取消", require_product_evidence=True)
+    assert trade == "背包订单已取消"

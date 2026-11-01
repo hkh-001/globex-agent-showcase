@@ -67,6 +67,7 @@ from app.infrastructure.budget import init_budget, remember_verified_result, get
 from app.application.grounding_audit import record as record_grounding_replacement
 from app.application.answer_grounding import (
     asserts_product_attributes,
+    has_trade_reference,
     grounded_product_fallback,
     grounded_confirmation_fallback,
     grounded_trade_fallback,
@@ -210,7 +211,8 @@ class MainAgentOrchestrator:
         has_trade_fact = bool(trade.get("orders") or trade.get("pending_confirmations"))
         if not (require_product_evidence or has_concrete_product_claim(text)):
             return False
-        if has_trade_fact and not has_concrete_product_claim(text) and not asserts_product_attributes(text):
+        if (has_trade_fact and has_trade_reference(text)
+                and not has_concrete_product_claim(text) and not asserts_product_attributes(text)):
             return False
         return True
 

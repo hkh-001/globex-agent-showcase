@@ -57,6 +57,16 @@ def has_concrete_product_claim(text: str) -> bool:
     return bool(text and _CONCRETE_PRODUCT_REFERENCE.search(text))
 
 
+_TRADE_REFERENCE = re.compile(
+    r"订单|意向单|已取消|取消|已创建|待确认|已确认|退款|支付成功|CANCELLED|CREATED|CONFIRMED"
+)
+
+
+def has_trade_reference(text: str) -> bool:
+    """Whether the text actually talks about a trade/order fact."""
+    return bool(text) and bool(_TRADE_REFERENCE.search(text))
+
+
 def asserts_product_attributes(text: str) -> bool:
     """Whether the text asserts a product attribute that needs catalog evidence."""
     return bool(text) and any(pattern.search(text) for pattern in _CLAIMS.values())

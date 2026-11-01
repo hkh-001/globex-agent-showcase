@@ -50,14 +50,17 @@ _CATEGORY_ALIASES = {
 }
 
 
-def request_fingerprint(args: dict) -> str:
-    """Identity of an effective search request, derived from the search spec fields.
+def request_fingerprint(spec: ProductSearchSpec) -> str:
+    """Identity of an effective search request, derived from the normalized spec.
 
-    Deriving the field list from ProductSearchSpec means a new hard constraint
-    cannot be silently dropped from duplicate detection.
+    Building the fingerprint after ProductSearchSpec normalization means
+    ``p1001`` and ``P1001`` compare equal, and every spec field (including
+    ``locale``) participates instead of only the keys the tool happens to pass.
     """
-    names = [spec_field.name for spec_field in fields(ProductSearchSpec)]
-    return json.dumps({name: args.get(name) for name in names}, sort_keys=True, ensure_ascii=False, default=str)
+    return json.dumps(
+        {spec_field.name: getattr(spec, spec_field.name) for spec_field in fields(type(spec))},
+        sort_keys=True, ensure_ascii=False, default=str,
+    )
 
 
 def _normalize_category(category: Optional[str], normalized_query: str) -> Optional[str]:
@@ -195,8 +198,7 @@ def build_product_search_tool(usecase: CatalogSearchUseCase, bus: TradeEventBus,
                 content=[TextBlock(type="text", text=f"[error] {error}")],
                 state=ToolResultState.ERROR,
             )
-        fingerprint = request_fingerprint(args)
-        cached = guard.cached_result(fingerprint) if guard is not None else None
+        cached = None
         try:
             spec = ProductSearchSpec(
                 normalized_query=args["normalized_query"],
@@ -215,12 +217,12 @@ def build_product_search_tool(usecase: CatalogSearchUseCase, bus: TradeEventBus,
                 preferred_product_type=args["preferred_product_type"],
                 prefer_lightweight=args["prefer_lightweight"],
             )
+            fingerprint = request_fingerprint(spec)
+            cached = guard.cached_result(fingerprint) if guard is not None else None
             if cached is not None:
                 result = copy.deepcopy(cached)
             else:
                 result = await usecase.execute(spec)
-                if guard is not None:
-                    guard.remember_result(fingerprint, result)
         except ValueError as err:
             bus.publish(session_id, "tool.result", {"tool": "product_search_tool", "error": str(err)})
             return ToolChunk(
@@ -235,6 +237,9 @@ def build_product_search_tool(usecase: CatalogSearchUseCase, bus: TradeEventBus,
         remember_verified_result("products", result)
         if cached is None and evidence_store is not None and snapshot_ctx is not None:
             result["result_ref"] = await evidence_store.save(snapshot_ctx.buyer_id, session_id, "products", result)
+        if cached is None and guard is not None:
+            # Store the finished snapshot so a reused result keeps observed_at/result_ref.
+            guard.remember_result(fingerprint, copy.deepcopy(result))
         bus.publish(
             session_id,
             "tool.result",
