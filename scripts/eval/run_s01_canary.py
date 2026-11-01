@@ -76,7 +76,8 @@ def _reserved_count(path: Path) -> int:
     return sum(row.get("event") == "reserved" for row in _rows(path))
 
 
-def validate_receipt(path: Path, acknowledgement: str, source_commit: str) -> dict[str, Any]:
+def validate_receipt(path: Path, acknowledgement: str, source_commit: str,
+                     case_id: str = CASE_ID, max_physical_requests: int = 4) -> dict[str, Any]:
     if path.is_symlink():
         raise ValueError("authorization receipt must not be a symlink")
     if not path.is_file():
@@ -95,12 +96,12 @@ def validate_receipt(path: Path, acknowledgement: str, source_commit: str) -> di
     exact = {
         "schema_version": RECEIPT_SCHEMA,
         "authorized": True,
-        "case_id": CASE_ID,
+        "case_id": case_id,
         "source_commit": source_commit,
         "model": MODEL,
         "temperature": TEMPERATURE,
         "max_output_tokens_per_request": OUTPUT_TOKENS,
-        "max_physical_requests": 4,
+        "max_physical_requests": max_physical_requests,
         "automatic_retries": 0,
         "fallback_model": "",
     }
@@ -417,25 +418,31 @@ def _safe_upstream(base_url: str) -> str:
     return base_url.rstrip("/")
 
 
-def _ag_ui_request() -> dict[str, Any]:
+def _ag_ui_request(case_id: str = CASE_ID, query: str = QUERY) -> dict[str, Any]:
+    slug = re.sub(r"[^a-z0-9-]+", "-", case_id.lower()).strip("-") or "case"
     return {
-        "threadId": "eval-s01-deepseek-flash-8192",
-        "runId": "eval-s01-deepseek-flash-8192-run-1",
+        "threadId": f"eval-{slug}-deepseek-flash-8192",
+        "runId": f"eval-{slug}-deepseek-flash-8192-run-1",
         "state": {},
-        "messages": [{"id": "s01-user-1", "role": "user", "content": QUERY}],
+        "messages": [{"id": f"{slug}-user-1", "role": "user", "content": query}],
         "tools": [], "context": [],
-        "forwardedProps": {"buyerId": "eval-buyer-s01", "locale": "zh-CN", "currency": "CNY"},
+        "forwardedProps": {"buyerId": f"eval-buyer-{slug}", "locale": "zh-CN", "currency": "CNY"},
     }
 
 
-def run_paid(output: Path, receipt_path: Path, acknowledgement: str) -> dict[str, Any]:
+def run_paid(output: Path, receipt_path: Path, acknowledgement: str, *,
+             case_id: str = CASE_ID, query: str = QUERY,
+             max_physical_requests: int = 4, runtime_dir: Path | None = None) -> dict[str, Any]:
     output = assert_output_path(output)
     if ROOT / ".globex-runtime" / "eval" not in output.parents:
         raise ValueError("paid evidence output must be under .globex-runtime/eval")
     if not _tracked_clean():
         raise ValueError("tracked worktree must be clean before a paid run")
     source_commit = _source_commit()
-    receipt = validate_receipt(receipt_path, acknowledgement, source_commit)
+    receipt = validate_receipt(
+        receipt_path, acknowledgement, source_commit,
+        case_id=case_id, max_physical_requests=max_physical_requests,
+    )
     settings = load_settings()
     if not settings.llm_api_key:
         raise ValueError("LLM_API_KEY is missing")
@@ -444,7 +451,9 @@ def run_paid(output: Path, receipt_path: Path, acknowledgement: str) -> dict[str
     embedding_probe = probe_local_embedding(embedding)
     receipt_sha256 = _sha256(receipt_path)
     output.mkdir(parents=True)
-    runtime = output / "runtime"
+    runtime = Path(runtime_dir) if runtime_dir is not None else output / "runtime"
+    if runtime_dir is not None and (not runtime.is_dir() or not any(runtime.iterdir())):
+        raise ValueError("reused runtime directory must exist and be non-empty")
     ledger = output / "http-ledger.jsonl"
     proxy_port, backend_port = _port(), _port()
     while backend_port == proxy_port:
@@ -458,7 +467,7 @@ def run_paid(output: Path, receipt_path: Path, acknowledgement: str) -> dict[str
     result: dict[str, Any] = {
         "schema_version": RESULT_SCHEMA,
         "source_commit": source_commit,
-        "case_id": CASE_ID,
+        "case_id": case_id,
         "status": "infrastructure_failure",
         "paid_request_attempted": False,
         "authorization": {
@@ -481,7 +490,8 @@ def run_paid(output: Path, receipt_path: Path, acknowledgement: str) -> dict[str
             "consumed": True,
             "consumed_marker_sha256": _sha256(marker),
         })
-        runtime.mkdir()
+        if runtime_dir is None:
+            runtime.mkdir()
         with (output / "proxy.log").open("wb") as proxy_log:
             proxy_process = subprocess.Popen(
                 proxy_command(port=proxy_port, upstream=upstream, ledger=ledger,
@@ -502,7 +512,7 @@ def run_paid(output: Path, receipt_path: Path, acknowledgement: str) -> dict[str
                 result["health"] = _wait_http(backend_url + "/health", timeout=300)
                 if _reserved_count(ledger) != 0:
                     raise RuntimeError("backend startup unexpectedly used the chat model")
-                request_body = _ag_ui_request()
+                request_body = _ag_ui_request(case_id, query)
                 write_json(output / "request.json", request_body)
                 files.append(output / "request.json")
                 result["paid_request_attempted"] = True
@@ -579,12 +589,20 @@ def main() -> int:
     run.add_argument("--output", type=Path, required=True)
     run.add_argument("--authorization-receipt", type=Path, required=True)
     run.add_argument("--acknowledge-paid-run", required=True)
+    run.add_argument("--case-id", default=CASE_ID)
+    run.add_argument("--query", default=QUERY)
+    run.add_argument("--max-physical-requests", type=int, default=4)
+    run.add_argument("--runtime-dir", type=Path)
     args = parser.parse_args()
     if args.mode == "preflight":
         report = local_preflight(args.output)
         print(json.dumps(report, ensure_ascii=False, indent=2))
         return 0 if report["passed"] else 2
-    result = run_paid(args.output, args.authorization_receipt, args.acknowledge_paid_run)
+    result = run_paid(
+        args.output, args.authorization_receipt, args.acknowledge_paid_run,
+        case_id=args.case_id, query=args.query,
+        max_physical_requests=args.max_physical_requests, runtime_dir=args.runtime_dir,
+    )
     print(json.dumps(result, ensure_ascii=False, indent=2))
     return 0 if result["status"] == "captured" else 2
 
