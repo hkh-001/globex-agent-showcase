@@ -108,6 +108,9 @@ def test_main_prompt_requires_authoritative_confirmation_for_order_writes():
     assert "原因已给出时不要重复索要" in prompt
     assert "未在 hits 或 filtered_out 中出现" in prompt
     assert "简单的现货推荐不要先查品类知识库" in prompt
+    assert "normalized_query 只能保留买家明确说出的" in prompt
+    assert "商品结构、做工、质量、耐用性" in prompt
+    assert "经验估计/需核验" in prompt
 
 
 def test_judge_ground_truth_includes_product_attributes_exposed_by_search_cards():

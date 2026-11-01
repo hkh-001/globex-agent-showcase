@@ -99,7 +99,7 @@ def test_tool_summaries_do_not_copy_addresses_preferences_skill_body_or_credenti
                for event in encoded(events) if event["type"] == "CUSTOM" and event["name"] == "activity.upsert")
 
 
-def test_real_sdk_thinking_events_are_bounded_throttled_and_separate_from_messages(monkeypatch):
+def test_provider_thinking_content_never_reaches_client_events(monkeypatch):
     adapter, events = adapter_for()
     monkeypatch.setattr("app.application.agents.ag_ui_adapter.time.monotonic", lambda: 100.0)
     adapter.on_agent_event(ThinkingBlockStartEvent(reply_id="reply", block_id="block"))
@@ -108,9 +108,10 @@ def test_real_sdk_thinking_events_are_bounded_throttled_and_separate_from_messag
     adapter.on_agent_event(ThinkingBlockEndEvent(reply_id="reply", block_id="block"))
     activity = adapter.state["activities"][0]
     assert activity["source"] == "provider" and activity["status"] == "completed"
-    assert len(activity["content"]) == 8000 and activity["truncated"] is True
+    assert activity["content"] == "" and "truncated" not in activity
     assert len(events) == 2 and all(event.type == "CUSTOM" for event in events)
-    assert events[0].value["content"] == ""  # 发布后的对象不随增量修改。
+    assert all(event.value["content"] == "" for event in events)
+    assert "公开模型输出的说明" not in json.dumps(encoded(events), ensure_ascii=False)
     adapter.finish("最后回答")
     assert next(event for event in events if event.type == "MESSAGES_SNAPSHOT").messages[-1].content == "最后回答"
 
@@ -130,7 +131,7 @@ def test_failure_closes_open_tools_and_provider_thinking(cancelled, code, status
     adapter.on_agent_event(ThinkingBlockDeltaEvent(reply_id="reply", block_id="block", delta="已收到的公开内容"))
     adapter.fail("结束", cancelled=cancelled, code=code)
     assert all(activity["status"] == status and activity["finishedAt"] for activity in adapter.state["activities"])
-    assert adapter.state["activities"][1]["content"] == "已收到的公开内容"
+    assert adapter.state["activities"][1]["content"] == ""
 
 
 async def test_persistent_activities_replay_and_cross_round_ownership(tmp_path):

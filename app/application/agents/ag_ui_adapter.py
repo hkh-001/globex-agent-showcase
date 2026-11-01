@@ -156,20 +156,12 @@ class AGUIRunAdapter:
             self._text_open.discard(message_id)
             self.emit(TextMessageEndEvent(message_id=message_id))
         elif kind in {"THINKING_BLOCK_START", "THINKING_BLOCK_DELTA", "THINKING_BLOCK_END"}:
-            # AgentScope 2.0.8 将供应商公开返回的 thinking/reasoning 映射到这些事件。
-            # 不读取 memory、系统提示、隐藏字段或从回答反推 Thinking。
+            # 供应商 reasoning 可能包含行为规则、提示词片段和内部决策过程。
+            # 客户端只接收固定状态边界，正文永不进入 AG-UI state / journal / SSE。
             identifier = self._id("thinking", f"{event.reply_id}:{event.block_id}")
             entry = self._activity(identifier, "thinking")
             if kind == "THINKING_BLOCK_DELTA":
-                delta = event.delta if isinstance(event.delta, str) else ""
-                remaining = max(0, 8000 - len(entry["content"]))
-                entry["content"] += delta[:remaining]
-                if len(delta) > remaining:
-                    entry["truncated"] = True
-                now = time.monotonic()
-                if now - self._thinking_published.get(identifier, 0) >= 0.2 and remaining:
-                    self._publish_activity(entry)
-                    self._thinking_published[identifier] = now
+                return
             elif kind == "THINKING_BLOCK_END":
                 entry.update(status="completed", finishedAt=int(time.time() * 1000))
                 self._publish_activity(entry)
