@@ -36,7 +36,10 @@ uv run python scripts/eval/run_agentbench_spike.py \
   --output .globex-runtime/agentbench-stage0-$(date +%Y%m%dT%H%M%S)
 ```
 
-The runner validates all three task documents, executes positive and negative
-graph probes, and runs only deterministic local tests. It records zero paid
-and zero external model requests; this is an infrastructure result, not an
-Agent quality score.
+The runner validates all three task documents but does not execute them as a
+model benchmark (`tasks_executed=false`). It executes positive and negative
+graph probes and deterministic local contract tests under a socket guard.
+External and paid request counts are derived from the guard journal rather
+than written as constants. This is an infrastructure result, not an Agent
+quality score. `dispatch_isolation_groups` proves distinct dispatch ownership;
+it does not by itself prove wall-clock overlap.

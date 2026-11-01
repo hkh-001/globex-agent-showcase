@@ -6,8 +6,11 @@ from pathlib import Path
 from types import SimpleNamespace
 
 import jsonschema
+import pytest
 
 from app.application.tools.task_dispatch_tool import build_task_dispatch_tool
+from app.application.agents.orchestrator import _turn_execution_scope
+from app.application.search_constraint_guard import SearchConstraintScope
 from app.application.usecases.confirmation_service import ConfirmationService
 from app.application.usecases.order_usecases import OrderItemInput
 from app.domain.order.address import Address
@@ -22,6 +25,7 @@ from app.infrastructure.persistence.sql.repositories import bootstrap_schema, cr
 from app.infrastructure.persistence.sql.trade_store import SqlTradeStore
 from app.infrastructure.tracing import current_correlation
 from scripts.eval.agentbench.scorer import score_execution_graph, summarize_execution
+from scripts.eval.agentbench.network_guard import _classify_address
 
 
 SEARCH_CONTRACT = {
@@ -34,7 +38,7 @@ SEARCH_CONTRACT = {
     ],
     "forbidden_edges": [["search_agent", "create_order_tool"]],
     "dispatch_policy": {"required": False, "max_dispatches": 2},
-    "parallel_groups": [],
+    "dispatch_isolation_groups": [],
 }
 
 
@@ -59,6 +63,19 @@ def event(kind, payload, *, agent="main_agent", dispatch_id=""):
 
 def test_execution_scope_uses_existing_correlation_and_restores_on_error():
     assert current_agent_execution().agent == "system"
+
+
+def test_partial_turn_scope_setup_rolls_back_all_contextvars(monkeypatch):
+    def fail_start(_query):
+        raise RuntimeError("scope setup failed")
+
+    monkeypatch.setattr(SearchConstraintScope, "start", fail_start)
+    snapshot = ShoppingContextSnapshot("scope-session", "scope-buyer", "zh-CN", "CNY")
+    with pytest.raises(RuntimeError, match="scope setup failed"):
+        with _turn_execution_scope(snapshot, "query"):
+            pass
+    assert ShoppingContext.current() is None
+    assert current_agent_execution().agent == "system"
     try:
         with agent_execution_scope("search_agent", dispatch_id="dispatch-test"):
             correlation = current_correlation()
@@ -77,7 +94,7 @@ def test_graph_accepts_direct_and_dispatched_search_and_rejects_missing_owner():
     dispatched = [
         event("agent.dispatch", {"agent": "search_agent", "dispatch_id": "d1"}, dispatch_id="d1"),
         event("tool.invoke", {"tool": "product_search_tool"}, agent="search_agent", dispatch_id="d1"),
-        event("tool.result", {"tool": "task_dispatch", "dispatch_id": "d1"}, dispatch_id="d1"),
+        event("tool.result", {"tool": "task_dispatch", "dispatch_id": "d1", "status": "completed"}, dispatch_id="d1"),
     ]
     assert score_execution_graph(dispatched, SEARCH_CONTRACT)["passed"]
 
@@ -92,7 +109,7 @@ def test_graph_rejects_forbidden_edge():
     trace = [
         event("agent.dispatch", {"agent": "search_agent", "dispatch_id": "d1"}, dispatch_id="d1"),
         event("tool.invoke", {"tool": "create_order_tool"}, agent="search_agent", dispatch_id="d1"),
-        event("tool.result", {"tool": "task_dispatch", "dispatch_id": "d1"}, dispatch_id="d1"),
+        event("tool.result", {"tool": "task_dispatch", "dispatch_id": "d1", "status": "completed"}, dispatch_id="d1"),
     ]
     result = score_execution_graph(trace, SEARCH_CONTRACT)
     assert not result["passed"]
@@ -112,6 +129,18 @@ def test_execution_accounting_counts_turns_tools_dispatches_and_unknown_usage():
     }
     trace[-1]["payload"]["usage_complete"] = False
     assert summarize_execution(trace)["physical_model_calls"] is None
+    assert summarize_execution([]) == {
+        "turns": 0, "physical_model_calls": None, "usage_complete": False,
+        "tool_calls": 0, "dispatches": 0,
+    }
+
+
+def test_network_guard_classifies_loopback_external_and_local_socket():
+    assert _classify_address(("127.0.0.1", 8000)) == "loopback"
+    assert _classify_address(("::1", 8000, 0, 0)) == "loopback"
+    assert _classify_address(("8.8.8.8", 443)) == "external"
+    assert _classify_address(("example.com", 443)) == "external"
+    assert _classify_address("/tmp/example.sock") == "local_socket"
 
 
 class InterleavedWorker:
@@ -168,6 +197,43 @@ async def test_parallel_dispatches_keep_distinct_contextvar_ownership():
     assert len(dispatch_ids) == 2
     assert all(value.startswith("dispatch-") for value in dispatch_ids)
     assert current_agent_execution().agent == "system"
+    scored = score_execution_graph(events, SEARCH_CONTRACT)
+    assert scored["passed"]
+    assert scored["dispatch_count"] == 2
+
+
+class FailingWorker:
+    async def reply(self, _inputs):
+        raise RuntimeError("synthetic worker failure")
+
+
+class FailingFactory:
+    def build(self):
+        return FailingWorker()
+
+
+async def test_failed_dispatch_emits_terminal_event_and_scores_task_failed():
+    bus = TradeEventBus()
+    queue = bus.subscribe("failed-session")
+    factory = FailingFactory()
+    dispatch = build_task_dispatch_tool(factory, factory, bus, subagent_inject=False)
+    shopping = ShoppingContext.set(ShoppingContextSnapshot("failed-session", "buyer", "zh-CN", "CNY"))
+    try:
+        with agent_execution_scope("main_agent"):
+            with pytest.raises(RuntimeError, match="synthetic worker failure"):
+                await dispatch("search_agent", "fail deterministically")
+    finally:
+        ShoppingContext.reset(shopping)
+    events = []
+    while not queue.empty():
+        events.append((await queue.get()).to_dict())
+    terminals = [row for row in events if row["type"] == "tool.result" and row["payload"].get("tool") == "task_dispatch"]
+    assert len(terminals) == 1
+    assert terminals[0]["payload"]["status"] == "error"
+    assert terminals[0]["payload"]["error_type"] == "RuntimeError"
+    result = score_execution_graph(events, SEARCH_CONTRACT)
+    assert result["status"] == "task_failed"
+    assert any(value.startswith("dispatch_error:") for value in result["failures"])
 
 
 async def test_cancelled_scope_restores_parent_and_event_roundtrip_keeps_owner():

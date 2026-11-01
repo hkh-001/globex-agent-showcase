@@ -19,7 +19,7 @@
     "forbidden_edges": [],
     "dispatch_policy": {"required": false, "max_dispatches": 4},
     "order_constraints": [],
-    "parallel_groups": []
+    "dispatch_isolation_groups": []
   },
   "forbidden_facts": ["removed_budget_still_active", "cross_session_state"],
   "max_turns": 4,

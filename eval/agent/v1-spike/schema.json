@@ -31,7 +31,7 @@
           "additionalProperties": false
         },
         "order_constraints": {"type": "array"},
-        "parallel_groups": {"type": "array", "items": {"type": "array", "items": {"type": "string"}}}
+        "dispatch_isolation_groups": {"type": "array", "items": {"type": "array", "items": {"type": "string"}}}
       },
       "additionalProperties": false
     },

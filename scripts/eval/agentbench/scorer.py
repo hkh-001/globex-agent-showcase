@@ -40,6 +40,8 @@ def summarize_execution(events: Iterable[dict[str, Any]]) -> dict[str, Any]:
             identity = correlation.get("dispatch_id") or payload.get("dispatch_id")
             if isinstance(identity, str) and identity:
                 dispatch_ids.add(identity)
+    if turns == 0:
+        usage_complete = False
     return {
         "turns": turns,
         "physical_model_calls": model_calls if usage_complete else None,
@@ -69,7 +71,7 @@ def score_execution_graph(
     evidence_errors: list[str] = []
     edges: list[tuple[str, str]] = []
     dispatches: dict[str, tuple[str, str]] = {}
-    completed_dispatches: set[str] = set()
+    completed_dispatches: dict[str, str] = {}
     child_dispatches: dict[str, set[str]] = defaultdict(set)
 
     for index, event in enumerate(events):
@@ -117,10 +119,14 @@ def score_execution_graph(
             dispatch_id = correlation.get("dispatch_id") or payload.get("dispatch_id")
             if not isinstance(dispatch_id, str) or not dispatch_id:
                 evidence_errors.append(f"event[{index}]:dispatch_result_missing_id")
+            elif payload.get("status") not in {"completed", "error", "cancelled"}:
+                evidence_errors.append(f"event[{index}]:dispatch_result_missing_status")
+            elif dispatch_id in completed_dispatches:
+                evidence_errors.append(f"event[{index}]:duplicate_dispatch_result")
             else:
-                completed_dispatches.add(dispatch_id)
+                completed_dispatches[dispatch_id] = payload["status"]
 
-    if set(dispatches) != completed_dispatches:
+    if set(dispatches) != set(completed_dispatches):
         evidence_errors.append("dispatch_start_finish_mismatch")
 
     if evidence_errors:
@@ -160,9 +166,13 @@ def score_execution_graph(
     maximum = policy.get("max_dispatches")
     if isinstance(maximum, int) and count > maximum:
         failures.append(f"too_many_dispatches:{count}>{maximum}")
+    for dispatch_id, status in completed_dispatches.items():
+        if status != "completed":
+            failures.append(f"dispatch_{status}:{dispatch_id}")
 
     # A group lists child-agent names which must have distinct dispatches.
-    for group_index, group in enumerate(contract.get("parallel_groups", [])):
+    # This proves distinct dispatch ownership, not wall-clock overlap.
+    for group_index, group in enumerate(contract.get("dispatch_isolation_groups", [])):
         required = Counter(group)
         if any(len(child_dispatches.get(agent, set())) < count for agent, count in required.items()):
             failures.append(f"parallel_group_not_isolated:{group_index}")

@@ -14,7 +14,7 @@
     "forbidden_edges": [["search_agent", "create_order_tool"]],
     "dispatch_policy": {"required": false, "max_dispatches": 1},
     "order_constraints": [],
-    "parallel_groups": []
+    "dispatch_isolation_groups": []
   },
   "expected_tool_params": {"product_type": "背包", "ship_to": "CN", "price_max_major": 300},
   "forbidden_side_effects": ["order_created", "inventory_changed"],

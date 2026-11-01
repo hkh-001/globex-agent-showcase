@@ -62,7 +62,7 @@ def scorer_probes() -> dict:
          "correlation": {"agent": "main_agent", "dispatch_id": "d1"}},
         {"type": "tool.invoke", "payload": {"tool": "product_search_tool"},
          "correlation": {"agent": "search_agent", "dispatch_id": "d1"}},
-        {"type": "tool.result", "payload": {"tool": "task_dispatch", "dispatch_id": "d1"},
+        {"type": "tool.result", "payload": {"tool": "task_dispatch", "dispatch_id": "d1", "status": "completed"},
          "correlation": {"agent": "main_agent", "dispatch_id": "d1"}},
     ]
     missing = json.loads(json.dumps(dispatched))
@@ -87,14 +87,29 @@ def scorer_probes() -> dict:
 
 
 def run_pytest(output: Path) -> dict:
-    command = [sys.executable, "-m", "pytest", "-q", *TESTS]
-    recorded_command = ["python", "-m", "pytest", "-q", *TESTS]
+    plugin = "scripts.eval.agentbench.network_guard"
+    command = [sys.executable, "-m", "pytest", "-q", "-p", plugin, *TESTS]
+    recorded_command = ["python", "-m", "pytest", "-q", "-p", plugin, *TESTS]
     environment = dict(__import__("os").environ)
     for name in ("ALL_PROXY", "all_proxy", "HTTP_PROXY", "HTTPS_PROXY", "http_proxy", "https_proxy"):
         environment.pop(name, None)
+    guard_log = output / "network-guard.jsonl"
+    environment["AGENTBENCH_NETWORK_GUARD_LOG"] = str(guard_log)
     process = subprocess.run(command, cwd=ROOT, text=True, capture_output=True, env=environment)
     (output / "pytest.log").write_text(process.stdout + process.stderr)
-    return {"command": recorded_command, "exit_code": process.returncode, "passed": process.returncode == 0}
+    observations = [json.loads(line) for line in guard_log.read_text().splitlines() if line.strip()]
+    return {
+        "command": recorded_command,
+        "exit_code": process.returncode,
+        "passed": process.returncode == 0,
+        "network_guard": {
+            "code_sha256": digest(ROOT / "scripts/eval/agentbench/network_guard.py"),
+            "observed_connect_attempts": len(observations),
+            "external_connect_attempts": sum(row["kind"] == "external" for row in observations),
+            "allowed_loopback_attempts": sum(row["kind"] == "loopback" for row in observations),
+            "local_socket_attempts": sum(row["kind"] == "local_socket" for row in observations),
+        },
+    }
 
 
 def main() -> int:
@@ -111,17 +126,21 @@ def main() -> int:
     tests = run_pytest(output)
     tracked_clean = subprocess.run(["git", "diff", "--quiet", "HEAD", "--"], cwd=ROOT).returncode == 0
     cached_clean = subprocess.run(["git", "diff", "--cached", "--quiet", "HEAD", "--"], cwd=ROOT).returncode == 0
+    external_attempts = tests["network_guard"]["external_connect_attempts"]
     manifest = {
         "schema_version": "agentbench-stage0-evidence-v1",
         "created_at": datetime.now(timezone.utc).isoformat(),
         "source_commit": git("rev-parse", "HEAD"),
         "tracked_worktree_clean": tracked_clean and cached_clean,
-        "external_model_requests": 0,
-        "paid_requests": 0,
+        "external_model_requests_observed": 0 if external_attempts == 0 else None,
+        "paid_requests_observed": 0 if external_attempts == 0 else None,
+        "task_specs_validated": True,
+        "tasks_executed": False,
+        "contract_tests_executed": True,
         "tasks": tasks,
         "scorer_probes": probes,
         "tests": tests,
-        "passed": tests["passed"] and all(value["status"] == {
+        "passed": tests["passed"] and external_attempts == 0 and all(value["status"] == {
             "direct_main": "passed", "dispatched_search": "passed",
             "missing_agent": "evidence_invalid", "forbidden_edge": "task_failed",
         }[name] for name, value in probes.items()),
@@ -130,7 +149,8 @@ def main() -> int:
     write_json(output / "manifest.json", manifest)
     hashes = {path.name: digest(path) for path in sorted(output.iterdir()) if path.is_file()}
     write_json(output / "files.sha256.json", hashes)
-    print(json.dumps({"output": str(output), "passed": manifest["passed"], "paid_requests": 0}, ensure_ascii=False))
+    print(json.dumps({"output": str(output), "passed": manifest["passed"],
+                      "paid_requests_observed": manifest["paid_requests_observed"]}, ensure_ascii=False))
     return 0 if manifest["passed"] else 1
 
 

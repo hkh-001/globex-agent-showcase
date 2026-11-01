@@ -25,7 +25,7 @@ import json
 import logging
 import time
 import uuid
-from contextlib import AsyncExitStack, aclosing
+from contextlib import AsyncExitStack, aclosing, contextmanager
 from dataclasses import dataclass
 from contextvars import ContextVar
 from typing import Any, Awaitable, Callable, Optional
@@ -62,7 +62,7 @@ from app.domain.session.ports.conversation_store import (
 from app.domain.session.ports.session_store import SessionStore  # noqa: F401 —— 保留类型引用
 from app.infrastructure.cache.semantic_cache import SemanticCache
 from app.infrastructure.context import ShoppingContext, ShoppingContextSnapshot
-from app.infrastructure.agent_execution import set_agent_execution, reset_agent_execution
+from app.infrastructure.agent_execution import agent_execution_scope
 from app.infrastructure.eventbus import TradeEventBus, observe_run_events
 from app.infrastructure.budget import init_budget, remember_verified_result, get_budget, rule_fallback_text, verified_result
 from app.application.grounding_audit import record as record_grounding_replacement
@@ -113,6 +113,22 @@ class SubmitIntentOutput:
     final_text: str
     error: str | None = None
     error_code: str | None = None
+
+
+@contextmanager
+def _turn_execution_scope(snapshot: ShoppingContextSnapshot, raw_query: str):
+    """Install all turn-local ContextVars with rollback on partial setup."""
+    shopping_token = ShoppingContext.set(snapshot)
+    try:
+        with agent_execution_scope("main_agent"):
+            from app.application.search_constraint_guard import SearchConstraintScope
+            search_token = SearchConstraintScope.start(raw_query)
+            try:
+                yield
+            finally:
+                SearchConstraintScope.reset(search_token)
+    finally:
+        ShoppingContext.reset(shopping_token)
 
 
 def _tasks_snapshot(agent: Agent) -> dict:
@@ -314,10 +330,7 @@ class MainAgentOrchestrator:
             locale=intent.locale,
             currency=intent.currency,
         )
-        token = ShoppingContext.set(snapshot)
-        execution_token = set_agent_execution("main_agent")
-        from app.application.search_constraint_guard import SearchConstraintScope
-        search_constraint_token = SearchConstraintScope.start(intent.raw_query)
+        turn_scope = _turn_execution_scope(snapshot, intent.raw_query)
         started_at = time.monotonic()
         # 本轮 Token 预算（TOKEN_BUDGET_TOTAL=0时为 None，不启用四档降级）
         init_budget(self._token_budget_total)
@@ -340,6 +353,7 @@ class MainAgentOrchestrator:
             if event.shopping_session_id == session_id and event.type == "tool.result":
                 if candidate_projection.apply(event.payload):
                     remember_verified_result("products", candidate_projection.result)
+        turn_scope.__enter__()
         try:
             selected_event("reading")
             agent = await self._sessions.get_or_create(session_id, **({"model_override": intent.model_override} if intent.model_override else {}))
@@ -497,9 +511,7 @@ class MainAgentOrchestrator:
                     self._loop_detector.reset(session_id)
                 if self._drift_detector is not None:
                     self._drift_detector.reset(session_id)
-                ShoppingContext.reset(token)
-                reset_agent_execution(execution_token)
-                SearchConstraintScope.reset(search_constraint_token)
+                turn_scope.__exit__(None, None, None)
 
     async def _preference_scope(self, buyer_id: str) -> str | None:
         """买家当前偏好的指纹，作为语义缓存的分桶维度。

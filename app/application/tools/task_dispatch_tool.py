@@ -22,6 +22,7 @@ import logging
 import json
 import re
 import time
+import asyncio
 from datetime import datetime, timezone
 from typing import Literal, Optional
 
@@ -101,6 +102,11 @@ def build_task_dispatch_tool(
         budget = get_budget()
         if budget is not None and budget.exhausted:
             return ToolChunk(content=[TextBlock(text=rule_fallback_text())], state=ToolResultState.SUCCESS)
+        if subagent_type not in {"search_agent", "trade_agent"}:
+            return ToolChunk(
+                content=[TextBlock(type="text", text=f"[error] 未知 subagent_type：{subagent_type}")],
+                state=ToolResultState.ERROR,
+            )
         started_at = datetime.now(timezone.utc).isoformat()
         started_monotonic = time.monotonic()
         with agent_execution_scope(
@@ -115,22 +121,9 @@ def build_task_dispatch_tool(
                  "dispatch_id": dispatch_id},
             )
 
-        if subagent_type == "search_agent":
-            worker = search_factory.build()
-        elif subagent_type == "trade_agent":
-            worker = trade_factory.build()
-        else:
-            return ToolChunk(
-                content=[TextBlock(type="text", text=f"[error] 未知 subagent_type：{subagent_type}")],
-                state=ToolResultState.ERROR,
-            )
-
-        inputs = [UserMsg("commerce_concierge", demands)]
-        hint = await _preference_hint(subagent_type, demands)
-        if hint:
-            inputs.insert(0, UserMsg("memory_hint", hint))
-
         evidence_refs, verified_ids = set(), set()
+        completion_status = "error"
+        error_type = ""
         def capture(event):
             if event.shopping_session_id != session_id or event.type != "tool.result" or not isinstance(event.payload, dict):
                 return
@@ -143,41 +136,57 @@ def build_task_dispatch_tool(
             for line in [*payload.get("confirmation", {}).get("payload", {}).get("items", []),
                          *payload.get("order", {}).get("lines", [])]:
                 verified_ids.update(str(line[key]) for key in ("product_id", "sku_id") if line.get(key))
-        with agent_execution_scope(
-            subagent_type,
-            dispatch_id=dispatch_id,
-            parent_dispatch_id=parent_execution.dispatch_id,
-        ):
-            with observe_run_events(capture):
-                reply = await worker.reply(inputs)
-        output = reply.get_text_content() or ""
-        mentioned_ids = set(re.findall(r"\bP\d{4}(?:-S\d+)?\b", output))
-        unknown = mentioned_ids - verified_ids
-        # 下单专家可能只核对主任务传入的 SKU；这些标识仍须经过其真实业务工具核验。
-        decision = {"agent": subagent_type, "status": "unverified" if unknown else "completed",
-                    "summary": output if not unknown else "子任务回复包含未能由本轮检索证据核实的商品标识，请使用业务工具复核。",
-                    "evidence_refs": sorted(evidence_refs), "verified_product_ids": sorted(verified_ids),
-                    "unverified_product_ids": sorted(unknown)}
-        with agent_execution_scope(
-            parent_execution.agent,
-            dispatch_id=dispatch_id,
-            parent_dispatch_id=parent_execution.dispatch_id,
-        ):
-            bus.publish(
-                session_id,
-                "tool.result",
-                {
+        try:
+            worker = search_factory.build() if subagent_type == "search_agent" else trade_factory.build()
+            inputs = [UserMsg("commerce_concierge", demands)]
+            hint = await _preference_hint(subagent_type, demands)
+            if hint:
+                inputs.insert(0, UserMsg("memory_hint", hint))
+            with agent_execution_scope(
+                subagent_type,
+                dispatch_id=dispatch_id,
+                parent_dispatch_id=parent_execution.dispatch_id,
+            ):
+                with observe_run_events(capture):
+                    reply = await worker.reply(inputs)
+            output = reply.get_text_content() or ""
+            mentioned_ids = set(re.findall(r"\bP\d{4}(?:-S\d+)?\b", output))
+            unknown = mentioned_ids - verified_ids
+            # 下单专家可能只核对主任务传入的 SKU；这些标识仍须经过其真实业务工具核验。
+            decision = {"agent": subagent_type, "status": "unverified" if unknown else "completed",
+                        "summary": output if not unknown else "子任务回复包含未能由本轮检索证据核实的商品标识，请使用业务工具复核。",
+                        "evidence_refs": sorted(evidence_refs), "verified_product_ids": sorted(verified_ids),
+                        "unverified_product_ids": sorted(unknown)}
+            completion_status = "completed"
+            return ToolChunk(
+                content=[TextBlock(type="text", text=json.dumps(decision, ensure_ascii=False))],
+                state=ToolResultState.SUCCESS,
+            )
+        except asyncio.CancelledError:
+            completion_status = "cancelled"
+            error_type = "CancelledError"
+            raise
+        except Exception as error:
+            completion_status = "error"
+            error_type = type(error).__name__
+            raise
+        finally:
+            with agent_execution_scope(
+                parent_execution.agent,
+                dispatch_id=dispatch_id,
+                parent_dispatch_id=parent_execution.dispatch_id,
+            ):
+                payload = {
                     "tool": "task_dispatch",
                     "agent": subagent_type,
                     "dispatch_id": dispatch_id,
+                    "status": completion_status,
                     "started_at": started_at,
                     "finished_at": datetime.now(timezone.utc).isoformat(),
                     "elapsed_ms": round((time.monotonic() - started_monotonic) * 1000),
-                },
-            )
-        return ToolChunk(
-            content=[TextBlock(type="text", text=json.dumps(decision, ensure_ascii=False))],
-            state=ToolResultState.SUCCESS,
-        )
+                }
+                if error_type:
+                    payload["error_type"] = error_type
+                bus.publish(session_id, "tool.result", payload)
 
     return task_dispatch

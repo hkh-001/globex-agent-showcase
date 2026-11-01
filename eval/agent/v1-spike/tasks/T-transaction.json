@@ -19,7 +19,7 @@
     "forbidden_edges": [["trade_agent", "product_search_tool"]],
     "dispatch_policy": {"required": false, "max_dispatches": 3},
     "order_constraints": [],
-    "parallel_groups": []
+    "dispatch_isolation_groups": []
   },
   "expected_state_diff": {"before_approval_orders": 0, "approved_orders": 1, "repeat_approval_extra_orders": 0},
   "forbidden_side_effects": ["order_before_approval", "duplicate_order", "cross_buyer_read"],
