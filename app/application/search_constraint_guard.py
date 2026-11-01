@@ -19,6 +19,26 @@ class SearchConstraintConflict(ValueError):
     pass
 
 
+_OPTIONAL_PREFERENCE_TERMS = {
+    "登机": ("登机", "机舱", "随身行李"),
+    "轻便": ("轻便", "轻量", "超轻"),
+    "大容量": ("大容量", "容量大"),
+}
+
+
+def _remove_unstated_preferences(raw_query: str, normalized_query: str) -> tuple[str, list[str]]:
+    cleaned, removed = normalized_query, []
+    for concept, terms in _OPTIONAL_PREFERENCE_TERMS.items():
+        if any(term in raw_query for term in terms):
+            continue
+        matched = [term for term in terms if term in cleaned]
+        if matched:
+            for term in matched:
+                cleaned = cleaned.replace(term, " ")
+            removed.append(concept)
+    return " ".join(cleaned.split()), removed
+
+
 @dataclass
 class SearchConstraintGuard:
     raw_query: str
@@ -32,6 +52,16 @@ class SearchConstraintGuard:
         """返回带继承约束的参数；精确 ID 查询不继承普通召回类型。"""
         args = dict(supplied)
         exact_id = bool(args.get("product_id") or args.get("sku_id"))
+        cleaned_query, removed_query_terms = _remove_unstated_preferences(
+            self.raw_query, str(args.get("normalized_query") or ""),
+        )
+        args["normalized_query"] = cleaned_query
+        if args.get("prefer_lightweight") and not any(
+            term in self.raw_query for term in _OPTIONAL_PREFERENCE_TERMS["轻便"]
+        ):
+            args["prefer_lightweight"] = False
+            if "轻便" not in removed_query_terms:
+                removed_query_terms.append("轻便")
 
         inferred: list[str] = []
         degraded: list[str] = []
@@ -96,6 +126,7 @@ class SearchConstraintGuard:
 
         return args, {
             "inherited": sorted(set(inherited)), "inferred": inferred, "degraded": degraded,
+            "removed_unsupported_query_terms": sorted(removed_query_terms),
             "scope": "exact_id" if exact_id else "turn",
         }
 

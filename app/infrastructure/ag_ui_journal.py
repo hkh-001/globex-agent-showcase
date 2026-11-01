@@ -38,9 +38,48 @@ def _json(value: Any) -> str:
     return json.dumps(value, ensure_ascii=False, separators=(",", ":"))
 
 
+_THINKING_ACTIVITY_FIELDS = {
+    "id", "runId", "kind", "label", "status", "sequence",
+    "startedAt", "finishedAt", "source",
+}
+
+
+def _sanitize_activity(activity: Any) -> Any:
+    if not isinstance(activity, dict) or activity.get("kind") != "thinking":
+        return copy.deepcopy(activity)
+    safe = {key: copy.deepcopy(value) for key, value in activity.items()
+            if key in _THINKING_ACTIVITY_FIELDS}
+    safe["content"] = ""
+    return safe
+
+
+def _sanitize_public_state(state: Any) -> Any:
+    safe = copy.deepcopy(state) if isinstance(state, dict) else {}
+    safe["activities"] = [_sanitize_activity(item) for item in safe.get("activities", [])]
+    return safe
+
+
+def _sanitize_public_event(event: Any) -> Any:
+    safe = copy.deepcopy(event) if isinstance(event, dict) else {}
+    if safe.get("type") == "CUSTOM" and safe.get("name") == "activity.upsert":
+        safe["value"] = _sanitize_activity(safe.get("value"))
+    elif safe.get("type") == "STATE_SNAPSHOT":
+        safe["snapshot"] = _sanitize_public_state(safe.get("snapshot"))
+    return safe
+
+
+def _sanitize_projection(projection: Any) -> dict:
+    safe = copy.deepcopy(projection) if isinstance(projection, dict) else {}
+    safe.setdefault("messages", [])
+    safe["state"] = _sanitize_public_state(safe.get("state"))
+    safe.setdefault("openMessages", [])
+    safe.setdefault("openTools", [])
+    return safe
+
+
 def _close_activity_state(state: dict, *, stopped: bool) -> dict:
     """崩溃恢复也收口展示投影；不能让工具或 Thinking 永久显示进行中。"""
-    state = copy.deepcopy(state)
+    state = _sanitize_public_state(state)
     state["status"] = "cancelled" if stopped else "error"
     for activity in state.setdefault("activities", []):
         if activity.get("status") in {"preparing", "running", "waiting"}:
@@ -73,6 +112,7 @@ class AGUIJournal:
                 try:
                     # 每次失败都关闭连接，不能带着上一轮未完成游标/事务重试。
                     async with aiosqlite.connect(self.path, timeout=0.5) as db:
+                        db.row_factory = aiosqlite.Row
                         async with db.execute("PRAGMA busy_timeout=500") as cursor:
                             await cursor.fetchall()
                         # PRAGMA 会返回结果行；显式耗尽并关闭，避免游标持锁阻碍后续 DDL。
@@ -96,6 +136,8 @@ class AGUIJournal:
                   run_id TEXT NOT NULL, seq INTEGER NOT NULL, event_json TEXT NOT NULL,
                   PRIMARY KEY(run_id,seq));
                         """ + LEARNING_SCHEMA + "COMMIT;")
+                        await self._sanitize_legacy_rows(db)
+                        await db.commit()
                     self._initialized = True
                     return
                 except aiosqlite.OperationalError as err:
@@ -103,6 +145,36 @@ class AGUIJournal:
                             or attempt == 19 or time.monotonic() >= deadline):
                         raise
                     await asyncio.sleep(min(0.05, max(0, deadline - time.monotonic())))
+
+    @staticmethod
+    async def _sanitize_legacy_rows(db) -> None:
+        """幂等清除旧版本已落盘的 provider reasoning 正文。"""
+        async with db.execute("SELECT run_id,seq,event_json FROM agui_events") as cursor:
+            events = await cursor.fetchall()
+        for row in events:
+            original = json.loads(row["event_json"])
+            safe = _sanitize_public_event(original)
+            if safe != original:
+                await db.execute(
+                    "UPDATE agui_events SET event_json=? WHERE run_id=? AND seq=?",
+                    (_json(safe), row["run_id"], row["seq"]),
+                )
+        async with db.execute("SELECT run_id,projection_json FROM agui_runs") as cursor:
+            runs = await cursor.fetchall()
+        for row in runs:
+            original = json.loads(row["projection_json"])
+            safe = _sanitize_projection(original)
+            if safe != original:
+                await db.execute("UPDATE agui_runs SET projection_json=? WHERE run_id=?",
+                                 (_json(safe), row["run_id"]))
+        async with db.execute("SELECT session_id,state_json FROM agui_sessions") as cursor:
+            sessions = await cursor.fetchall()
+        for row in sessions:
+            original = json.loads(row["state_json"])
+            safe = _sanitize_public_state(original)
+            if safe != original:
+                await db.execute("UPDATE agui_sessions SET state_json=? WHERE session_id=?",
+                                 (_json(safe), row["session_id"]))
 
     @asynccontextmanager
     async def _db(self, write=False):
@@ -135,7 +207,7 @@ class AGUIJournal:
 
     @staticmethod
     def _run(row):
-        projection = json.loads(row["projection_json"])
+        projection = _sanitize_projection(json.loads(row["projection_json"]))
         projection["state"].setdefault("activities", [])
         return {"runId": row["run_id"], "threadId": row["session_id"], "status": row["status"],
                 "cursor": row["last_seq"], "stopRequested": bool(row["stop_requested"]),
@@ -222,6 +294,10 @@ class AGUIJournal:
 
     @staticmethod
     def _project(projection, event, run_id):
+        sanitized = _sanitize_projection(projection)
+        projection.clear()
+        projection.update(sanitized)
+        event = _sanitize_public_event(event)
         kind = event["type"]
         if kind == "MESSAGES_SNAPSHOT":
             owners = {m["id"]: m.get("runId") for m in projection["messages"]}
@@ -266,8 +342,9 @@ class AGUIJournal:
             projection["openTools"] = [i for i in projection["openTools"] if i != event["toolCallId"]]
 
     async def _append(self, db, row, events):
-        projection, seq, status = json.loads(row["projection_json"]), row["last_seq"], row["status"]
-        for event in events:
+        projection, seq, status = _sanitize_projection(json.loads(row["projection_json"])), row["last_seq"], row["status"]
+        for raw_event in events:
+            event = _sanitize_public_event(raw_event)
             if event["type"] == "CUSTOM" and event.get("name") == "activity.upsert":
                 activity = event.get("value")
                 if (not isinstance(activity, dict) or activity.get("runId") != row["run_id"]
@@ -337,7 +414,8 @@ class AGUIJournal:
             if after < 0 or after > row["last_seq"]:
                 raise JournalConflict("事件游标超出该运行范围")
             async with db.execute("SELECT seq,event_json FROM agui_events WHERE run_id=? AND seq>? ORDER BY seq LIMIT ?", (run_id, after, limit)) as cursor:
-                events = [{"seq": item["seq"], "event": json.loads(item["event_json"])} for item in await cursor.fetchall()]
+                events = [{"seq": item["seq"], "event": _sanitize_public_event(json.loads(item["event_json"]))}
+                          for item in await cursor.fetchall()]
             return events, row["status"], row["last_seq"]
 
     async def run_session_id(self, run_id, buyer_id):
@@ -417,7 +495,7 @@ class AGUIJournal:
                 (session_id, buyer_id),
             ) as cursor:
                 async for saved in cursor:
-                    projection = json.loads(saved["projection_json"])
+                    projection = _sanitize_projection(json.loads(saved["projection_json"]))
                     # 只用已受归属和请求指纹校验的原生 resume 决议收口旧确认卡。
                     # “已批准”仅表示决议，实际执行结果保留在后续运行；不改写历史事件。
                     for decision in json.loads(saved["input_json"]).get("resume") or []:
@@ -455,7 +533,7 @@ class AGUIJournal:
             ) as cursor:
                 events = [{"id": f"{item['run_id']}:{item['seq']}", "type": item["type"],
                            "timestamp": item["timestamp"]} for item in await cursor.fetchall()]
-            state = json.loads(row["state_json"])
+            state = _sanitize_public_state(json.loads(row["state_json"]))
             state.setdefault("activities", [])
             return {"id": session_id, "title": row["title"], "messages": list(messages.values()),
                     "activities": activities,

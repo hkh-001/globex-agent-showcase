@@ -179,7 +179,9 @@
     "tests/test_public_business_automation.py",
     "tests/test_search_constraint_continuity.py",
     "tests/test_model_budget_proxy.py",
-    "tests/test_s01_canary_driver.py"
+    "tests/test_s01_canary_driver.py",
+    "tests/test_ag_ui_journal.py",
+    "tests/test_answer_grounding_contract.py"
   ],
   "contract_allowed_skips": [
     {

@@ -3,6 +3,7 @@
 import asyncio
 import json
 import socket
+import sqlite3
 import time
 from types import SimpleNamespace
 
@@ -348,3 +349,49 @@ async def test_history_preserves_old_products_without_reviving_current_results_o
     assert all(set(item) <= {'id', 'type', 'timestamp'} for item in restored['events'])
     with pytest.raises(JournalForbidden):
         await journal.session('s1', 'another-buyer')
+
+
+async def test_legacy_provider_reasoning_is_scrubbed_at_rest_and_on_every_read_path(tmp_path):
+    path = tmp_path / "legacy-thinking.db"
+    journal = AGUIJournal(path)
+    await journal.reserve(body(), "b1", "owner", lease_seconds=1)
+    await journal.append("r1", "owner", [{
+        "type": "CUSTOM", "name": "activity.upsert",
+        "value": {"id": "r1:thinking:old", "runId": "r1", "kind": "thinking",
+                  "label": "Thinking", "status": "running", "sequence": 1,
+                  "source": "provider", "content": "safe-new-run"},
+    }])
+    secret = "INTERNAL_REASONING_SECRET"
+    activity = {"id": "r1:thinking:old", "runId": "r1", "kind": "thinking",
+                "label": "Thinking", "status": "running", "sequence": 1,
+                "source": "provider", "content": secret, "reasoning": secret, "truncated": True}
+    event = {"type": "CUSTOM", "name": "activity.upsert", "value": activity}
+    projection = {"messages": [], "state": {"activities": [activity]},
+                  "openMessages": [], "openTools": []}
+    with sqlite3.connect(path) as db:
+        db.execute("UPDATE agui_events SET event_json=? WHERE run_id='r1'", (json.dumps(event),))
+        db.execute("UPDATE agui_runs SET projection_json=?,lease_until=0 WHERE run_id='r1'",
+                   (json.dumps(projection),))
+        db.execute("UPDATE agui_sessions SET state_json=? WHERE session_id='s1'",
+                   (json.dumps({"activities": [activity]}),))
+        db.commit()
+
+    restored = AGUIJournal(path)
+    await restored.recover_expired()
+    payloads = [
+        await restored.run("r1", "b1"),
+        (await restored.events("r1", "b1"))[0],
+        await restored.session("s1", "b1"),
+    ]
+    assert all(secret not in json.dumps(payload, ensure_ascii=False) for payload in payloads)
+    with sqlite3.connect(path) as db:
+        raw = " ".join(
+            str(value)
+            for query in (
+                "SELECT event_json FROM agui_events",
+                "SELECT projection_json FROM agui_runs",
+                "SELECT state_json FROM agui_sessions",
+            )
+            for row in db.execute(query).fetchall() for value in row
+        )
+    assert secret not in raw

@@ -126,6 +126,12 @@ def remember_verified_result(kind: str, value: dict) -> None:
         facts[kind] = value
 
 
+def verified_result(kind: str) -> dict | None:
+    facts = _verified_results.get() or {}
+    value = facts.get(kind)
+    return value if isinstance(value, dict) else None
+
+
 def rule_fallback_text() -> str:
     facts = _verified_results.get() or {}
     lines = [FALLBACK_NOTICE]

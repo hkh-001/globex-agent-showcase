@@ -63,7 +63,8 @@ from app.domain.session.ports.session_store import SessionStore  # noqa: F401 �
 from app.infrastructure.cache.semantic_cache import SemanticCache
 from app.infrastructure.context import ShoppingContext, ShoppingContextSnapshot
 from app.infrastructure.eventbus import TradeEventBus, observe_run_events
-from app.infrastructure.budget import init_budget, remember_verified_result, get_budget, rule_fallback_text
+from app.infrastructure.budget import init_budget, remember_verified_result, get_budget, rule_fallback_text, verified_result
+from app.application.answer_grounding import grounded_product_fallback, product_claim_violations
 from app.infrastructure.security.output_guard import audit_output
 from app.infrastructure.transient import is_transient_error
 from app.infrastructure.capability_registry import CapabilityVersionChanged
@@ -182,7 +183,18 @@ class MainAgentOrchestrator:
         命中只脱敏并发一条告警事件，**不阻断回复**：
         一条误判不应让整轮对话失败。
         """
-        if not self._output_guard_enabled or not text:
+        if not text:
+            return text
+        violations = product_claim_violations(text, verified_result("products"))
+        if violations:
+            logger.warning("商品回复包含无证据主张，已降级为工具事实摘要（会话 %s，类型 %s）",
+                           session_id, ",".join(violations))
+            self._bus.publish(session_id, "error", {
+                "message": "部分推荐理由缺少可核验商品证据，已改为工具事实摘要",
+                "claim_guard": violations,
+            })
+            text = grounded_product_fallback(verified_result("products"))
+        if not self._output_guard_enabled:
             return text
         safe, cleaned = audit_output(text)
         if not safe:

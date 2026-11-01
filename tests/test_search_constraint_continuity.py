@@ -44,6 +44,22 @@ async def test_known_query_type_is_inferred_but_unknown_type_degrades_without_gu
     assert unknown["product_type"] is None and unknown_meta["inferred"] == []
 
 
+async def test_unstated_preferences_cannot_silently_change_retrieval_ranking():
+    effective, metadata = await SearchConstraintGuard("帮我挑一个适合旅行的背包").reconcile(
+        _args(normalized_query="旅行背包 登机 轻便 大容量", prefer_lightweight=True)
+    )
+    assert effective["normalized_query"] == "旅行背包"
+    assert effective["prefer_lightweight"] is False
+    assert metadata["removed_unsupported_query_terms"] == ["大容量", "登机", "轻便"]
+
+    explicit, explicit_meta = await SearchConstraintGuard("找一个轻便、可登机的大容量背包").reconcile(
+        _args(normalized_query="轻量 登机 容量大 背包", prefer_lightweight=True)
+    )
+    assert explicit["normalized_query"] == "轻量 登机 容量大 背包"
+    assert explicit["prefer_lightweight"] is True
+    assert explicit_meta["removed_unsupported_query_terms"] == []
+
+
 async def test_unknown_explicit_type_degrades_without_guessing_or_error():
     effective, metadata = await SearchConstraintGuard("找保温杯").reconcile(
         _args(normalized_query="旅行保温杯", product_type="保温杯", category="户外运动")
