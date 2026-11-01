@@ -33,40 +33,286 @@
         "recall_strategy": "keyword_2gram",
         "total_candidates": 3,
         "top_product_id": "P1018",
-        "result_ref": "probe-ref"
+        "result_ref": "probe-ref",
+        "tool": "product_search_tool",
+        "query_conditions": {
+          "normalized_query": "旅行背包",
+          "category": null,
+          "ship_to": "CN",
+          "top_k": 5,
+          "price_max_major": null,
+          "target_currency": "CNY",
+          "excluded_material_tags": [],
+          "required_material_tags": [],
+          "product_id": null,
+          "sku_id": null,
+          "sku_spec": null,
+          "product_type": "背包",
+          "max_weight_kg": null,
+          "preferred_product_type": null,
+          "prefer_lightweight": false
+        },
+        "hits": [
+          {
+            "product_id": "P1018",
+            "title": "DryPack 30L 防水卷口背包",
+            "brand": "DryPack",
+            "category": "旅行装备",
+            "origin_country": "CN",
+            "price_major": 219.0,
+            "currency": "CNY",
+            "source_price_major": 219.0,
+            "source_currency": "CNY",
+            "highlights": [
+              "防水：IPX6 卷口密封"
+            ],
+            "skus": [
+              {
+                "sku_id": "P1018-S1",
+                "spec": "墨绿",
+                "price_major": 219.0,
+                "currency": "CNY",
+                "stock": 55
+              }
+            ],
+            "score": 2.0,
+            "source_platform": "ebay",
+            "canonical_product_id": "CAN-LEGACY-017",
+            "material_tags": [
+              "合成聚合物"
+            ],
+            "weight_kg": 1.68,
+            "description": "卷口防水 30L TPU涂层 户外 涉水 结实抗造 骑行 满水不漏",
+            "rating_summary": {
+              "average": 4.8,
+              "review_count": 217
+            },
+            "rating_is_live": false,
+            "ships_to": [
+              "CN",
+              "US",
+              "EU"
+            ],
+            "dimensions_cm": {
+              "height": 9,
+              "length": 29,
+              "width": 10
+            },
+            "updated_at": "2026-08-01",
+            "default_sku_id": "P1018-S1",
+            "image_url": "/products/drypack.png",
+            "image_kind": "illustration",
+            "image_alt": "DryPack 30L 防水卷口背包：AI 生成示意图，非商品实拍",
+            "product_type": "背包",
+            "known_weight_kg": 1.68,
+            "eligible_sku_ids": [
+              "P1018-S1"
+            ],
+            "landed_price": {
+              "ship_to": "CN",
+              "subtotal_major": 219.0,
+              "freight_major": 25.0,
+              "tariff_major": 0.0,
+              "tariff_rate": 0.09,
+              "de_minimis_applied": true,
+              "landed_total_major": 244.0,
+              "currency": "CNY"
+            }
+          },
+          {
+            "product_id": "P1049",
+            "title": "BudgetPack 20L 简易背包",
+            "brand": "BudgetPack",
+            "category": "旅行装备",
+            "origin_country": "CN",
+            "price_major": 39.0,
+            "currency": "CNY",
+            "source_price_major": 39.0,
+            "source_currency": "CNY",
+            "highlights": [
+              "价位：入门平价款"
+            ],
+            "skus": [
+              {
+                "sku_id": "P1049-S1",
+                "spec": "黑色",
+                "price_major": 39.0,
+                "currency": "CNY",
+                "stock": 300
+              }
+            ],
+            "score": 2.0,
+            "source_platform": "walmart",
+            "canonical_product_id": "CAN-LEGACY-027",
+            "material_tags": [
+              "合成聚合物"
+            ],
+            "weight_kg": 0.78,
+            "description": "20L 入门背包 轻便 平价 涤纶 日常 通勤",
+            "rating_summary": {
+              "average": 4.0,
+              "review_count": 327
+            },
+            "rating_is_live": false,
+            "ships_to": [
+              "CN"
+            ],
+            "dimensions_cm": {
+              "height": 7,
+              "length": 39,
+              "width": 20
+            },
+            "updated_at": "2026-08-01",
+            "default_sku_id": "P1049-S1",
+            "image_url": "/products/budgetpack.png",
+            "image_kind": "illustration",
+            "image_alt": "BudgetPack 20L 简易背包：AI 生成示意图，非商品实拍",
+            "product_type": "背包",
+            "known_weight_kg": 0.78,
+            "eligible_sku_ids": [
+              "P1049-S1"
+            ],
+            "landed_price": {
+              "ship_to": "CN",
+              "subtotal_major": 39.0,
+              "freight_major": 25.0,
+              "tariff_major": 0.0,
+              "tariff_rate": 0.09,
+              "de_minimis_applied": true,
+              "landed_total_major": 64.0,
+              "currency": "CNY"
+            }
+          },
+          {
+            "product_id": "P1003",
+            "title": "Wanderlite 折叠旅行双肩包 35L",
+            "brand": "Wanderlite",
+            "category": "旅行装备",
+            "origin_country": "KR",
+            "price_major": 129.0,
+            "currency": "CNY",
+            "source_price_major": 129.0,
+            "source_currency": "CNY",
+            "highlights": [
+              "重量：仅 380g 超轻",
+              "收纳：可折叠成手掌大小"
+            ],
+            "skus": [
+              {
+                "sku_id": "P1003-S1",
+                "spec": "石墨黑",
+                "price_major": 129.0,
+                "currency": "CNY",
+                "stock": 80
+              },
+              {
+                "sku_id": "P1003-S2",
+                "spec": "雾霾蓝",
+                "price_major": 129.0,
+                "currency": "CNY",
+                "stock": 60
+              }
+            ],
+            "score": 1.0,
+            "source_platform": "etsy",
+            "canonical_product_id": "CAN-LEGACY-002",
+            "material_tags": [
+              "合成聚合物"
+            ],
+            "weight_kg": 0.33,
+            "description": "防泼水尼龙 超轻 可折叠收纳 大容量 35升 徒步 城市通勤 便宜实惠 高性价比",
+            "rating_summary": {
+              "average": 4.2,
+              "review_count": 52
+            },
+            "rating_is_live": false,
+            "ships_to": [
+              "CN",
+              "JP",
+              "SG"
+            ],
+            "dimensions_cm": {
+              "height": 6,
+              "length": 14,
+              "width": 10
+            },
+            "updated_at": "2026-08-01",
+            "default_sku_id": "P1003-S1",
+            "image_url": "/products/wanderlite.png",
+            "image_kind": "illustration",
+            "image_alt": "Wanderlite 折叠旅行双肩包 35L：AI 生成示意图，非商品实拍",
+            "product_type": "背包",
+            "known_weight_kg": 0.33,
+            "eligible_sku_ids": [
+              "P1003-S1",
+              "P1003-S2"
+            ],
+            "landed_price": {
+              "ship_to": "CN",
+              "subtotal_major": 129.0,
+              "freight_major": 25.0,
+              "tariff_major": 0.0,
+              "tariff_rate": 0.09,
+              "de_minimis_applied": true,
+              "landed_total_major": 154.0,
+              "currency": "CNY"
+            }
+          }
+        ],
+        "filtered_out": [
+          {
+            "product_id": "P3000",
+            "title": "Roamix 登山背包 GX-01-1 15L 无防雨罩",
+            "category": "旅行装备",
+            "price_major": 59.0,
+            "currency": "CNY",
+            "reason": "out_of_stock"
+          },
+          {
+            "product_id": "P3001",
+            "title": "Roamix 登山背包 GX-01-1 15L 无防雨罩",
+            "category": "旅行装备",
+            "price_major": 74.98,
+            "currency": "CNY",
+            "reason": "product_type_unknown"
+          },
+          {
+            "product_id": "P3002",
+            "title": "Roamix 登山背包 GX-01-1 15L 无防雨罩",
+            "category": "旅行装备",
+            "price_major": 73.01,
+            "currency": "CNY",
+            "reason": "product_type_unknown"
+          }
+        ]
       },
       "value_assertions": [
         {
           "field": "tool",
-          "projection": "tool",
           "operator": "exists",
           "actual": "product_search_tool",
           "expected": true
         },
         {
           "field": "hit_count",
-          "projection": null,
           "operator": "gt",
           "actual": 3,
           "expected": 0
         },
         {
           "field": "recall_strategy",
-          "projection": null,
           "operator": "exists",
           "actual": "keyword_2gram",
           "expected": true
         },
         {
           "field": "total_candidates",
-          "projection": null,
           "operator": "exists",
           "actual": 3,
           "expected": true
         },
         {
           "field": "query_conditions",
-          "projection": "query_conditions",
           "operator": "nonempty",
           "actual": {
             "normalized_query": "旅行背包",
@@ -89,14 +335,218 @@
         },
         {
           "field": "hits",
-          "projection": "first.product_id",
-          "operator": "exists",
-          "actual": "P1018",
+          "operator": "nonempty",
+          "actual": [
+            {
+              "product_id": "P1018",
+              "title": "DryPack 30L 防水卷口背包",
+              "brand": "DryPack",
+              "category": "旅行装备",
+              "origin_country": "CN",
+              "price_major": 219.0,
+              "currency": "CNY",
+              "source_price_major": 219.0,
+              "source_currency": "CNY",
+              "highlights": [
+                "防水：IPX6 卷口密封"
+              ],
+              "skus": [
+                {
+                  "sku_id": "P1018-S1",
+                  "spec": "墨绿",
+                  "price_major": 219.0,
+                  "currency": "CNY",
+                  "stock": 55
+                }
+              ],
+              "score": 2.0,
+              "source_platform": "ebay",
+              "canonical_product_id": "CAN-LEGACY-017",
+              "material_tags": [
+                "合成聚合物"
+              ],
+              "weight_kg": 1.68,
+              "description": "卷口防水 30L TPU涂层 户外 涉水 结实抗造 骑行 满水不漏",
+              "rating_summary": {
+                "average": 4.8,
+                "review_count": 217
+              },
+              "rating_is_live": false,
+              "ships_to": [
+                "CN",
+                "US",
+                "EU"
+              ],
+              "dimensions_cm": {
+                "height": 9,
+                "length": 29,
+                "width": 10
+              },
+              "updated_at": "2026-08-01",
+              "default_sku_id": "P1018-S1",
+              "image_url": "/products/drypack.png",
+              "image_kind": "illustration",
+              "image_alt": "DryPack 30L 防水卷口背包：AI 生成示意图，非商品实拍",
+              "product_type": "背包",
+              "known_weight_kg": 1.68,
+              "eligible_sku_ids": [
+                "P1018-S1"
+              ],
+              "landed_price": {
+                "ship_to": "CN",
+                "subtotal_major": 219.0,
+                "freight_major": 25.0,
+                "tariff_major": 0.0,
+                "tariff_rate": 0.09,
+                "de_minimis_applied": true,
+                "landed_total_major": 244.0,
+                "currency": "CNY"
+              }
+            },
+            {
+              "product_id": "P1049",
+              "title": "BudgetPack 20L 简易背包",
+              "brand": "BudgetPack",
+              "category": "旅行装备",
+              "origin_country": "CN",
+              "price_major": 39.0,
+              "currency": "CNY",
+              "source_price_major": 39.0,
+              "source_currency": "CNY",
+              "highlights": [
+                "价位：入门平价款"
+              ],
+              "skus": [
+                {
+                  "sku_id": "P1049-S1",
+                  "spec": "黑色",
+                  "price_major": 39.0,
+                  "currency": "CNY",
+                  "stock": 300
+                }
+              ],
+              "score": 2.0,
+              "source_platform": "walmart",
+              "canonical_product_id": "CAN-LEGACY-027",
+              "material_tags": [
+                "合成聚合物"
+              ],
+              "weight_kg": 0.78,
+              "description": "20L 入门背包 轻便 平价 涤纶 日常 通勤",
+              "rating_summary": {
+                "average": 4.0,
+                "review_count": 327
+              },
+              "rating_is_live": false,
+              "ships_to": [
+                "CN"
+              ],
+              "dimensions_cm": {
+                "height": 7,
+                "length": 39,
+                "width": 20
+              },
+              "updated_at": "2026-08-01",
+              "default_sku_id": "P1049-S1",
+              "image_url": "/products/budgetpack.png",
+              "image_kind": "illustration",
+              "image_alt": "BudgetPack 20L 简易背包：AI 生成示意图，非商品实拍",
+              "product_type": "背包",
+              "known_weight_kg": 0.78,
+              "eligible_sku_ids": [
+                "P1049-S1"
+              ],
+              "landed_price": {
+                "ship_to": "CN",
+                "subtotal_major": 39.0,
+                "freight_major": 25.0,
+                "tariff_major": 0.0,
+                "tariff_rate": 0.09,
+                "de_minimis_applied": true,
+                "landed_total_major": 64.0,
+                "currency": "CNY"
+              }
+            },
+            {
+              "product_id": "P1003",
+              "title": "Wanderlite 折叠旅行双肩包 35L",
+              "brand": "Wanderlite",
+              "category": "旅行装备",
+              "origin_country": "KR",
+              "price_major": 129.0,
+              "currency": "CNY",
+              "source_price_major": 129.0,
+              "source_currency": "CNY",
+              "highlights": [
+                "重量：仅 380g 超轻",
+                "收纳：可折叠成手掌大小"
+              ],
+              "skus": [
+                {
+                  "sku_id": "P1003-S1",
+                  "spec": "石墨黑",
+                  "price_major": 129.0,
+                  "currency": "CNY",
+                  "stock": 80
+                },
+                {
+                  "sku_id": "P1003-S2",
+                  "spec": "雾霾蓝",
+                  "price_major": 129.0,
+                  "currency": "CNY",
+                  "stock": 60
+                }
+              ],
+              "score": 1.0,
+              "source_platform": "etsy",
+              "canonical_product_id": "CAN-LEGACY-002",
+              "material_tags": [
+                "合成聚合物"
+              ],
+              "weight_kg": 0.33,
+              "description": "防泼水尼龙 超轻 可折叠收纳 大容量 35升 徒步 城市通勤 便宜实惠 高性价比",
+              "rating_summary": {
+                "average": 4.2,
+                "review_count": 52
+              },
+              "rating_is_live": false,
+              "ships_to": [
+                "CN",
+                "JP",
+                "SG"
+              ],
+              "dimensions_cm": {
+                "height": 6,
+                "length": 14,
+                "width": 10
+              },
+              "updated_at": "2026-08-01",
+              "default_sku_id": "P1003-S1",
+              "image_url": "/products/wanderlite.png",
+              "image_kind": "illustration",
+              "image_alt": "Wanderlite 折叠旅行双肩包 35L：AI 生成示意图，非商品实拍",
+              "product_type": "背包",
+              "known_weight_kg": 0.33,
+              "eligible_sku_ids": [
+                "P1003-S1",
+                "P1003-S2"
+              ],
+              "landed_price": {
+                "ship_to": "CN",
+                "subtotal_major": 129.0,
+                "freight_major": 25.0,
+                "tariff_major": 0.0,
+                "tariff_rate": 0.09,
+                "de_minimis_applied": true,
+                "landed_total_major": 154.0,
+                "currency": "CNY"
+              }
+            }
+          ],
           "expected": true
         },
         {
           "field": "filtered_out",
-          "projection": "filtered_out",
           "operator": "exists",
           "actual": [
             {
@@ -128,14 +578,13 @@
         },
         {
           "field": "result_ref",
-          "projection": null,
           "operator": "exists",
           "actual": "probe-ref",
           "expected": true
         }
       ],
-      "run_id": "cc57f7a57e934c4980a9787c4069d839",
-      "source_commit": "77da4e254a5b5bf9eefcaf83dacfe86ef3045b55"
+      "run_id": "031610ad70e4495c8404d51c71edb939",
+      "source_commit": "fe53abaf67c27f0f17283ef55f10c6eda1b110bd"
     },
     {
       "capability_id": "search.constraints",
@@ -155,12 +604,54 @@
       "observed_values": {
         "ship_to": "CN",
         "product_type": "背包",
-        "filtered_out_count": 3
+        "filtered_out_count": 3,
+        "query_conditions": {
+          "normalized_query": "旅行背包",
+          "category": null,
+          "ship_to": "CN",
+          "top_k": 5,
+          "price_max_major": null,
+          "target_currency": "CNY",
+          "excluded_material_tags": [],
+          "required_material_tags": [],
+          "product_id": null,
+          "sku_id": null,
+          "sku_spec": null,
+          "product_type": "背包",
+          "max_weight_kg": null,
+          "preferred_product_type": null,
+          "prefer_lightweight": false
+        },
+        "filtered_out": [
+          {
+            "product_id": "P3000",
+            "title": "Roamix 登山背包 GX-01-1 15L 无防雨罩",
+            "category": "旅行装备",
+            "price_major": 59.0,
+            "currency": "CNY",
+            "reason": "out_of_stock"
+          },
+          {
+            "product_id": "P3001",
+            "title": "Roamix 登山背包 GX-01-1 15L 无防雨罩",
+            "category": "旅行装备",
+            "price_major": 74.98,
+            "currency": "CNY",
+            "reason": "product_type_unknown"
+          },
+          {
+            "product_id": "P3002",
+            "title": "Roamix 登山背包 GX-01-1 15L 无防雨罩",
+            "category": "旅行装备",
+            "price_major": 73.01,
+            "currency": "CNY",
+            "reason": "product_type_unknown"
+          }
+        ]
       },
       "value_assertions": [
         {
           "field": "query_conditions",
-          "projection": "query_conditions",
           "operator": "nonempty",
           "actual": {
             "normalized_query": "旅行背包",
@@ -183,7 +674,6 @@
         },
         {
           "field": "filtered_out",
-          "projection": "filtered_out",
           "operator": "exists",
           "actual": [
             {
@@ -214,8 +704,8 @@
           "expected": true
         }
       ],
-      "run_id": "cc57f7a57e934c4980a9787c4069d839",
-      "source_commit": "77da4e254a5b5bf9eefcaf83dacfe86ef3045b55"
+      "run_id": "031610ad70e4495c8404d51c71edb939",
+      "source_commit": "fe53abaf67c27f0f17283ef55f10c6eda1b110bd"
     },
     {
       "capability_id": "search.landed_price",
@@ -243,47 +733,47 @@
         "freight_major": 25.0,
         "tariff_major": 0.0,
         "landed_total_major": 244.0,
-        "currency": "CNY"
+        "currency": "CNY",
+        "hits[].landed_price.subtotal_major": 219.0,
+        "hits[].landed_price.freight_major": 25.0,
+        "hits[].landed_price.tariff_major": 0.0,
+        "hits[].landed_price.landed_total_major": 244.0,
+        "hits[].landed_price.currency": "CNY"
       },
       "value_assertions": [
         {
           "field": "hits[].landed_price.subtotal_major",
-          "projection": "first.landed_price.subtotal_major",
           "operator": "exists",
           "actual": 219.0,
           "expected": true
         },
         {
           "field": "hits[].landed_price.freight_major",
-          "projection": "first.landed_price.freight_major",
           "operator": "exists",
           "actual": 25.0,
           "expected": true
         },
         {
           "field": "hits[].landed_price.tariff_major",
-          "projection": "first.landed_price.tariff_major",
           "operator": "exists",
           "actual": 0.0,
           "expected": true
         },
         {
           "field": "hits[].landed_price.landed_total_major",
-          "projection": "first.landed_price.landed_total_major",
           "operator": "exists",
           "actual": 244.0,
           "expected": true
         },
         {
           "field": "hits[].landed_price.currency",
-          "projection": "first.landed_price.currency",
           "operator": "exists",
           "actual": "CNY",
           "expected": true
         }
       ],
-      "run_id": "cc57f7a57e934c4980a9787c4069d839",
-      "source_commit": "77da4e254a5b5bf9eefcaf83dacfe86ef3045b55"
+      "run_id": "031610ad70e4495c8404d51c71edb939",
+      "source_commit": "fe53abaf67c27f0f17283ef55f10c6eda1b110bd"
     },
     {
       "capability_id": "search.exact_id",
@@ -312,26 +802,191 @@
       "event_count": 2,
       "observed_values": {
         "recall_strategy": "exact_id_lookup",
-        "first_product_id": "P1003"
+        "first_product_id": "P1003",
+        "hits": [
+          {
+            "product_id": "P1003",
+            "title": "Wanderlite 折叠旅行双肩包 35L",
+            "brand": "Wanderlite",
+            "category": "旅行装备",
+            "origin_country": "KR",
+            "price_major": 129.0,
+            "currency": "CNY",
+            "source_price_major": 129.0,
+            "source_currency": "CNY",
+            "highlights": [
+              "重量：仅 380g 超轻",
+              "收纳：可折叠成手掌大小"
+            ],
+            "skus": [
+              {
+                "sku_id": "P1003-S1",
+                "spec": "石墨黑",
+                "price_major": 129.0,
+                "currency": "CNY",
+                "stock": 80
+              },
+              {
+                "sku_id": "P1003-S2",
+                "spec": "雾霾蓝",
+                "price_major": 129.0,
+                "currency": "CNY",
+                "stock": 60
+              }
+            ],
+            "score": 1.0,
+            "source_platform": "etsy",
+            "canonical_product_id": "CAN-LEGACY-002",
+            "material_tags": [
+              "合成聚合物"
+            ],
+            "weight_kg": 0.33,
+            "description": "防泼水尼龙 超轻 可折叠收纳 大容量 35升 徒步 城市通勤 便宜实惠 高性价比",
+            "rating_summary": {
+              "average": 4.2,
+              "review_count": 52
+            },
+            "rating_is_live": false,
+            "ships_to": [
+              "CN",
+              "JP",
+              "SG"
+            ],
+            "dimensions_cm": {
+              "height": 6,
+              "length": 14,
+              "width": 10
+            },
+            "updated_at": "2026-08-01",
+            "default_sku_id": "P1003-S1",
+            "image_url": "/products/wanderlite.png",
+            "image_kind": "illustration",
+            "image_alt": "Wanderlite 折叠旅行双肩包 35L：AI 生成示意图，非商品实拍",
+            "product_type": "背包",
+            "known_weight_kg": 0.33,
+            "eligible_sku_ids": [
+              "P1003-S1"
+            ],
+            "landed_price": {
+              "ship_to": "CN",
+              "subtotal_major": 129.0,
+              "freight_major": 25.0,
+              "tariff_major": 0.0,
+              "tariff_rate": 0.09,
+              "de_minimis_applied": true,
+              "landed_total_major": 154.0,
+              "currency": "CNY"
+            }
+          }
+        ],
+        "query_conditions": {
+          "normalized_query": "",
+          "category": null,
+          "ship_to": "CN",
+          "top_k": 5,
+          "price_max_major": null,
+          "target_currency": "CNY",
+          "excluded_material_tags": [],
+          "required_material_tags": [],
+          "product_id": "P1003",
+          "sku_id": null,
+          "sku_spec": null,
+          "product_type": null,
+          "max_weight_kg": null,
+          "preferred_product_type": null,
+          "prefer_lightweight": false
+        }
       },
       "value_assertions": [
         {
           "field": "recall_strategy",
-          "projection": null,
-          "operator": "exists",
+          "operator": "equals",
           "actual": "exact_id_lookup",
-          "expected": true
+          "expected": "exact_id_lookup"
         },
         {
           "field": "hits",
-          "projection": "first.product_id",
-          "operator": "exists",
-          "actual": "P1003",
+          "operator": "nonempty",
+          "actual": [
+            {
+              "product_id": "P1003",
+              "title": "Wanderlite 折叠旅行双肩包 35L",
+              "brand": "Wanderlite",
+              "category": "旅行装备",
+              "origin_country": "KR",
+              "price_major": 129.0,
+              "currency": "CNY",
+              "source_price_major": 129.0,
+              "source_currency": "CNY",
+              "highlights": [
+                "重量：仅 380g 超轻",
+                "收纳：可折叠成手掌大小"
+              ],
+              "skus": [
+                {
+                  "sku_id": "P1003-S1",
+                  "spec": "石墨黑",
+                  "price_major": 129.0,
+                  "currency": "CNY",
+                  "stock": 80
+                },
+                {
+                  "sku_id": "P1003-S2",
+                  "spec": "雾霾蓝",
+                  "price_major": 129.0,
+                  "currency": "CNY",
+                  "stock": 60
+                }
+              ],
+              "score": 1.0,
+              "source_platform": "etsy",
+              "canonical_product_id": "CAN-LEGACY-002",
+              "material_tags": [
+                "合成聚合物"
+              ],
+              "weight_kg": 0.33,
+              "description": "防泼水尼龙 超轻 可折叠收纳 大容量 35升 徒步 城市通勤 便宜实惠 高性价比",
+              "rating_summary": {
+                "average": 4.2,
+                "review_count": 52
+              },
+              "rating_is_live": false,
+              "ships_to": [
+                "CN",
+                "JP",
+                "SG"
+              ],
+              "dimensions_cm": {
+                "height": 6,
+                "length": 14,
+                "width": 10
+              },
+              "updated_at": "2026-08-01",
+              "default_sku_id": "P1003-S1",
+              "image_url": "/products/wanderlite.png",
+              "image_kind": "illustration",
+              "image_alt": "Wanderlite 折叠旅行双肩包 35L：AI 生成示意图，非商品实拍",
+              "product_type": "背包",
+              "known_weight_kg": 0.33,
+              "eligible_sku_ids": [
+                "P1003-S1"
+              ],
+              "landed_price": {
+                "ship_to": "CN",
+                "subtotal_major": 129.0,
+                "freight_major": 25.0,
+                "tariff_major": 0.0,
+                "tariff_rate": 0.09,
+                "de_minimis_applied": true,
+                "landed_total_major": 154.0,
+                "currency": "CNY"
+              }
+            }
+          ],
           "expected": true
         },
         {
           "field": "query_conditions",
-          "projection": "query_conditions",
           "operator": "nonempty",
           "actual": {
             "normalized_query": "",
@@ -353,8 +1008,8 @@
           "expected": true
         }
       ],
-      "run_id": "cc57f7a57e934c4980a9787c4069d839",
-      "source_commit": "77da4e254a5b5bf9eefcaf83dacfe86ef3045b55"
+      "run_id": "031610ad70e4495c8404d51c71edb939",
+      "source_commit": "fe53abaf67c27f0f17283ef55f10c6eda1b110bd"
     },
     {
       "capability_id": "state.constraint_carry",
@@ -381,12 +1036,20 @@
           "product_type",
           "ship_to",
           "sku_spec"
-        ]
+        ],
+        "constraint_continuity.inherited": [
+          "price_max_major",
+          "product_type",
+          "ship_to",
+          "sku_spec"
+        ],
+        "query_conditions.price_max_major": 300,
+        "query_conditions.ship_to": "CN",
+        "query_conditions.sku_spec": "黑色"
       },
       "value_assertions": [
         {
           "field": "constraint_continuity.inherited",
-          "projection": "constraint_continuity.inherited",
           "operator": "exists",
           "actual": [
             "price_max_major",
@@ -398,28 +1061,25 @@
         },
         {
           "field": "query_conditions.price_max_major",
-          "projection": "query_conditions.price_max_major",
           "operator": "exists",
           "actual": 300,
           "expected": true
         },
         {
           "field": "query_conditions.ship_to",
-          "projection": "query_conditions.ship_to",
           "operator": "exists",
           "actual": "CN",
           "expected": true
         },
         {
           "field": "query_conditions.sku_spec",
-          "projection": "query_conditions.sku_spec",
           "operator": "exists",
           "actual": "黑色",
           "expected": true
         }
       ],
-      "run_id": "cc57f7a57e934c4980a9787c4069d839",
-      "source_commit": "77da4e254a5b5bf9eefcaf83dacfe86ef3045b55"
+      "run_id": "031610ad70e4495c8404d51c71edb939",
+      "source_commit": "fe53abaf67c27f0f17283ef55f10c6eda1b110bd"
     },
     {
       "capability_id": "dispatch.search",
@@ -442,51 +1102,38 @@
       "event_count": 3,
       "observed_values": {
         "agent": "search_agent",
-        "dispatch_id": "dispatch-518715fc8687447fa4e78a8b7c82f843",
-        "status": "completed"
+        "dispatch_id": "dispatch-5ebafa92ee6c4913ac745b954d9ec237",
+        "status": "completed",
+        "tool": "task_dispatch"
       },
       "value_assertions": [
         {
           "field": "tool",
-          "projection": "tool",
           "operator": "exists",
           "actual": "task_dispatch",
           "expected": true
         },
         {
           "field": "agent",
-          "projection": null,
-          "operator": "in",
+          "operator": "equals",
           "actual": "search_agent",
-          "expected": [
-            "search_agent",
-            "trade_agent"
-          ]
+          "expected": "search_agent"
         },
         {
           "field": "dispatch_id",
-          "projection": null,
           "operator": "exists",
-          "actual": "dispatch-518715fc8687447fa4e78a8b7c82f843",
+          "actual": "dispatch-5ebafa92ee6c4913ac745b954d9ec237",
           "expected": true
         },
         {
           "field": "status",
-          "projection": null,
-          "operator": "in",
+          "operator": "equals",
           "actual": "completed",
-          "expected": [
-            "completed",
-            "pending",
-            "approved",
-            "rejected",
-            "CONFIRMED",
-            "CANCELLED"
-          ]
+          "expected": "completed"
         }
       ],
-      "run_id": "cc57f7a57e934c4980a9787c4069d839",
-      "source_commit": "77da4e254a5b5bf9eefcaf83dacfe86ef3045b55"
+      "run_id": "031610ad70e4495c8404d51c71edb939",
+      "source_commit": "fe53abaf67c27f0f17283ef55f10c6eda1b110bd"
     },
     {
       "capability_id": "dispatch.search",
@@ -514,8 +1161,7 @@
       "value_assertions": [
         {
           "field": "verified_product_ids",
-          "projection": null,
-          "operator": "nonempty",
+          "operator": "exists",
           "actual": [
             "P1003",
             "P1003-S1"
@@ -524,14 +1170,13 @@
         },
         {
           "field": "unverified_product_ids",
-          "projection": null,
-          "operator": "equals",
+          "operator": "exists",
           "actual": [],
-          "expected": []
+          "expected": true
         }
       ],
-      "run_id": "cc57f7a57e934c4980a9787c4069d839",
-      "source_commit": "77da4e254a5b5bf9eefcaf83dacfe86ef3045b55"
+      "run_id": "031610ad70e4495c8404d51c71edb939",
+      "source_commit": "fe53abaf67c27f0f17283ef55f10c6eda1b110bd"
     },
     {
       "capability_id": "dispatch.trade",
@@ -554,51 +1199,38 @@
       "event_count": 3,
       "observed_values": {
         "agent": "trade_agent",
-        "dispatch_id": "dispatch-52398e89185e4dc99b0d31e559ba669f",
-        "status": "completed"
+        "dispatch_id": "dispatch-723c9089a08b4c219c7268b8a9035e8e",
+        "status": "completed",
+        "tool": "task_dispatch"
       },
       "value_assertions": [
         {
           "field": "tool",
-          "projection": "tool",
           "operator": "exists",
           "actual": "task_dispatch",
           "expected": true
         },
         {
           "field": "agent",
-          "projection": null,
-          "operator": "in",
+          "operator": "equals",
           "actual": "trade_agent",
-          "expected": [
-            "search_agent",
-            "trade_agent"
-          ]
+          "expected": "trade_agent"
         },
         {
           "field": "dispatch_id",
-          "projection": null,
           "operator": "exists",
-          "actual": "dispatch-52398e89185e4dc99b0d31e559ba669f",
+          "actual": "dispatch-723c9089a08b4c219c7268b8a9035e8e",
           "expected": true
         },
         {
           "field": "status",
-          "projection": null,
-          "operator": "in",
+          "operator": "equals",
           "actual": "completed",
-          "expected": [
-            "completed",
-            "pending",
-            "approved",
-            "rejected",
-            "CONFIRMED",
-            "CANCELLED"
-          ]
+          "expected": "completed"
         }
       ],
-      "run_id": "cc57f7a57e934c4980a9787c4069d839",
-      "source_commit": "77da4e254a5b5bf9eefcaf83dacfe86ef3045b55"
+      "run_id": "031610ad70e4495c8404d51c71edb939",
+      "source_commit": "fe53abaf67c27f0f17283ef55f10c6eda1b110bd"
     },
     {
       "capability_id": "dispatch.trade",
@@ -626,8 +1258,7 @@
       "value_assertions": [
         {
           "field": "verified_product_ids",
-          "projection": null,
-          "operator": "nonempty",
+          "operator": "exists",
           "actual": [
             "P1003",
             "P1003-S1"
@@ -636,14 +1267,13 @@
         },
         {
           "field": "unverified_product_ids",
-          "projection": null,
-          "operator": "equals",
+          "operator": "exists",
           "actual": [],
-          "expected": []
+          "expected": true
         }
       ],
-      "run_id": "cc57f7a57e934c4980a9787c4069d839",
-      "source_commit": "77da4e254a5b5bf9eefcaf83dacfe86ef3045b55"
+      "run_id": "031610ad70e4495c8404d51c71edb939",
+      "source_commit": "fe53abaf67c27f0f17283ef55f10c6eda1b110bd"
     },
     {
       "capability_id": "harness.grounding_gate",
@@ -669,14 +1299,12 @@
       "value_assertions": [
         {
           "field": "message",
-          "projection": null,
           "operator": "exists",
           "actual": "商品摘要已按目录工具事实生成",
           "expected": true
         },
         {
           "field": "claim_guard",
-          "projection": null,
           "operator": "exists",
           "actual": [
             "carry_on"
@@ -684,8 +1312,8 @@
           "expected": true
         }
       ],
-      "run_id": "cc57f7a57e934c4980a9787c4069d839",
-      "source_commit": "77da4e254a5b5bf9eefcaf83dacfe86ef3045b55"
+      "run_id": "031610ad70e4495c8404d51c71edb939",
+      "source_commit": "fe53abaf67c27f0f17283ef55f10c6eda1b110bd"
     },
     {
       "capability_id": "harness.grounding_gate",
@@ -717,14 +1345,12 @@
       "value_assertions": [
         {
           "field": "replacement_kind",
-          "projection": null,
           "operator": "exists",
           "actual": "grounded_product_fallback",
           "expected": true
         },
         {
           "field": "violations",
-          "projection": null,
           "operator": "exists",
           "actual": [
             "carry_on"
@@ -732,8 +1358,8 @@
           "expected": true
         }
       ],
-      "run_id": "cc57f7a57e934c4980a9787c4069d839",
-      "source_commit": "77da4e254a5b5bf9eefcaf83dacfe86ef3045b55"
+      "run_id": "031610ad70e4495c8404d51c71edb939",
+      "source_commit": "fe53abaf67c27f0f17283ef55f10c6eda1b110bd"
     },
     {
       "capability_id": "memory.remember",
@@ -754,14 +1380,13 @@
       "value_assertions": [
         {
           "field": "saved",
-          "projection": null,
           "operator": "equals",
           "actual": "喜欢轻便背包",
           "expected": "喜欢轻便背包"
         }
       ],
-      "run_id": "cc57f7a57e934c4980a9787c4069d839",
-      "source_commit": "77da4e254a5b5bf9eefcaf83dacfe86ef3045b55"
+      "run_id": "031610ad70e4495c8404d51c71edb939",
+      "source_commit": "fe53abaf67c27f0f17283ef55f10c6eda1b110bd"
     },
     {
       "capability_id": "memory.remember",
@@ -785,25 +1410,19 @@
       "value_assertions": [
         {
           "field": "action",
-          "projection": null,
-          "operator": "in",
+          "operator": "equals",
           "actual": "保存",
-          "expected": [
-            "保存",
-            "更新",
-            "删除"
-          ]
+          "expected": "保存"
         },
         {
           "field": "statement",
-          "projection": null,
-          "operator": "exists",
+          "operator": "equals",
           "actual": "喜欢轻便背包",
-          "expected": true
+          "expected": "喜欢轻便背包"
         }
       ],
-      "run_id": "cc57f7a57e934c4980a9787c4069d839",
-      "source_commit": "77da4e254a5b5bf9eefcaf83dacfe86ef3045b55"
+      "run_id": "031610ad70e4495c8404d51c71edb939",
+      "source_commit": "fe53abaf67c27f0f17283ef55f10c6eda1b110bd"
     },
     {
       "capability_id": "memory.update",
@@ -825,14 +1444,13 @@
       "value_assertions": [
         {
           "field": "updated",
-          "projection": null,
           "operator": "equals",
           "actual": true,
           "expected": true
         }
       ],
-      "run_id": "cc57f7a57e934c4980a9787c4069d839",
-      "source_commit": "77da4e254a5b5bf9eefcaf83dacfe86ef3045b55"
+      "run_id": "031610ad70e4495c8404d51c71edb939",
+      "source_commit": "fe53abaf67c27f0f17283ef55f10c6eda1b110bd"
     },
     {
       "capability_id": "memory.update",
@@ -853,18 +1471,13 @@
       "value_assertions": [
         {
           "field": "action",
-          "projection": null,
-          "operator": "in",
+          "operator": "equals",
           "actual": "更新",
-          "expected": [
-            "保存",
-            "更新",
-            "删除"
-          ]
+          "expected": "更新"
         }
       ],
-      "run_id": "cc57f7a57e934c4980a9787c4069d839",
-      "source_commit": "77da4e254a5b5bf9eefcaf83dacfe86ef3045b55"
+      "run_id": "031610ad70e4495c8404d51c71edb939",
+      "source_commit": "fe53abaf67c27f0f17283ef55f10c6eda1b110bd"
     },
     {
       "capability_id": "memory.forget",
@@ -886,14 +1499,13 @@
       "value_assertions": [
         {
           "field": "deleted",
-          "projection": null,
           "operator": "equals",
           "actual": "喜欢超轻背包",
           "expected": "喜欢超轻背包"
         }
       ],
-      "run_id": "cc57f7a57e934c4980a9787c4069d839",
-      "source_commit": "77da4e254a5b5bf9eefcaf83dacfe86ef3045b55"
+      "run_id": "031610ad70e4495c8404d51c71edb939",
+      "source_commit": "fe53abaf67c27f0f17283ef55f10c6eda1b110bd"
     },
     {
       "capability_id": "memory.forget",
@@ -917,25 +1529,19 @@
       "value_assertions": [
         {
           "field": "action",
-          "projection": null,
-          "operator": "in",
+          "operator": "equals",
           "actual": "删除",
-          "expected": [
-            "保存",
-            "更新",
-            "删除"
-          ]
+          "expected": "删除"
         },
         {
           "field": "statement",
-          "projection": null,
-          "operator": "exists",
+          "operator": "equals",
           "actual": "喜欢超轻背包",
-          "expected": true
+          "expected": "喜欢超轻背包"
         }
       ],
-      "run_id": "cc57f7a57e934c4980a9787c4069d839",
-      "source_commit": "77da4e254a5b5bf9eefcaf83dacfe86ef3045b55"
+      "run_id": "031610ad70e4495c8404d51c71edb939",
+      "source_commit": "fe53abaf67c27f0f17283ef55f10c6eda1b110bd"
     },
     {
       "capability_id": "state.session_isolation",
@@ -965,7 +1571,6 @@
       "value_assertions": [
         {
           "field": "shopping_session_id",
-          "projection": null,
           "operator": "exists",
           "actual": [
             "session-a",
@@ -975,7 +1580,6 @@
         },
         {
           "field": "correlation.session_id",
-          "projection": null,
           "operator": "exists",
           "actual": [
             "sha256:e8de016fbd70182f6d2325e8",
@@ -984,8 +1588,8 @@
           "expected": true
         }
       ],
-      "run_id": "cc57f7a57e934c4980a9787c4069d839",
-      "source_commit": "77da4e254a5b5bf9eefcaf83dacfe86ef3045b55"
+      "run_id": "031610ad70e4495c8404d51c71edb939",
+      "source_commit": "fe53abaf67c27f0f17283ef55f10c6eda1b110bd"
     },
     {
       "capability_id": "state.session_isolation",
@@ -1015,7 +1619,6 @@
       "value_assertions": [
         {
           "field": "buyer_id",
-          "projection": null,
           "operator": "exists",
           "actual": [
             "buyer-a",
@@ -1025,7 +1628,6 @@
         },
         {
           "field": "statement",
-          "projection": null,
           "operator": "nonempty",
           "actual": {
             "buyer-a": "喜欢军绿色",
@@ -1034,8 +1636,8 @@
           "expected": true
         }
       ],
-      "run_id": "cc57f7a57e934c4980a9787c4069d839",
-      "source_commit": "77da4e254a5b5bf9eefcaf83dacfe86ef3045b55"
+      "run_id": "031610ad70e4495c8404d51c71edb939",
+      "source_commit": "fe53abaf67c27f0f17283ef55f10c6eda1b110bd"
     },
     {
       "capability_id": "trade.prepare",
@@ -1059,8 +1661,8 @@
       "result": "pass",
       "event_count": 3,
       "observed_values": {
-        "confirmation_id": "61a4dda42d3047b3b1f74db35f707919",
-        "snapshot_hash": "b356e15a9ca5a03c65a5ba6a4f0d654bad0e2c36e49043387ab895cf94870f23",
+        "confirmation_id": "91230266687040bcb7ca1b3335a328df",
+        "snapshot_hash": "b9849496c917e99ec0f8bf018b17b1a7f7b2c21bb4813f8dff179f474d5ceb30",
         "status": "pending",
         "payload_keys": [
           "amount_scope",
@@ -1080,65 +1682,117 @@
           "tariff_minor",
           "tariff_rate",
           "total_amount_minor"
-        ]
+        ],
+        "confirmation_required": true,
+        "confirmation.confirmation_id": "91230266687040bcb7ca1b3335a328df",
+        "confirmation.snapshot_hash": "b9849496c917e99ec0f8bf018b17b1a7f7b2c21bb4813f8dff179f474d5ceb30",
+        "confirmation.status": "pending",
+        "confirmation.payload": {
+          "items": [
+            {
+              "product_id": "P1001",
+              "sku_id": "P1001-S1",
+              "title": "Nomadica 旅行三件套（收纳袋+颈枕+眼罩）（军绿色）",
+              "unit_price_minor": 18900,
+              "currency": "CNY",
+              "quantity": 1
+            }
+          ],
+          "shipping_address": {
+            "recipient_name": "张三",
+            "country": "CN",
+            "state": "浙江",
+            "city": "杭州",
+            "address_line": "西湖区某路 1 号",
+            "postal_code": "310000",
+            "phone": "13800000000"
+          },
+          "amount_scope": "landed_total",
+          "order_kind": "purchase_intent",
+          "source_currency": "CNY",
+          "quote_currency": "CNY",
+          "currency": "CNY",
+          "ship_to": "CN",
+          "category": "旅行装备",
+          "quantity": 1,
+          "merchandise_subtotal_minor": 18900,
+          "freight_minor": 2500,
+          "tariff_minor": 0,
+          "total_amount_minor": 21400,
+          "tariff_rate": 0.09,
+          "de_minimis_applied": true,
+          "pricing_revision": "515b5a61ff800537144e7355e29b8931bc13a3f1e38ab776d94f94cc56579fa6"
+        }
       },
       "value_assertions": [
         {
           "field": "confirmation_required",
-          "projection": "confirmation_required",
-          "operator": "exists",
+          "operator": "equals",
           "actual": true,
           "expected": true
         },
         {
           "field": "confirmation.confirmation_id",
-          "projection": "confirmation.confirmation_id",
           "operator": "exists",
-          "actual": "61a4dda42d3047b3b1f74db35f707919",
+          "actual": "91230266687040bcb7ca1b3335a328df",
           "expected": true
         },
         {
           "field": "confirmation.snapshot_hash",
-          "projection": "confirmation.snapshot_hash",
           "operator": "exists",
-          "actual": "b356e15a9ca5a03c65a5ba6a4f0d654bad0e2c36e49043387ab895cf94870f23",
+          "actual": "b9849496c917e99ec0f8bf018b17b1a7f7b2c21bb4813f8dff179f474d5ceb30",
           "expected": true
         },
         {
           "field": "confirmation.status",
-          "projection": "confirmation.status",
-          "operator": "exists",
+          "operator": "equals",
           "actual": "pending",
-          "expected": true
+          "expected": "pending"
         },
         {
           "field": "confirmation.payload",
-          "projection": "keys",
-          "operator": "exists",
-          "actual": [
-            "amount_scope",
-            "category",
-            "currency",
-            "de_minimis_applied",
-            "freight_minor",
-            "items",
-            "merchandise_subtotal_minor",
-            "order_kind",
-            "pricing_revision",
-            "quantity",
-            "quote_currency",
-            "ship_to",
-            "shipping_address",
-            "source_currency",
-            "tariff_minor",
-            "tariff_rate",
-            "total_amount_minor"
-          ],
+          "operator": "nonempty",
+          "actual": {
+            "items": [
+              {
+                "product_id": "P1001",
+                "sku_id": "P1001-S1",
+                "title": "Nomadica 旅行三件套（收纳袋+颈枕+眼罩）（军绿色）",
+                "unit_price_minor": 18900,
+                "currency": "CNY",
+                "quantity": 1
+              }
+            ],
+            "shipping_address": {
+              "recipient_name": "张三",
+              "country": "CN",
+              "state": "浙江",
+              "city": "杭州",
+              "address_line": "西湖区某路 1 号",
+              "postal_code": "310000",
+              "phone": "13800000000"
+            },
+            "amount_scope": "landed_total",
+            "order_kind": "purchase_intent",
+            "source_currency": "CNY",
+            "quote_currency": "CNY",
+            "currency": "CNY",
+            "ship_to": "CN",
+            "category": "旅行装备",
+            "quantity": 1,
+            "merchandise_subtotal_minor": 18900,
+            "freight_minor": 2500,
+            "tariff_minor": 0,
+            "total_amount_minor": 21400,
+            "tariff_rate": 0.09,
+            "de_minimis_applied": true,
+            "pricing_revision": "515b5a61ff800537144e7355e29b8931bc13a3f1e38ab776d94f94cc56579fa6"
+          },
           "expected": true
         }
       ],
-      "run_id": "cc57f7a57e934c4980a9787c4069d839",
-      "source_commit": "77da4e254a5b5bf9eefcaf83dacfe86ef3045b55"
+      "run_id": "031610ad70e4495c8404d51c71edb939",
+      "source_commit": "fe53abaf67c27f0f17283ef55f10c6eda1b110bd"
     },
     {
       "capability_id": "trade.prepare",
@@ -1173,21 +1827,18 @@
       "value_assertions": [
         {
           "field": "order_count_before",
-          "projection": null,
           "operator": "exists",
           "actual": 0,
           "expected": true
         },
         {
           "field": "order_count_after",
-          "projection": null,
           "operator": "exists",
           "actual": 0,
           "expected": true
         },
         {
           "field": "inventory_before",
-          "projection": null,
           "operator": "nonempty",
           "actual": {
             "P1001-S1": 50
@@ -1196,7 +1847,6 @@
         },
         {
           "field": "inventory_after",
-          "projection": null,
           "operator": "nonempty",
           "actual": {
             "P1001-S1": 50
@@ -1204,8 +1854,8 @@
           "expected": true
         }
       ],
-      "run_id": "cc57f7a57e934c4980a9787c4069d839",
-      "source_commit": "77da4e254a5b5bf9eefcaf83dacfe86ef3045b55"
+      "run_id": "031610ad70e4495c8404d51c71edb939",
+      "source_commit": "fe53abaf67c27f0f17283ef55f10c6eda1b110bd"
     },
     {
       "capability_id": "trade.query",
@@ -1222,20 +1872,86 @@
       "result": "pass",
       "event_count": 2,
       "observed_values": {
-        "order_id": "e94fe8133c854f19abe858689edba82d",
-        "status": "CONFIRMED"
+        "order_id": "3e8c5c96a20443809dda2f4f52606c20",
+        "status": "CONFIRMED",
+        "order": {
+          "order_id": "3e8c5c96a20443809dda2f4f52606c20",
+          "buyer_id": "buyer-trade",
+          "status": "CONFIRMED",
+          "total_amount_major": 214.0,
+          "currency": "CNY",
+          "shipping_address": "CN 浙江 杭州 西湖区某路 1 号（张三 13800000000）",
+          "lines": [
+            {
+              "product_id": "P1001",
+              "sku_id": "P1001-S1",
+              "title": "Nomadica 旅行三件套（收纳袋+颈枕+眼罩）（军绿色）",
+              "unit_price_major": 189.0,
+              "currency": "CNY",
+              "quantity": 1
+            }
+          ],
+          "created_at": "2026-11-01T16:43:04.576310+00:00",
+          "cancel_reason": null,
+          "total_amount_minor": 21400,
+          "amount_scope": "landed_total",
+          "order_kind": "purchase_intent",
+          "source_currency": "CNY",
+          "quote_currency": "CNY",
+          "ship_to": "CN",
+          "category": "旅行装备",
+          "quantity": 1,
+          "merchandise_subtotal_minor": 18900,
+          "freight_minor": 2500,
+          "tariff_minor": 0,
+          "tariff_rate": 0.09,
+          "de_minimis_applied": true,
+          "pricing_revision": "515b5a61ff800537144e7355e29b8931bc13a3f1e38ab776d94f94cc56579fa6"
+        }
       },
       "value_assertions": [
         {
           "field": "order",
-          "projection": "order_id",
-          "operator": "exists",
-          "actual": "e94fe8133c854f19abe858689edba82d",
+          "operator": "nonempty",
+          "actual": {
+            "order_id": "3e8c5c96a20443809dda2f4f52606c20",
+            "buyer_id": "buyer-trade",
+            "status": "CONFIRMED",
+            "total_amount_major": 214.0,
+            "currency": "CNY",
+            "shipping_address": "CN 浙江 杭州 西湖区某路 1 号（张三 13800000000）",
+            "lines": [
+              {
+                "product_id": "P1001",
+                "sku_id": "P1001-S1",
+                "title": "Nomadica 旅行三件套（收纳袋+颈枕+眼罩）（军绿色）",
+                "unit_price_major": 189.0,
+                "currency": "CNY",
+                "quantity": 1
+              }
+            ],
+            "created_at": "2026-11-01T16:43:04.576310+00:00",
+            "cancel_reason": null,
+            "total_amount_minor": 21400,
+            "amount_scope": "landed_total",
+            "order_kind": "purchase_intent",
+            "source_currency": "CNY",
+            "quote_currency": "CNY",
+            "ship_to": "CN",
+            "category": "旅行装备",
+            "quantity": 1,
+            "merchandise_subtotal_minor": 18900,
+            "freight_minor": 2500,
+            "tariff_minor": 0,
+            "tariff_rate": 0.09,
+            "de_minimis_applied": true,
+            "pricing_revision": "515b5a61ff800537144e7355e29b8931bc13a3f1e38ab776d94f94cc56579fa6"
+          },
           "expected": true
         }
       ],
-      "run_id": "cc57f7a57e934c4980a9787c4069d839",
-      "source_commit": "77da4e254a5b5bf9eefcaf83dacfe86ef3045b55"
+      "run_id": "031610ad70e4495c8404d51c71edb939",
+      "source_commit": "fe53abaf67c27f0f17283ef55f10c6eda1b110bd"
     },
     {
       "capability_id": "search.category_insight",
@@ -1266,21 +1982,18 @@
       "value_assertions": [
         {
           "field": "hit_count",
-          "projection": null,
           "operator": "gt",
           "actual": 2,
           "expected": 0
         },
         {
           "field": "abstained",
-          "projection": null,
           "operator": "equals",
           "actual": false,
           "expected": false
         },
         {
           "field": "policy_fact_statuses",
-          "projection": null,
           "operator": "exists",
           "actual": [
             "not_policy",
@@ -1289,8 +2002,8 @@
           "expected": true
         }
       ],
-      "run_id": "cc57f7a57e934c4980a9787c4069d839",
-      "source_commit": "77da4e254a5b5bf9eefcaf83dacfe86ef3045b55"
+      "run_id": "031610ad70e4495c8404d51c71edb939",
+      "source_commit": "fe53abaf67c27f0f17283ef55f10c6eda1b110bd"
     },
     {
       "capability_id": "search.category_insight",
@@ -1312,33 +2025,33 @@
       "observed_values": {
         "source": "guide.md",
         "source_reference": "未登记的临时知识文档",
-        "source_type": "unversioned_fixture"
+        "source_type": "unversioned_fixture",
+        "insights[].source": "guide.md",
+        "insights[].metadata.source_reference": "未登记的临时知识文档",
+        "insights[].metadata.source_type": "unversioned_fixture"
       },
       "value_assertions": [
         {
           "field": "insights[].source",
-          "projection": "first.source",
           "operator": "exists",
           "actual": "guide.md",
           "expected": true
         },
         {
           "field": "insights[].metadata.source_reference",
-          "projection": "first.metadata.source_reference",
           "operator": "exists",
           "actual": "未登记的临时知识文档",
           "expected": true
         },
         {
           "field": "insights[].metadata.source_type",
-          "projection": "first.metadata.source_type",
           "operator": "exists",
           "actual": "unversioned_fixture",
           "expected": true
         }
       ],
-      "run_id": "cc57f7a57e934c4980a9787c4069d839",
-      "source_commit": "77da4e254a5b5bf9eefcaf83dacfe86ef3045b55"
+      "run_id": "031610ad70e4495c8404d51c71edb939",
+      "source_commit": "fe53abaf67c27f0f17283ef55f10c6eda1b110bd"
     },
     {
       "capability_id": "search.category_insight",
@@ -1387,8 +2100,8 @@
           "expected": true
         }
       ],
-      "run_id": "cc57f7a57e934c4980a9787c4069d839",
-      "source_commit": "77da4e254a5b5bf9eefcaf83dacfe86ef3045b55"
+      "run_id": "031610ad70e4495c8404d51c71edb939",
+      "source_commit": "fe53abaf67c27f0f17283ef55f10c6eda1b110bd"
     },
     {
       "capability_id": "search.category_insight",
@@ -1427,8 +2140,8 @@
           "expected": true
         }
       ],
-      "run_id": "cc57f7a57e934c4980a9787c4069d839",
-      "source_commit": "77da4e254a5b5bf9eefcaf83dacfe86ef3045b55"
+      "run_id": "031610ad70e4495c8404d51c71edb939",
+      "source_commit": "fe53abaf67c27f0f17283ef55f10c6eda1b110bd"
     },
     {
       "capability_id": "trade.approve",
@@ -1448,26 +2161,26 @@
       "case": "approved",
       "observed_values": {
         "status": "approved",
-        "order_id": "4852f61492d34f29a1f6426a579ae7b8"
+        "order_id": "000f1144f2254dd8a133d2e3978b240a",
+        "confirmation.status": "approved",
+        "confirmation.result.order_id": "000f1144f2254dd8a133d2e3978b240a"
       },
       "value_assertions": [
         {
           "field": "confirmation.status",
-          "projection": "confirmation.status",
-          "operator": "exists",
+          "operator": "equals",
           "actual": "approved",
-          "expected": true
+          "expected": "approved"
         },
         {
           "field": "confirmation.result.order_id",
-          "projection": "confirmation.result.order_id",
           "operator": "exists",
-          "actual": "4852f61492d34f29a1f6426a579ae7b8",
+          "actual": "000f1144f2254dd8a133d2e3978b240a",
           "expected": true
         }
       ],
-      "run_id": "cc57f7a57e934c4980a9787c4069d839",
-      "source_commit": "77da4e254a5b5bf9eefcaf83dacfe86ef3045b55"
+      "run_id": "031610ad70e4495c8404d51c71edb939",
+      "source_commit": "fe53abaf67c27f0f17283ef55f10c6eda1b110bd"
     },
     {
       "capability_id": "trade.approve",
@@ -1499,27 +2212,24 @@
           "P1001-S1": 49
         },
         "inventory_delta": -1,
-        "order_id": "4852f61492d34f29a1f6426a579ae7b8",
+        "order_id": "000f1144f2254dd8a133d2e3978b240a",
         "order_status": "CONFIRMED"
       },
       "value_assertions": [
         {
           "field": "order_count_before",
-          "projection": null,
           "operator": "exists",
           "actual": 0,
           "expected": true
         },
         {
           "field": "order_count_after",
-          "projection": null,
           "operator": "exists",
           "actual": 1,
           "expected": true
         },
         {
           "field": "inventory_before",
-          "projection": null,
           "operator": "nonempty",
           "actual": {
             "P1001-S1": 50
@@ -1528,7 +2238,6 @@
         },
         {
           "field": "inventory_after",
-          "projection": null,
           "operator": "nonempty",
           "actual": {
             "P1001-S1": 49
@@ -1536,8 +2245,8 @@
           "expected": true
         }
       ],
-      "run_id": "cc57f7a57e934c4980a9787c4069d839",
-      "source_commit": "77da4e254a5b5bf9eefcaf83dacfe86ef3045b55"
+      "run_id": "031610ad70e4495c8404d51c71edb939",
+      "source_commit": "fe53abaf67c27f0f17283ef55f10c6eda1b110bd"
     },
     {
       "capability_id": "trade.approve",
@@ -1554,19 +2263,19 @@
       "event_count": 1,
       "case": "rejected",
       "observed_values": {
-        "status": "rejected"
+        "status": "rejected",
+        "confirmation.status": "rejected"
       },
       "value_assertions": [
         {
           "field": "confirmation.status",
-          "projection": "confirmation.status",
-          "operator": "exists",
+          "operator": "equals",
           "actual": "rejected",
-          "expected": true
+          "expected": "rejected"
         }
       ],
-      "run_id": "cc57f7a57e934c4980a9787c4069d839",
-      "source_commit": "77da4e254a5b5bf9eefcaf83dacfe86ef3045b55"
+      "run_id": "031610ad70e4495c8404d51c71edb939",
+      "source_commit": "fe53abaf67c27f0f17283ef55f10c6eda1b110bd"
     },
     {
       "capability_id": "trade.approve",
@@ -1604,21 +2313,18 @@
       "value_assertions": [
         {
           "field": "order_count_before",
-          "projection": null,
           "operator": "exists",
           "actual": 0,
           "expected": true
         },
         {
           "field": "order_count_after",
-          "projection": null,
           "operator": "exists",
           "actual": 0,
           "expected": true
         },
         {
           "field": "inventory_before",
-          "projection": null,
           "operator": "nonempty",
           "actual": {
             "P1001-S1": 50
@@ -1627,7 +2333,6 @@
         },
         {
           "field": "inventory_after",
-          "projection": null,
           "operator": "nonempty",
           "actual": {
             "P1001-S1": 50
@@ -1635,8 +2340,8 @@
           "expected": true
         }
       ],
-      "run_id": "cc57f7a57e934c4980a9787c4069d839",
-      "source_commit": "77da4e254a5b5bf9eefcaf83dacfe86ef3045b55"
+      "run_id": "031610ad70e4495c8404d51c71edb939",
+      "source_commit": "fe53abaf67c27f0f17283ef55f10c6eda1b110bd"
     },
     {
       "capability_id": "trade.cancel",
@@ -1660,40 +2365,40 @@
       "observed_values": {
         "status": "approved",
         "action": "cancel",
-        "order_id": "1bcbcbeab86942289520d9b0a4287e2f"
+        "order_id": "1c16bc6689e64b438ea0f2906dc7c861",
+        "confirmation.status": "approved",
+        "confirmation.action": "cancel",
+        "confirmation.result.order_id": "1c16bc6689e64b438ea0f2906dc7c861",
+        "confirmation.result.status": "CANCELLED"
       },
       "value_assertions": [
         {
           "field": "confirmation.status",
-          "projection": "confirmation.status",
-          "operator": "exists",
+          "operator": "equals",
           "actual": "approved",
-          "expected": true
+          "expected": "approved"
         },
         {
           "field": "confirmation.action",
-          "projection": "confirmation.action",
-          "operator": "exists",
+          "operator": "equals",
           "actual": "cancel",
-          "expected": true
+          "expected": "cancel"
         },
         {
           "field": "confirmation.result.order_id",
-          "projection": "confirmation.result.order_id",
           "operator": "exists",
-          "actual": "1bcbcbeab86942289520d9b0a4287e2f",
+          "actual": "1c16bc6689e64b438ea0f2906dc7c861",
           "expected": true
         },
         {
           "field": "confirmation.result.status",
-          "projection": "confirmation.result.status",
           "operator": "exists",
           "actual": "CANCELLED",
           "expected": true
         }
       ],
-      "run_id": "cc57f7a57e934c4980a9787c4069d839",
-      "source_commit": "77da4e254a5b5bf9eefcaf83dacfe86ef3045b55"
+      "run_id": "031610ad70e4495c8404d51c71edb939",
+      "source_commit": "fe53abaf67c27f0f17283ef55f10c6eda1b110bd"
     },
     {
       "capability_id": "trade.cancel",
@@ -1717,10 +2422,10 @@
       "observed_values": {
         "order_count_before": 2,
         "order_count_after": 2,
-        "target_order_id": "1bcbcbeab86942289520d9b0a4287e2f",
+        "target_order_id": "1c16bc6689e64b438ea0f2906dc7c861",
         "target_status_before": "CONFIRMED",
         "target_status_after": "CANCELLED",
-        "unaffected_order_id": "0f470f5e129c4978a6cf5705bba6fdff",
+        "unaffected_order_id": "5c7fa7d831aa4a209d0851216b9d17f8",
         "unaffected_status_before": "CONFIRMED",
         "unaffected_status_after": "CONFIRMED",
         "inventory_before": {
@@ -1734,21 +2439,18 @@
       "value_assertions": [
         {
           "field": "order_count_before",
-          "projection": null,
           "operator": "exists",
           "actual": 2,
           "expected": true
         },
         {
           "field": "order_count_after",
-          "projection": null,
           "operator": "exists",
           "actual": 2,
           "expected": true
         },
         {
           "field": "inventory_before",
-          "projection": null,
           "operator": "nonempty",
           "actual": {
             "P1001-S1": 48
@@ -1757,7 +2459,6 @@
         },
         {
           "field": "inventory_after",
-          "projection": null,
           "operator": "nonempty",
           "actual": {
             "P1001-S1": 49
@@ -1765,8 +2466,8 @@
           "expected": true
         }
       ],
-      "run_id": "cc57f7a57e934c4980a9787c4069d839",
-      "source_commit": "77da4e254a5b5bf9eefcaf83dacfe86ef3045b55"
+      "run_id": "031610ad70e4495c8404d51c71edb939",
+      "source_commit": "fe53abaf67c27f0f17283ef55f10c6eda1b110bd"
     },
     {
       "capability_id": "trade.idempotency",
@@ -1785,26 +2486,26 @@
       "event_count": 1,
       "observed_values": {
         "status": "approved",
-        "order_id": "3ad932e53a9c460fa1d225d1d4a821a6"
+        "order_id": "f542eaa7c306479f8e40022568ce6dc9",
+        "confirmation.status": "approved",
+        "confirmation.result.order_id": "f542eaa7c306479f8e40022568ce6dc9"
       },
       "value_assertions": [
         {
           "field": "confirmation.status",
-          "projection": "confirmation.status",
-          "operator": "exists",
+          "operator": "equals",
           "actual": "approved",
-          "expected": true
+          "expected": "approved"
         },
         {
           "field": "confirmation.result.order_id",
-          "projection": "confirmation.result.order_id",
           "operator": "exists",
-          "actual": "3ad932e53a9c460fa1d225d1d4a821a6",
+          "actual": "f542eaa7c306479f8e40022568ce6dc9",
           "expected": true
         }
       ],
-      "run_id": "cc57f7a57e934c4980a9787c4069d839",
-      "source_commit": "77da4e254a5b5bf9eefcaf83dacfe86ef3045b55"
+      "run_id": "031610ad70e4495c8404d51c71edb939",
+      "source_commit": "fe53abaf67c27f0f17283ef55f10c6eda1b110bd"
     },
     {
       "capability_id": "trade.idempotency",
@@ -1823,26 +2524,26 @@
       "event_count": 1,
       "observed_values": {
         "status": "approved",
-        "order_id": "3ad932e53a9c460fa1d225d1d4a821a6"
+        "order_id": "f542eaa7c306479f8e40022568ce6dc9",
+        "confirmation.status": "approved",
+        "confirmation.result.order_id": "f542eaa7c306479f8e40022568ce6dc9"
       },
       "value_assertions": [
         {
           "field": "confirmation.status",
-          "projection": "confirmation.status",
-          "operator": "exists",
+          "operator": "equals",
           "actual": "approved",
-          "expected": true
+          "expected": "approved"
         },
         {
           "field": "confirmation.result.order_id",
-          "projection": "confirmation.result.order_id",
           "operator": "exists",
-          "actual": "3ad932e53a9c460fa1d225d1d4a821a6",
+          "actual": "f542eaa7c306479f8e40022568ce6dc9",
           "expected": true
         }
       ],
-      "run_id": "cc57f7a57e934c4980a9787c4069d839",
-      "source_commit": "77da4e254a5b5bf9eefcaf83dacfe86ef3045b55"
+      "run_id": "031610ad70e4495c8404d51c71edb939",
+      "source_commit": "fe53abaf67c27f0f17283ef55f10c6eda1b110bd"
     },
     {
       "capability_id": "trade.idempotency",
@@ -1867,8 +2568,8 @@
         "order_count_before": 0,
         "order_count_after": 1,
         "order_count_after_first": 1,
-        "first_order_id": "3ad932e53a9c460fa1d225d1d4a821a6",
-        "second_order_id": "3ad932e53a9c460fa1d225d1d4a821a6",
+        "first_order_id": "f542eaa7c306479f8e40022568ce6dc9",
+        "second_order_id": "f542eaa7c306479f8e40022568ce6dc9",
         "inventory_before": {
           "P1001-S1": 50
         },
@@ -1883,21 +2584,18 @@
       "value_assertions": [
         {
           "field": "order_count_before",
-          "projection": null,
           "operator": "exists",
           "actual": 0,
           "expected": true
         },
         {
           "field": "order_count_after",
-          "projection": null,
           "operator": "exists",
           "actual": 1,
           "expected": true
         },
         {
           "field": "inventory_before",
-          "projection": null,
           "operator": "nonempty",
           "actual": {
             "P1001-S1": 50
@@ -1906,7 +2604,6 @@
         },
         {
           "field": "inventory_after",
-          "projection": null,
           "operator": "nonempty",
           "actual": {
             "P1001-S1": 49
@@ -1914,8 +2611,8 @@
           "expected": true
         }
       ],
-      "run_id": "cc57f7a57e934c4980a9787c4069d839",
-      "source_commit": "77da4e254a5b5bf9eefcaf83dacfe86ef3045b55"
+      "run_id": "031610ad70e4495c8404d51c71edb939",
+      "source_commit": "fe53abaf67c27f0f17283ef55f10c6eda1b110bd"
     }
   ],
   "capabilities": [
@@ -1941,10 +2638,10 @@
   "external_connect_attempts": 0,
   "paid_requests": 0,
   "external_model_requests": 0,
-  "run_id": "cc57f7a57e934c4980a9787c4069d839",
-  "generated_at": "2026-11-01T16:33:23.506538+00:00",
-  "source_commit": "77da4e254a5b5bf9eefcaf83dacfe86ef3045b55",
+  "run_id": "031610ad70e4495c8404d51c71edb939",
+  "generated_at": "2026-11-01T16:43:05.937462+00:00",
+  "source_commit": "fe53abaf67c27f0f17283ef55f10c6eda1b110bd",
   "tracked_worktree_clean": true,
-  "scanner_sha256": "a295298fb8703d6b958fac96339f169b2cda48f694a11a30e3dccccee3626301",
-  "records_sha256": "8c37f8704c640155c4dad467cab0860fc9fc6a5dfdd5a70eedaef16833535b95"
+  "scanner_sha256": "c4843cd3834a05d5f7d9fd7b035f1361c6e81d8d769101eb7ecdadf8530c6b18",
+  "records_sha256": "7822e2cf85092e43e51d9f329b33cf28b3d0539ec54c8f88eb464fafd2461571"
 }
