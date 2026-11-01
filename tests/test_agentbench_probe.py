@@ -130,3 +130,17 @@ def test_probe_nodeid_must_be_declared_in_matrix(tmp_path):
     errors = capability_audit.audit(MATRIX, ROOT / "eval/agent/v1/unsupported-capabilities.json",
                                     ROOT / "eval/agent/v1/template-catalog.json", None, path)
     assert any("not declared in matrix" in error for error in errors)
+
+
+def test_pass_record_without_values_fails(tmp_path):
+    evidence = json.loads(EVIDENCE.read_text(encoding="utf-8"))
+    record = next(row for row in evidence["records"]
+                  if row["capability_id"] == "search.catalog" and row["result"] == "pass")
+    record["observed_values"] = {}
+    evidence["records_sha256"] = __import__("hashlib").sha256(
+        json.dumps(evidence["records"], ensure_ascii=False, sort_keys=True).encode()).hexdigest()
+    path = tmp_path / "evidence.json"
+    path.write_text(json.dumps(evidence), encoding="utf-8")
+    errors = capability_audit.audit(MATRIX, ROOT / "eval/agent/v1/unsupported-capabilities.json",
+                                    ROOT / "eval/agent/v1/template-catalog.json", None, path)
+    assert any("has no observed_values" in error for error in errors)

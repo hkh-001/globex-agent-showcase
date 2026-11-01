@@ -71,6 +71,14 @@ def check_fields(records: list[dict], selector: str, fields: list[str]) -> tuple
     return len(observed) == len(fields), observed
 
 
+def first_payload(records):
+    return next((row["payload"] for row in records if row["type"] == "tool.result"), {})
+
+
+def payload_hits(records):
+    return first_payload(records).get("hits") or []
+
+
 async def probe_search() -> list[dict]:
     repo = InMemoryProductRepository()
     bus = TradeEventBus()
@@ -88,15 +96,25 @@ async def probe_search() -> list[dict]:
     ok, observed = check_fields(catalog, "tool.result:product_search_tool",
                                 ["tool", "hit_count", "recall_strategy", "total_candidates",
                                  "query_conditions", "hits", "filtered_out", "result_ref"])
+    first_hit = (payload_hits(catalog) or [{}])[0]
     results.append(_result("search.catalog", "event", "tool.result:product_search_tool",
                            ["tool", "hit_count", "recall_strategy", "total_candidates",
-                            "query_conditions", "hits", "filtered_out", "result_ref"], observed, ok, catalog))
+                            "query_conditions", "hits", "filtered_out", "result_ref"], observed, ok, catalog,
+                           observed_values={"hit_count": first_payload(catalog).get("hit_count"),
+                                            "recall_strategy": first_payload(catalog).get("recall_strategy"),
+                                            "total_candidates": first_payload(catalog).get("total_candidates"),
+                                            "top_product_id": first_hit.get("product_id"),
+                                            "result_ref": first_payload(catalog).get("result_ref")}))
     constraints_ok, constraints_observed = check_fields(
         catalog, "tool.result:product_search_tool",
         ["query_conditions", "filtered_out"])
+    conditions = first_payload(catalog).get("query_conditions") or {}
     results.append(_result("search.constraints", "event", "tool.result:product_search_tool",
                            ["query_conditions", "filtered_out"], constraints_observed,
-                           constraints_ok, catalog))
+                           constraints_ok, catalog,
+                           observed_values={"ship_to": conditions.get("ship_to"),
+                                            "product_type": conditions.get("product_type"),
+                                            "filtered_out_count": len(first_payload(catalog).get("filtered_out") or [])}))
 
     payload = next((row["payload"] for row in catalog if row["type"] == "tool.result"), {})
     hit = (payload.get("hits") or [{}])[0]
@@ -105,7 +123,8 @@ async def probe_search() -> list[dict]:
     landed_required = [f"hits[].landed_price.{name}" for name in landed_fields]
     landed_ok = all(name in landed for name in landed_fields)
     results.append(_result("search.landed_price", "event", "tool.result:product_search_tool",
-                           landed_required, landed_required if landed_ok else [], landed_ok, catalog))
+                           landed_required, landed_required if landed_ok else [], landed_ok, catalog,
+                           observed_values={name: landed.get(name) for name in landed_fields}))
 
     exact = await run(normalized_query="", product_id="P1003", ship_to="CN", top_k=5)
     exact_payload = next((row["payload"] for row in exact if row["type"] == "tool.result"), {})
@@ -114,7 +133,9 @@ async def probe_search() -> list[dict]:
         item.get("product_id") == "P1003" for item in exact_hits)
     results.append(_result("search.exact_id", "event", "tool.result:product_search_tool",
                            ["recall_strategy", "hits", "query_conditions"], sorted(exact_payload),
-                           ok_exact, exact))
+                           ok_exact, exact,
+                           observed_values={"recall_strategy": exact_payload.get("recall_strategy"),
+                                            "first_product_id": (exact_hits or [{}])[0].get("product_id")}))
 
     guard_token = SearchConstraintScope.start("300 元以内 送到中国 的黑色旅行背包")
     try:
@@ -131,7 +152,8 @@ async def probe_search() -> list[dict]:
     carry_observed = [field for field in carry_fields if _present(carried_payload, field)]
     results.append(_result("state.constraint_carry", "event", "tool.result:product_search_tool",
                            carry_fields, carry_observed,
-                           bool(inherited) and len(carry_observed) == len(carry_fields), carried))
+                           bool(inherited) and len(carry_observed) == len(carry_fields), carried,
+                           observed_values={"inherited": inherited}))
     return results
 
 
@@ -178,13 +200,20 @@ async def probe_dispatch() -> list[dict]:
         verified = decision.get("verified_product_ids")
     except Exception:
         verified = None
+    dispatch_payload = first_payload(records)
     results = [_result("dispatch.search", "event", "tool.result:task_dispatch",
-                       ["tool", "agent", "dispatch_id", "status"], observed, ok, records)]
+                       ["tool", "agent", "dispatch_id", "status"], observed, ok, records,
+                       observed_values={"agent": dispatch_payload.get("agent"),
+                                        "dispatch_id": dispatch_payload.get("dispatch_id"),
+                                        "status": dispatch_payload.get("status")})]
     verified_ok = isinstance(verified, list) and "P1003" in verified
     results.append(_result("dispatch.search", "tool_result", "task_dispatch",
                            ["verified_product_ids", "unverified_product_ids"],
                            ["verified_product_ids", "unverified_product_ids"] if verified is not None else [],
-                           verified_ok, records))
+                           verified_ok, records,
+                           observed_values={"status": decision.get("status") if decision else None,
+                                            "verified_product_ids": verified,
+                                            "unverified_product_ids": (decision or {}).get("unverified_product_ids")}))
     decision = {}
     try:
         decision = json.loads(content)
@@ -193,6 +222,7 @@ async def probe_dispatch() -> list[dict]:
     results[-1]["observed_values"] = {"status": decision.get("status"),
                                       "verified_product_ids": decision.get("verified_product_ids"),
                                       "unverified_product_ids": decision.get("unverified_product_ids")}
+    results[-1]["required_fields"] = ["verified_product_ids", "unverified_product_ids"]
     results[-1]["result"] = "pass" if (verified_ok and decision.get("status") == "completed"
                                        and decision.get("unverified_product_ids") == []) else "fail"
 
@@ -208,9 +238,13 @@ async def probe_dispatch() -> list[dict]:
     trade_records = _records(trade_events)
     trade_ok, trade_observed = check_fields(trade_records, "tool.result:task_dispatch",
                                             ["tool", "agent", "dispatch_id", "status"])
+    trade_payload = first_payload(trade_records)
     results.append(_result("dispatch.trade", "event", "tool.result:task_dispatch",
                            ["tool", "agent", "dispatch_id", "status"], trade_observed,
-                           trade_ok, trade_records))
+                           trade_ok, trade_records,
+                           observed_values={"agent": trade_payload.get("agent"),
+                                            "dispatch_id": trade_payload.get("dispatch_id"),
+                                            "status": trade_payload.get("status")}))
     trade_content = "".join(getattr(block, "text", "") for block in trade_chunk.content)
     try:
         trade_decision = json.loads(trade_content)
@@ -224,7 +258,10 @@ async def probe_dispatch() -> list[dict]:
                            ["verified_product_ids", "unverified_product_ids"],
                            ["verified_product_ids", "unverified_product_ids"]
                            if trade_verified is not None else [],
-                           trade_ok_result, trade_records))
+                           trade_ok_result, trade_records,
+                           observed_values={"status": trade_decision.get("status"),
+                                            "verified_product_ids": trade_verified,
+                                            "unverified_product_ids": trade_decision.get("unverified_product_ids")}))
     return results
 
 
@@ -247,10 +284,14 @@ async def probe_grounding(tmp_path=None) -> list[dict]:
     audit_rows = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
     row = audit_rows[-1] if audit_rows else {}
     fields = ["replacement_kind", "violations"]
+    error_payload = first_payload(records)
     results = [_result("harness.grounding_gate", "event", "error", ["message", "claim_guard"],
-                       observed, ok_event, records),
+                       observed, ok_event, records,
+                       observed_values={"message": error_payload.get("message"),
+                                        "claim_guard": error_payload.get("claim_guard")}),
                _result("harness.grounding_gate", "private_artifact", "grounding_audit.jsonl",
-                       fields, sorted(row), all(name in row for name in fields), records)]
+                       fields, sorted(row), all(name in row for name in fields), records,
+                       observed_values={name: row.get(name) for name in fields})]
     return results
 
 
@@ -294,9 +335,12 @@ async def probe_memory(tmp_path) -> list[dict]:
         ok = (saved == "喜欢轻便背包" and written.get("action") == "保存"
               and written.get("statement") == "喜欢轻便背包")
         results.append(_result("memory.remember", "event", "tool.result:remember_preference_tool",
-                               ["saved"], ["saved"] if saved else [], ok, records))
+                               ["saved"], ["saved"] if saved else [], ok, records,
+                               observed_values={"saved": saved}))
         results.append(_result("memory.remember", "verified_result", "memory_write",
-                               ["action", "statement"], sorted(written), ok, records))
+                               ["action", "statement"], sorted(written), ok, records,
+                               observed_values={"action": written.get("action"),
+                                                "statement": written.get("statement")}))
 
         preferences = await store.list_by_buyer("buyer-memory")
         target = preferences[0]
@@ -311,10 +355,13 @@ async def probe_memory(tmp_path) -> list[dict]:
         written = verified_result("memory_write") or {}
         results.append(_result("memory.update", "event", "tool.result:update_preference_tool",
                                ["updated"], ["updated"] if updated is not None else [],
-                               updated is True and any(p.statement == "喜欢超轻背包" for p in current), records))
+                               updated is True and any(p.statement == "喜欢超轻背包" for p in current), records,
+                               observed_values={"updated": updated,
+                                                "stored_statement": current[0].statement if current else None}))
         results.append(_result("memory.update", "verified_result", "memory_write",
                                ["action"], sorted(written),
-                               written.get("action") == "更新", records))
+                               written.get("action") == "更新", records,
+                               observed_values={"action": written.get("action")}))
 
         preferences = await store.list_by_buyer("buyer-memory")
         target = preferences[0]
@@ -328,11 +375,14 @@ async def probe_memory(tmp_path) -> list[dict]:
         written = verified_result("memory_write") or {}
         results.append(_result("memory.forget", "event", "tool.result:forget_preference_tool",
                                ["deleted"], ["deleted"] if deleted else [],
-                               deleted == "喜欢超轻背包" and remaining == [], records))
+                               deleted == "喜欢超轻背包" and remaining == [], records,
+                               observed_values={"deleted": deleted, "remaining": len(remaining)}))
         results.append(_result("memory.forget", "verified_result", "memory_write",
                                ["action", "statement"], sorted(written),
                                written.get("action") == "删除"
-                               and written.get("statement") == "喜欢超轻背包", records))
+                               and written.get("statement") == "喜欢超轻背包", records,
+                               observed_values={"action": written.get("action"),
+                                                "statement": written.get("statement")}))
     finally:
         ShoppingContext.reset(context_token)
     return results
@@ -369,7 +419,9 @@ async def probe_session(tmp_path) -> list[dict]:
     return [
         _result("state.session_isolation", "event", "TradeEvent",
                 ["shopping_session_id", "correlation.session_id"],
-                ["shopping_session_id", "correlation.session_id"] if ok else [], ok, records),
+                ["shopping_session_id", "correlation.session_id"] if ok else [], ok, records,
+                observed_values={"shopping_session_id": sorted(raw_ids),
+                                 "correlation.session_id": sorted(hashes)}),
         _result("state.session_isolation", "state_snapshot", "preference_repository",
                 ["buyer_id", "statement"], ["buyer_id", "statement"] if ok else [], ok, records,
                 observed_values={"buyer_id": [row["buyer_id"] for row in snapshot_rows],
@@ -423,7 +475,11 @@ async def probe_trade(tmp_path) -> list[dict]:
                        and inventory_before == inventory_after)
         results = [
             _result("trade.prepare", "event", "tool.result:create_order_tool", fields,
-                    [field for field in fields if _present(payload, field)], prepared_ok, records),
+                    [field for field in fields if _present(payload, field)], prepared_ok, records,
+                    observed_values={"confirmation_id": confirmation.get("confirmation_id"),
+                                     "snapshot_hash": confirmation.get("snapshot_hash"),
+                                     "status": confirmation.get("status"),
+                                     "payload_keys": sorted(confirmation.get("payload") or {})}),
             _result("trade.prepare", "state_snapshot", "trade_repository",
                     ["order_count_before", "order_count_after", "inventory_before", "inventory_after"],
                     ["order_count_before", "order_count_after", "inventory_before", "inventory_after"],
@@ -452,7 +508,9 @@ async def probe_trade(tmp_path) -> list[dict]:
         query_ok = (order_state.get("order_id") == order.get("order_id")
                     and order_state.get("status") == order.get("status"))
         results.append(_result("trade.query", "event", "tool.result:query_order_tool",
-                               ["order"], sorted(qpayload), query_ok, records))
+                               ["order"], sorted(qpayload), query_ok, records,
+                               observed_values={"order_id": order_state.get("order_id"),
+                                                "status": order_state.get("status")}))
     finally:
         ShoppingContext.reset(context_token)
         await engine.dispose()
@@ -511,18 +569,29 @@ async def probe_knowledge(tmp_path) -> list[dict]:
     return [
         _result("search.category_insight", "event", "tool.result:category_insight_tool",
                 ["hit_count", "abstained", "policy_fact_statuses"],
-                sorted(payload), event_ok, records),
+                sorted(payload), event_ok, records,
+                observed_values={"hit_count": payload.get("hit_count"),
+                                 "abstained": payload.get("abstained"),
+                                 "policy_fact_statuses": payload.get("policy_fact_statuses")}),
         _result("search.category_insight", "tool_result", "category_insight_tool",
                 ["insights[].source", "insights[].metadata.source_reference",
                  "insights[].metadata.source_type"],
                 ["insights[].source", "insights[].metadata.source_reference",
-                 "insights[].metadata.source_type"] if tool_ok else [], tool_ok, records),
+                 "insights[].metadata.source_type"] if tool_ok else [], tool_ok, records,
+                observed_values={"source": first.get("source"),
+                                 "source_reference": metadata.get("source_reference"),
+                                 "source_type": metadata.get("source_type")}),
         _result("search.category_insight", "event", "tool.result:category_insight_tool",
                 ["abstained", "hit_count", "reason"], sorted(abstain_payload),
-                abstain_ok, abstain_events, case="abstain"),
+                abstain_ok, abstain_events, case="abstain",
+                observed_values={"abstained": abstain_payload.get("abstained"),
+                                 "hit_count": abstain_payload.get("hit_count"),
+                                 "reason": abstain_payload.get("reason")}),
         _result("search.category_insight", "tool_result", "category_insight_tool",
                 ["unanswerable", "reason"], sorted(abstain_content),
-                abstain_ok, abstain_events, case="abstain"),
+                abstain_ok, abstain_events, case="abstain",
+                observed_values={"unanswerable": abstain_content.get("unanswerable"),
+                                 "reason": abstain_content.get("reason")}),
     ]
 
 

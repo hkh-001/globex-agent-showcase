@@ -99,7 +99,13 @@ shasum -a 256 eval/agent/v1/inventory/source-inventory.json \
               eval/agent/v1/template-catalog.json
 ```
 
-与 `manifest.json` 中的 `inventory_file_sha256`、`record_index_file_sha256` 以及 catalog 的 `catalog_sha256` 对照。三者必须分别一致。
+口径必须区分：
+
+- `manifest.inventory_file_sha256` / `record_index_file_sha256`：**文件字节**的 SHA-256；
+- `shasum` 对 `template-catalog.json` 得到的是**文件字节**哈希；
+- catalog 内部的 `catalog_sha256`：由 `template_catalog.build()` 对生成内容做的**语义哈希**，与文件字节哈希本来就不同。
+
+因此：三个冻结文件用 `shasum` 对照 manifest 的文件哈希；catalog 的 `catalog_sha256` 由 `check_catalog` 重建后比较，不能用 `shasum` 去比。
 
 ### 4.2 commit / tree
 
@@ -365,9 +371,15 @@ PY
 ```bash
 cd "$TMP/review"
 cat .github/workflows/agentbench-catalog.yml
-grep -RInE 'secrets\.|API_KEY|OPENAI|DASHSCOPE|TAVILY' .github/workflows scripts/eval/agentbench/check_catalog.py scripts/eval/agentbench/freeze_inventory.py
+# 只扫描本 workflow 与两个脚本；不要扫其他 workflow（HARNESS_* 是合法配置）
+grep -nE 'secrets\.|OPENAI_API_KEY|DASHSCOPE_API_KEY|LLM_API_KEY|ANTHROPIC_API_KEY' \
+  .github/workflows/agentbench-catalog.yml \
+  scripts/eval/agentbench/check_catalog.py \
+  scripts/eval/agentbench/freeze_inventory.py
 echo "grep_exit=$?"
 ```
+
+说明：安全扫描代码里出现 `TAVILY_API_KEY` 字样是**字符串检测规则**，不是密钥；不能据此判泄漏。只匹配真实赋值/密钥格式。
 
 必须确认：
 
