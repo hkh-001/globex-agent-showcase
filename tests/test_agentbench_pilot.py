@@ -4,7 +4,7 @@ from __future__ import annotations
 import json
 import pathlib
 
-from scripts.eval.agentbench import generate_pilot, validate_pilot
+from scripts.eval.agentbench import deterministic_checks, generate_pilot, scorer, validate_pilot
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 CATALOG = ROOT / "eval/agent/v1/template-catalog.json"
@@ -69,9 +69,89 @@ def test_source_oracles_are_inherited():
     assert routing["source_oracle"]["required_tools"] == ["product_search_tool"]
 
 
-def test_validator_rejects_adapter_mismatch(tmp_path):
+def _write_tampered(tmp_path, mutate):
     data = json.loads(PILOT.read_text(encoding="utf-8"))
-    data["tasks"][0]["turns"][0]["content"] = "tampered"
+    mutate(data)
     path = tmp_path / "pilot.json"
     path.write_text(json.dumps(data), encoding="utf-8")
-    assert validate_pilot.validate(path)
+    return validate_pilot.validate(path)
+
+
+def test_validator_rejects_adapter_and_oracle_mismatch(tmp_path):
+    mutations = [
+        lambda data: data["tasks"][0].__setitem__("oracle_adapter_id", "evil"),
+        lambda data: data["tasks"][0].__setitem__("oracle_adapter_version", "v999"),
+        lambda data: data["tasks"][0].__setitem__("source_oracle", {"relevant": ["EVIL"]}),
+        lambda data: data["tasks"][0]["turns"][0].__setitem__("content", "tampered"),
+    ]
+    for mutate in mutations:
+        assert _write_tampered(tmp_path, mutate)
+
+
+def test_validator_rejects_weakened_execution_contract(tmp_path):
+    mutations = [
+        lambda data: data["tasks"][0].__setitem__("required_capabilities", []),
+        lambda data: data["tasks"][0].__setitem__("allowed_edges", []),
+        lambda data: data["tasks"][0].__setitem__("allowed_agents", []),
+        lambda data: data["tasks"][0].__setitem__("forbidden_edges", []),
+        lambda data: data["tasks"][0].__setitem__("max_model_calls", 999),
+        lambda data: data["tasks"][0].__setitem__("execution_ready", True),
+    ]
+    for mutate in mutations:
+        assert _write_tampered(tmp_path, mutate)
+
+
+def _event(event_type, tool, payload=None, *, agent="main_agent", dispatch_id=None):
+    body = {"tool": tool, **(payload or {})}
+    correlation = {"agent": agent}
+    if dispatch_id:
+        correlation["dispatch_id"] = dispatch_id
+    return {"type": event_type, "payload": body, "correlation": correlation}
+
+
+def _positive_traces():
+    search = [
+        _event("tool.invoke", "product_search_tool"),
+        _event("tool.result", "product_search_tool", {"hits": [{
+            "product_id": "P1015", "canonical_product_id": "CAN-LEGACY-014",
+            "landed_price": {"currency": "CNY"}, "skus": [{"stock": 3}],
+        }]}),
+    ]
+    knowledge = [
+        _event("tool.invoke", "category_insight_tool"),
+        _event("tool.result", "category_insight_tool", {
+            "hit_count": 1, "policy_fact_statuses": ["current"],
+            "insights": [{"source": "eval-digital-accessories-价格与预算.md"}],
+        }),
+    ]
+    routing = [
+        {"type": "agent.dispatch", "payload": {"agent": "search_agent", "dispatch_id": "d1"},
+         "correlation": {"agent": "main_agent", "dispatch_id": "d1"}},
+        _event("tool.invoke", "product_search_tool", agent="search_agent", dispatch_id="d1"),
+        _event("tool.result", "product_search_tool", {"hits": [{"product_id": "P1"}]},
+               agent="search_agent", dispatch_id="d1"),
+        _event("tool.result", "task_dispatch", {"agent": "search_agent", "dispatch_id": "d1",
+               "status": "completed"}, dispatch_id="d1"),
+    ]
+    return {"search.catalog": search, "search.category_insight": knowledge, "dispatch.search": routing}
+
+
+def test_three_pilot_contracts_accept_positive_and_reject_negative_traces():
+    data = json.loads(PILOT.read_text(encoding="utf-8"))
+    traces = _positive_traces()
+    for task in data["tasks"]:
+        events = traces[task["capability"]]
+        assert scorer.score_execution_graph(events, task)["passed"]
+        assert deterministic_checks.score(task["deterministic_checks"], events)["passed"]
+        broken = [event for event in events if event.get("payload", {}).get("tool") != (
+            "product_search_tool" if task["capability"] != "search.category_insight" else "category_insight_tool")]
+        assert not deterministic_checks.score(task["deterministic_checks"], broken)["passed"]
+
+
+def test_deterministic_check_schema_and_array_quantifiers_are_fail_closed():
+    assert deterministic_checks.validate_check({"kind": "event", "selector": "x:y", "field": "a",
+                                                 "operator": "included", "expected": []}) == "check_operator"
+    checks = [{"kind": "event", "selector": "tool.result:x", "field": "hits[].id",
+               "operator": "contains_all", "expected": ["A", "B"]}]
+    events = [_event("tool.result", "x", {"hits": [{"id": "A"}]})]
+    assert not deterministic_checks.score(checks, events)["passed"]

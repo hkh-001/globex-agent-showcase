@@ -40,26 +40,6 @@
         "top_k": 5
       },
       "task_oracle": {
-        "checks": [
-          {
-            "kind": "value",
-            "field": "hit_count",
-            "operator": "gt",
-            "expected": 0
-          },
-          {
-            "kind": "value",
-            "field": "hits",
-            "operator": "nonempty",
-            "expected": true
-          },
-          {
-            "kind": "value",
-            "field": "hits[].landed_price.subtotal_major",
-            "operator": "gt",
-            "expected": 0
-          }
-        ],
         "forbidden_capabilities": [
           "search.web"
         ],
@@ -108,26 +88,6 @@
         "top_k": 2
       },
       "task_oracle": {
-        "checks": [
-          {
-            "kind": "value",
-            "field": "hit_count",
-            "operator": "gt",
-            "expected": 0
-          },
-          {
-            "kind": "value",
-            "field": "abstained",
-            "operator": "equals",
-            "expected": false
-          },
-          {
-            "kind": "value",
-            "field": "insights[].source",
-            "operator": "nonempty",
-            "expected": true
-          }
-        ],
         "forbidden_capabilities": [
           "search.web"
         ],
@@ -166,20 +126,6 @@
         "demands": "比较 Atlas 便携餐盒 165 和 Atlas 旅行洗护套装 188 寄到 JP 的到手价。"
       },
       "task_oracle": {
-        "checks": [
-          {
-            "kind": "value",
-            "field": "agent",
-            "operator": "equals",
-            "expected": "search_agent"
-          },
-          {
-            "kind": "value",
-            "field": "status",
-            "operator": "equals",
-            "expected": "completed"
-          }
-        ],
         "forbidden_capabilities": [
           "search.web"
         ],

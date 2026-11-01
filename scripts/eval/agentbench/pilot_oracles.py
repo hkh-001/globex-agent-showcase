@@ -36,33 +36,40 @@ def checks(asset: str, oracle: dict) -> list[dict]:
     adapter = ADAPTERS[asset][0]
     if adapter == "product-retrieval":
         result = [
-            {"kind": "value", "field": "hits[].product_id", "operator": "in",
+            {"kind": "event", "selector": "tool.result:product_search_tool",
+             "field": "hits[].product_id", "operator": "contains_any",
              "expected": oracle["relevant"]},
-            {"kind": "value", "field": "hits[].canonical_product_id", "operator": "in",
+            {"kind": "event", "selector": "tool.result:product_search_tool",
+             "field": "hits[].canonical_product_id", "operator": "contains_any",
              "expected": oracle["relevant_canonical_ids"]},
-            {"kind": "value", "field": "hits[].landed_price.currency", "operator": "equals",
+            {"kind": "event", "selector": "tool.result:product_search_tool",
+             "field": "hits[].landed_price.currency", "operator": "all_equal",
              "expected": oracle["target_currency"]},
         ]
         if oracle["require_in_stock"]:
-            result.append({"kind": "value", "field": "hits[].skus[].stock", "operator": "gt",
-                           "expected": 0})
+            result.append({"kind": "event", "selector": "tool.result:product_search_tool",
+                           "field": "hits[].skus[].stock", "operator": "any_gt", "expected": 0})
         return result
     if adapter == "knowledge-source":
         return [
-            {"kind": "value", "field": "insights[].source", "operator": "in",
+            {"kind": "event", "selector": "tool.result:category_insight_tool",
+             "field": "insights[].source", "operator": "contains_any",
              "expected": oracle["relevant"]},
-            {"kind": "value", "field": "hit_count", "operator": "gt", "expected": 0},
-            {"kind": "value", "field": "policy_fact_statuses", "operator": "exists", "expected": True},
+            {"kind": "event", "selector": "tool.result:category_insight_tool",
+             "field": "hit_count", "operator": "scalar_gt", "expected": 0},
+            {"kind": "event", "selector": "tool.result:category_insight_tool",
+             "field": "policy_fact_statuses", "operator": "exists", "expected": True},
         ]
     if adapter == "agent-contract":
         return [
             {"kind": "event", "selector": "tool.result:task_dispatch", "field": "agent",
-             "operator": "equals", "expected": "search_agent"},
+             "operator": "scalar_equals", "expected": "search_agent"},
             {"kind": "event", "selector": "tool.result:task_dispatch", "field": "status",
-             "operator": "equals", "expected": "completed"},
+             "operator": "scalar_equals", "expected": "completed"},
             {"kind": "event", "selector": "tool.result:product_search_tool", "field": "hits",
              "operator": "nonempty", "expected": True},
-            {"kind": "tool", "field": "required_tools", "operator": "included",
+            {"kind": "tool", "selector": "execution", "field": "invoked_tools",
+             "operator": "contains_all",
              "expected": oracle["required_tools"]},
         ]
     raise ValueError(asset)

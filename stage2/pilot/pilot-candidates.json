@@ -79,31 +79,35 @@
       },
       "deterministic_checks": [
         {
-          "kind": "value",
+          "kind": "event",
+          "selector": "tool.result:product_search_tool",
           "field": "hits[].product_id",
-          "operator": "in",
+          "operator": "contains_any",
           "expected": [
             "P1015"
           ]
         },
         {
-          "kind": "value",
+          "kind": "event",
+          "selector": "tool.result:product_search_tool",
           "field": "hits[].canonical_product_id",
-          "operator": "in",
+          "operator": "contains_any",
           "expected": [
             "CAN-LEGACY-014"
           ]
         },
         {
-          "kind": "value",
+          "kind": "event",
+          "selector": "tool.result:product_search_tool",
           "field": "hits[].landed_price.currency",
-          "operator": "equals",
+          "operator": "all_equal",
           "expected": "CNY"
         },
         {
-          "kind": "value",
+          "kind": "event",
+          "selector": "tool.result:product_search_tool",
           "field": "hits[].skus[].stock",
-          "operator": "gt",
+          "operator": "any_gt",
           "expected": 0
         }
       ],
@@ -216,21 +220,24 @@
       },
       "deterministic_checks": [
         {
-          "kind": "value",
+          "kind": "event",
+          "selector": "tool.result:category_insight_tool",
           "field": "insights[].source",
-          "operator": "in",
+          "operator": "contains_any",
           "expected": [
             "eval-digital-accessories-价格与预算.md"
           ]
         },
         {
-          "kind": "value",
+          "kind": "event",
+          "selector": "tool.result:category_insight_tool",
           "field": "hit_count",
-          "operator": "gt",
+          "operator": "scalar_gt",
           "expected": 0
         },
         {
-          "kind": "value",
+          "kind": "event",
+          "selector": "tool.result:category_insight_tool",
           "field": "policy_fact_statuses",
           "operator": "exists",
           "expected": true
@@ -336,14 +343,14 @@
           "kind": "event",
           "selector": "tool.result:task_dispatch",
           "field": "agent",
-          "operator": "equals",
+          "operator": "scalar_equals",
           "expected": "search_agent"
         },
         {
           "kind": "event",
           "selector": "tool.result:task_dispatch",
           "field": "status",
-          "operator": "equals",
+          "operator": "scalar_equals",
           "expected": "completed"
         },
         {
@@ -355,8 +362,9 @@
         },
         {
           "kind": "tool",
-          "field": "required_tools",
-          "operator": "included",
+          "selector": "execution",
+          "field": "invoked_tools",
+          "operator": "contains_all",
           "expected": [
             "product_search_tool"
           ]

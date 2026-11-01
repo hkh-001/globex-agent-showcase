@@ -5,7 +5,7 @@ import hashlib
 import json
 import pathlib
 
-from scripts.eval.agentbench import inventory, pilot_oracles
+from scripts.eval.agentbench import deterministic_checks, generate_pilot, inventory, pilot_oracles
 
 ROOT = pathlib.Path(__file__).resolve().parents[3]
 TOOL = {"search.catalog": "product_search_tool", "search.category_insight": "category_insight_tool",
@@ -29,6 +29,18 @@ def validate(path: pathlib.Path) -> list[str]:
     records = [json.loads(line) for line in
                (ROOT / "eval/agent/v1/inventory/record-index.jsonl").read_text(encoding="utf-8").splitlines()
                if line.strip()]
+    try:
+        canonical = generate_pilot.build()
+    except (KeyError, ValueError, SystemExit) as exc:
+        return [f"canonical generation failed: {exc}"]
+    if data != canonical:
+        errors.append("pilot differs from canonical generator output")
+    registry_ids = [entry.get("registry_id") for entry in registry.get("entries", [])]
+    task_ids = [task.get("task_id") for task in data.get("tasks") or []]
+    if len(registry_ids) != len(set(registry_ids)):
+        errors.append("duplicate registry_id")
+    if len(task_ids) != len(set(task_ids)):
+        errors.append("duplicate task_id")
     if data.get("candidate_count") != len(data.get("tasks") or []):
         errors.append("candidate_count does not match tasks")
     if len(data.get("tasks") or []) != len(entries):
@@ -86,8 +98,19 @@ def validate(path: pathlib.Path) -> list[str]:
                         == task["source_record_id"]), None)
             if row is not None:
                 oracle = pilot_oracles.extract(task["source_asset"], row)
+                adapter_contract = pilot_oracles.ADAPTERS.get(task["source_asset"])
+                if task.get("source_oracle") != oracle or entry.get("source_oracle") != oracle:
+                    errors.append(f"{tid}: source oracle differs from source/registry")
                 if pilot_oracles.sha(oracle) != task.get("source_oracle_sha256"):
                     errors.append(f"{tid}: source oracle hash mismatch")
+                if entry.get("source_oracle_sha256") != task.get("source_oracle_sha256"):
+                    errors.append(f"{tid}: registry oracle hash differs from task")
+                if not adapter_contract or task.get("oracle_adapter_id") != adapter_contract[0] or entry.get(
+                        "oracle_adapter_id") != adapter_contract[0]:
+                    errors.append(f"{tid}: oracle adapter id mismatch")
+                if not adapter_contract or task.get("oracle_adapter_version") != adapter_contract[1] or entry.get(
+                        "oracle_adapter_version") != adapter_contract[1]:
+                    errors.append(f"{tid}: oracle adapter version mismatch")
                 if pilot_oracles.checks(task["source_asset"], oracle) != task.get("deterministic_checks"):
                     errors.append(f"{tid}: checks are not inherited from the source oracle")
                 raw = row.get(spec["prompt_field"])
@@ -111,8 +134,9 @@ def validate(path: pathlib.Path) -> list[str]:
         if any(tool not in steps for tool in required_tools):
             errors.append(f"{tid}: execution plan misses a required source tool")
         for check in task.get("deterministic_checks") or []:
-            if not {"kind", "field", "operator", "expected"} <= set(check):
-                errors.append(f"{tid}: check lacks task-level expected")
+            problem = deterministic_checks.validate_check(check)
+            if problem:
+                errors.append(f"{tid}: invalid deterministic check: {problem}")
         if task.get("automatic_scoring") is not False:
             errors.append(f"{tid}: automatic_scoring must be false until a dry-run exists")
     return errors

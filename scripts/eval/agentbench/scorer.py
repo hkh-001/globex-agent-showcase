@@ -6,6 +6,9 @@ from typing import Any, Iterable
 
 
 DEFAULT_CAPABILITIES = {
+    "search.catalog": {"product_search_tool"},
+    "search.category_insight": {"category_insight_tool"},
+    "dispatch.search": {"product_search_tool"},
     "catalog_search": {"product_search_tool"},
     "category_knowledge": {"category_insight_tool"},
     "order_create": {"create_order_tool"},
