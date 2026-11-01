@@ -6,7 +6,7 @@ import hashlib
 import json
 import pathlib
 
-from scripts.eval.agentbench import inventory
+from scripts.eval.agentbench import inventory, pilot_oracles
 
 ROOT = pathlib.Path(__file__).resolve().parents[3]
 REGISTRY = ROOT / "stage2/pilot/conversion-registry.json"
@@ -43,7 +43,7 @@ def _resolve(entry: dict):
         _, normalized, _ = inventory.prompt_hashes(raw)
         if normalized != entry["source_prompt_sha256"]:
             raise SystemExit(f"{entry['registry_id']}: source prompt hash mismatch")
-        return raw, normalized, content
+        return raw, normalized, content, row
     raise SystemExit(f"{entry['registry_id']}: record not found")
 
 
@@ -61,7 +61,11 @@ def build() -> dict:
         entry_capability = matrix[entry["capability_id"]]
         if entry_capability.get("verification_status") != "verified":
             raise SystemExit(f"{entry['registry_id']}: capability is not verified")
-        raw, normalized, content = _resolve(entry)
+        raw, normalized, content, row = _resolve(entry)
+        oracle = pilot_oracles.extract(entry["source_asset"], row)
+        if oracle != entry.get("source_oracle") or pilot_oracles.sha(oracle) != entry.get(
+                "source_oracle_sha256"):
+            raise SystemExit(f"{entry['registry_id']}: source oracle mismatch")
         turns = [{"role": "user", "content": content}]
         tasks.append({
             "task_id": f"pilot-{entry['registry_id']}",
@@ -88,9 +92,13 @@ def build() -> dict:
                               for left, right in zip(plan, plan[1:])],
             "forbidden_edges": [["main_agent", "web_search_tool"]],
             "expected_tool_parameters": entry["expected_tool_parameters"],
-            "deterministic_checks": entry["task_oracle"]["checks"],
+            "deterministic_checks": pilot_oracles.checks(entry["source_asset"], oracle),
+            "source_oracle": oracle,
+            "source_oracle_sha256": entry["source_oracle_sha256"],
+            "oracle_adapter_id": entry["oracle_adapter_id"],
+            "oracle_adapter_version": entry["oracle_adapter_version"],
             "oracle_id": entry["oracle_id"],
-            "oracle_version": "v1",
+            "oracle_version": entry["oracle_adapter_version"],
             "side_effect_policy": {"before_after_snapshot": "none", "expected": entry["task_oracle"]["side_effects"]},
             "isolation": {"buyer_id": f"pilot-{entry['registry_id']}-buyer",
                           "session_id": f"pilot-{entry['registry_id']}-session",

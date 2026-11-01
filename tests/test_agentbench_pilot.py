@@ -56,3 +56,22 @@ def test_capabilities_are_verified_and_isolated():
         assert validate_pilot.validate(PILOT) == []
         assert task["side_effect_policy"]["before_after_snapshot"] in {"none", "trade_repository"}
         assert task["max_turns"] >= 1 and task["max_model_calls"] >= 0
+
+
+def test_source_oracles_are_inherited():
+    data = json.loads(PILOT.read_text(encoding="utf-8"))
+    search = next(task for task in data["tasks"] if task["capability"] == "search.catalog")
+    assert "P1015" in search["source_oracle"]["relevant"]
+    assert search["source_oracle"]["relevant_canonical_ids"] == ["CAN-LEGACY-014"]
+    assert search["source_oracle"]["require_in_stock"] is True
+    routing = next(task for task in data["tasks"] if task["capability"] == "dispatch.search")
+    assert "product_search_tool" in {step for plan in routing["acceptable_execution_plans"] for step in plan}
+    assert routing["source_oracle"]["required_tools"] == ["product_search_tool"]
+
+
+def test_validator_rejects_adapter_mismatch(tmp_path):
+    data = json.loads(PILOT.read_text(encoding="utf-8"))
+    data["tasks"][0]["turns"][0]["content"] = "tampered"
+    path = tmp_path / "pilot.json"
+    path.write_text(json.dumps(data), encoding="utf-8")
+    assert validate_pilot.validate(path)

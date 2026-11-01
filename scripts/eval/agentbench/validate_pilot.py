@@ -5,7 +5,7 @@ import hashlib
 import json
 import pathlib
 
-from scripts.eval.agentbench import inventory
+from scripts.eval.agentbench import inventory, pilot_oracles
 
 ROOT = pathlib.Path(__file__).resolve().parents[3]
 TOOL = {"search.catalog": "product_search_tool", "search.category_insight": "category_insight_tool",
@@ -68,12 +68,48 @@ def validate(path: pathlib.Path) -> list[str]:
                     errors.append(f"{tid}: source payload hash mismatch")
                 if inventory.prompt_hashes(raw)[1] != task.get("source_prompt_sha256"):
                     errors.append(f"{tid}: source prompt hash mismatch")
+        if entry.get("capability_id") != task.get("capability"):
+            errors.append(f"{tid}: capability differs from registry")
+        if entry.get("expected_execution_plans") != task.get("acceptable_execution_plans"):
+            errors.append(f"{tid}: plans differ from registry")
+        if entry.get("expected_tool_parameters") != task.get("expected_tool_parameters"):
+            errors.append(f"{tid}: parameters differ from registry")
+        if entry.get("oracle_id") != task.get("oracle_id") or entry.get(
+                "oracle_adapter_version") != task.get("oracle_version"):
+            errors.append(f"{tid}: oracle id/version differs from registry")
+        if entry.get("adapter_id") != (task.get("conversion") or {}).get("adapter_id"):
+            errors.append(f"{tid}: adapter differs from registry")
+        if entry.get("adapter_version") != (task.get("conversion") or {}).get("adapter_version"):
+            errors.append(f"{tid}: adapter version differs from registry")
+        if spec is not None:
+            row = next((item for item in rows if inventory.canonical_id(item, spec)
+                        == task["source_record_id"]), None)
+            if row is not None:
+                oracle = pilot_oracles.extract(task["source_asset"], row)
+                if pilot_oracles.sha(oracle) != task.get("source_oracle_sha256"):
+                    errors.append(f"{tid}: source oracle hash mismatch")
+                if pilot_oracles.checks(task["source_asset"], oracle) != task.get("deterministic_checks"):
+                    errors.append(f"{tid}: checks are not inherited from the source oracle")
+                raw = row.get(spec["prompt_field"])
+                adapter = task["conversion"]["adapter_id"]
+                if adapter == "identity":
+                    applied = raw if isinstance(raw, str) else None
+                elif adapter == "join-list":
+                    applied = "；".join(raw) if isinstance(raw, list) and all(
+                        isinstance(item, str) for item in raw) else None
+                else:
+                    applied = None
+                if applied != task["turns"][0]["content"]:
+                    errors.append(f"{tid}: adapter output does not match turns")
         capability = task.get("capability")
         if matrix.get(capability, {}).get("verification_status") != "verified":
             errors.append(f"{tid}: capability is not verified")
-        if TOOL.get(capability) not in {step for plan in task.get("acceptable_execution_plans") or []
-                                        for step in plan}:
+        steps = {step for plan in task.get("acceptable_execution_plans") or [] for step in plan}
+        if TOOL.get(capability) not in steps:
             errors.append(f"{tid}: execution plan does not cover the capability tool")
+        required_tools = (task.get("source_oracle") or {}).get("required_tools") or []
+        if any(tool not in steps for tool in required_tools):
+            errors.append(f"{tid}: execution plan misses a required source tool")
         for check in task.get("deterministic_checks") or []:
             if not {"kind", "field", "operator", "expected"} <= set(check):
                 errors.append(f"{tid}: check lacks task-level expected")

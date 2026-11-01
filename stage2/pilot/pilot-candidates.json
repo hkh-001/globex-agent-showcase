@@ -80,23 +80,47 @@
       "deterministic_checks": [
         {
           "kind": "value",
-          "field": "hit_count",
-          "operator": "gt",
-          "expected": 0
+          "field": "hits[].product_id",
+          "operator": "in",
+          "expected": [
+            "P1015"
+          ]
         },
         {
           "kind": "value",
-          "field": "hits",
-          "operator": "nonempty",
-          "expected": true
+          "field": "hits[].canonical_product_id",
+          "operator": "in",
+          "expected": [
+            "CAN-LEGACY-014"
+          ]
         },
         {
           "kind": "value",
-          "field": "hits[].landed_price.subtotal_major",
+          "field": "hits[].landed_price.currency",
+          "operator": "equals",
+          "expected": "CNY"
+        },
+        {
+          "kind": "value",
+          "field": "hits[].skus[].stock",
           "operator": "gt",
           "expected": 0
         }
       ],
+      "source_oracle": {
+        "relevant": [
+          "P1015"
+        ],
+        "relevant_canonical_ids": [
+          "CAN-LEGACY-014"
+        ],
+        "target_currency": "CNY",
+        "require_in_stock": true,
+        "category": "旅行装备"
+      },
+      "source_oracle_sha256": "25eb783e7ab941c84f59b4385d9c1a6cde955830b238b773d245165fa17cbe82",
+      "oracle_adapter_id": "product-retrieval",
+      "oracle_adapter_version": "v1",
       "oracle_id": "search-landed-v1",
       "oracle_version": "v1",
       "side_effect_policy": {
@@ -193,23 +217,33 @@
       "deterministic_checks": [
         {
           "kind": "value",
+          "field": "insights[].source",
+          "operator": "in",
+          "expected": [
+            "eval-digital-accessories-价格与预算.md"
+          ]
+        },
+        {
+          "kind": "value",
           "field": "hit_count",
           "operator": "gt",
           "expected": 0
         },
         {
           "kind": "value",
-          "field": "abstained",
-          "operator": "equals",
-          "expected": false
-        },
-        {
-          "kind": "value",
-          "field": "insights[].source",
-          "operator": "nonempty",
+          "field": "policy_fact_statuses",
+          "operator": "exists",
           "expected": true
         }
       ],
+      "source_oracle": {
+        "relevant": [
+          "eval-digital-accessories-价格与预算.md"
+        ]
+      },
+      "source_oracle_sha256": "08678b8b3ebcc9d0b027facd8367cbd05a48ef90931392b6bbcef5a4e4378194",
+      "oracle_adapter_id": "knowledge-source",
+      "oracle_adapter_version": "v1",
       "oracle_id": "knowledge-fields-v1",
       "oracle_version": "v1",
       "side_effect_policy": {
@@ -263,7 +297,8 @@
       "acceptable_execution_plans": [
         [
           "main_agent",
-          "search_agent"
+          "search_agent",
+          "product_search_tool"
         ]
       ],
       "required_capabilities": [
@@ -280,6 +315,10 @@
         [
           "main_agent",
           "search_agent"
+        ],
+        [
+          "search_agent",
+          "product_search_tool"
         ]
       ],
       "forbidden_edges": [
@@ -294,18 +333,43 @@
       },
       "deterministic_checks": [
         {
-          "kind": "value",
+          "kind": "event",
+          "selector": "tool.result:task_dispatch",
           "field": "agent",
           "operator": "equals",
           "expected": "search_agent"
         },
         {
-          "kind": "value",
+          "kind": "event",
+          "selector": "tool.result:task_dispatch",
           "field": "status",
           "operator": "equals",
           "expected": "completed"
+        },
+        {
+          "kind": "event",
+          "selector": "tool.result:product_search_tool",
+          "field": "hits",
+          "operator": "nonempty",
+          "expected": true
+        },
+        {
+          "kind": "tool",
+          "field": "required_tools",
+          "operator": "included",
+          "expected": [
+            "product_search_tool"
+          ]
         }
       ],
+      "source_oracle": {
+        "required_tools": [
+          "product_search_tool"
+        ]
+      },
+      "source_oracle_sha256": "ae30c98ee0be1de7701db028ef9497f43c452949a09ce035f3437f9540a9c904",
+      "oracle_adapter_id": "agent-contract",
+      "oracle_adapter_version": "v1",
       "oracle_id": "routing-compare-v1",
       "oracle_version": "v1",
       "side_effect_policy": {

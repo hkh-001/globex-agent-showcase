@@ -1,8 +1,15 @@
 {
   "schema_version": "agentbench-conversion-registry-v1",
   "adapters": {
-    "identity": {"version": "v1", "description": "prompt is already a user string"},
-    "join-list": {"version": "v1", "separator": "；", "description": "join a list of user queries into one string"}
+    "identity": {
+      "version": "v1",
+      "description": "prompt is already a user string"
+    },
+    "join-list": {
+      "version": "v1",
+      "separator": "；",
+      "description": "join a list of user queries into one string"
+    }
   },
   "entries": [
     {
@@ -17,20 +24,62 @@
       "oracle_id": "search-landed-v1",
       "conversion_reason": "原始请求是明确的商品检索，含具体型号，适合 search.catalog",
       "expected_execution_plans": [
-        ["main_agent", "search_agent", "product_search_tool"],
-        ["main_agent", "product_search_tool"]
+        [
+          "main_agent",
+          "search_agent",
+          "product_search_tool"
+        ],
+        [
+          "main_agent",
+          "product_search_tool"
+        ]
       ],
-      "expected_tool_parameters": {"normalized_query": "TrailOx 24寸托运行李箱 铝框款", "ship_to": null, "top_k": 5},
+      "expected_tool_parameters": {
+        "normalized_query": "TrailOx 24寸托运行李箱 铝框款",
+        "ship_to": null,
+        "top_k": 5
+      },
       "task_oracle": {
         "checks": [
-          {"kind": "value", "field": "hit_count", "operator": "gt", "expected": 0},
-          {"kind": "value", "field": "hits", "operator": "nonempty", "expected": true},
-          {"kind": "value", "field": "hits[].landed_price.subtotal_major", "operator": "gt", "expected": 0}
+          {
+            "kind": "value",
+            "field": "hit_count",
+            "operator": "gt",
+            "expected": 0
+          },
+          {
+            "kind": "value",
+            "field": "hits",
+            "operator": "nonempty",
+            "expected": true
+          },
+          {
+            "kind": "value",
+            "field": "hits[].landed_price.subtotal_major",
+            "operator": "gt",
+            "expected": 0
+          }
         ],
-        "forbidden_capabilities": ["search.web"],
+        "forbidden_capabilities": [
+          "search.web"
+        ],
         "side_effects": "none",
         "data_limitations": "single query, no budget filter; 不外推到多轮"
-      }
+      },
+      "source_oracle": {
+        "relevant": [
+          "P1015"
+        ],
+        "relevant_canonical_ids": [
+          "CAN-LEGACY-014"
+        ],
+        "target_currency": "CNY",
+        "require_in_stock": true,
+        "category": "旅行装备"
+      },
+      "source_oracle_sha256": "25eb783e7ab941c84f59b4385d9c1a6cde955830b238b773d245165fa17cbe82",
+      "oracle_adapter_id": "product-retrieval",
+      "oracle_adapter_version": "v1"
     },
     {
       "registry_id": "knowledge-policy-fields",
@@ -44,20 +93,55 @@
       "oracle_id": "knowledge-fields-v1",
       "conversion_reason": "原始请求是明确的品类/政策知识问题，适合 category_insight 的有据回答",
       "expected_execution_plans": [
-        ["main_agent", "search_agent", "category_insight_tool"],
-        ["main_agent", "category_insight_tool"]
+        [
+          "main_agent",
+          "search_agent",
+          "category_insight_tool"
+        ],
+        [
+          "main_agent",
+          "category_insight_tool"
+        ]
       ],
-      "expected_tool_parameters": {"question": "选购数码配件 价格与预算时，应该优先核对哪些可验证字段？", "top_k": 2},
+      "expected_tool_parameters": {
+        "question": "选购数码配件 价格与预算时，应该优先核对哪些可验证字段？",
+        "top_k": 2
+      },
       "task_oracle": {
         "checks": [
-          {"kind": "value", "field": "hit_count", "operator": "gt", "expected": 0},
-          {"kind": "value", "field": "abstained", "operator": "equals", "expected": false},
-          {"kind": "value", "field": "insights[].source", "operator": "nonempty", "expected": true}
+          {
+            "kind": "value",
+            "field": "hit_count",
+            "operator": "gt",
+            "expected": 0
+          },
+          {
+            "kind": "value",
+            "field": "abstained",
+            "operator": "equals",
+            "expected": false
+          },
+          {
+            "kind": "value",
+            "field": "insights[].source",
+            "operator": "nonempty",
+            "expected": true
+          }
         ],
-        "forbidden_capabilities": ["search.web"],
+        "forbidden_capabilities": [
+          "search.web"
+        ],
         "side_effects": "none",
         "data_limitations": "local deterministic KB; 不代表真实向量库召回率"
-      }
+      },
+      "source_oracle": {
+        "relevant": [
+          "eval-digital-accessories-价格与预算.md"
+        ]
+      },
+      "source_oracle_sha256": "08678b8b3ebcc9d0b027facd8367cbd05a48ef90931392b6bbcef5a4e4378194",
+      "oracle_adapter_id": "knowledge-source",
+      "oracle_adapter_version": "v1"
     },
     {
       "registry_id": "routing-compare-two",
@@ -70,17 +154,46 @@
       "adapter_version": "v1",
       "oracle_id": "routing-compare-v1",
       "conversion_reason": "原始 queries 列表是同一用户的一次比较请求；join-list 适配为单个字符串",
-      "expected_execution_plans": [["main_agent", "search_agent"]],
-      "expected_tool_parameters": {"agent": "search_agent", "demands": "比较 Atlas 便携餐盒 165 和 Atlas 旅行洗护套装 188 寄到 JP 的到手价。"},
+      "expected_execution_plans": [
+        [
+          "main_agent",
+          "search_agent",
+          "product_search_tool"
+        ]
+      ],
+      "expected_tool_parameters": {
+        "agent": "search_agent",
+        "demands": "比较 Atlas 便携餐盒 165 和 Atlas 旅行洗护套装 188 寄到 JP 的到手价。"
+      },
       "task_oracle": {
         "checks": [
-          {"kind": "value", "field": "agent", "operator": "equals", "expected": "search_agent"},
-          {"kind": "value", "field": "status", "operator": "equals", "expected": "completed"}
+          {
+            "kind": "value",
+            "field": "agent",
+            "operator": "equals",
+            "expected": "search_agent"
+          },
+          {
+            "kind": "value",
+            "field": "status",
+            "operator": "equals",
+            "expected": "completed"
+          }
         ],
-        "forbidden_capabilities": ["search.web"],
+        "forbidden_capabilities": [
+          "search.web"
+        ],
         "side_effects": "none",
         "data_limitations": "只测一次 dispatch，不测多轮比较"
-      }
+      },
+      "source_oracle": {
+        "required_tools": [
+          "product_search_tool"
+        ]
+      },
+      "source_oracle_sha256": "ae30c98ee0be1de7701db028ef9497f43c452949a09ce035f3437f9540a9c904",
+      "oracle_adapter_id": "agent-contract",
+      "oracle_adapter_version": "v1"
     }
   ]
 }
