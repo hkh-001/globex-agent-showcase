@@ -39,7 +39,7 @@ uv run python -m scripts.eval.run_s01_canary preflight \
   --output .globex-runtime/eval/s01-preflight-<new-id>
 ```
 
-付费 `run` 模式必须额外提供一次性、权限为 `0600`、直接位于 `.globex-runtime/authorizations/` 的授权 receipt，并让 `--acknowledge-paid-run` 与其中 `receipt_id` 完全一致。receipt 还必须绑定当前 source commit、S01、`deepseek-chat`、温度 0、每请求 8192 输出 token、最多 4 次物理请求、零自动重试和空 fallback。驱动按 `receipt_id` 建立全局消费标记，复制或改名不能重复使用；随后启动全新账本和隔离数据目录。它还会强制使用本机回环的 bge-m3 1024 维 embedding，关闭 reranker、Web 搜索、模型恢复和其他外部旁路。任何启动、模型身份、cap、usage、账本、事件合同或副作用故障均保留首次结果并停止，不会自动调参重跑。
+付费 `run` 模式必须额外提供一次性、权限为 `0600`、直接位于 `.globex-runtime/authorizations/` 的授权 receipt，并让 `--acknowledge-paid-run` 与其中 `receipt_id` 完全一致。receipt 还必须绑定当前 source commit、S01、DeepSeek 当前公开 API 模型 `deepseek-flash`、温度 0、每请求 8192 输出 token、最多 4 次物理请求、零自动重试和空 fallback。驱动按 `receipt_id` 建立全局消费标记，复制或改名不能重复使用；随后启动全新账本和隔离数据目录。它还会强制使用本机回环的 bge-m3 1024 维 embedding，关闭 reranker、Web 搜索、模型恢复和其他外部旁路。任何启动、模型身份、cap、usage、账本、事件合同或副作用故障均保留首次结果并停止，不会自动调参重跑。
 
 驱动明确不调用模型连接探针：现有连接探针固定使用 1024 输出 token，与本批冻结的 8192 合同不同。批前正向验证由 MockTransport 完成；真实供应商的第一次请求就是获得单独授权后的 S01，不额外消耗“连通性探针”调用。
 

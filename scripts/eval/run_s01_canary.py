@@ -35,11 +35,11 @@ from scripts.model_budget_proxy import (
 
 CASE_ID = "S01"
 QUERY = "帮我挑一个适合旅行的背包。"
-MODEL = "deepseek-chat"
+MODEL = "deepseek-flash"
 OUTPUT_TOKENS = 8192
 TEMPERATURE = 0
 RECEIPT_SCHEMA = "globex-paid-eval-authorization-v1"
-RESULT_SCHEMA = "globex-s01-canary-run-v2"
+RESULT_SCHEMA = "globex-s01-canary-run-v3"
 AUTHORIZATION_ROOT = ROOT / ".globex-runtime" / "authorizations"
 CONSUMED_ROOT = AUTHORIZATION_ROOT / "consumed"
 RECEIPT_ID_RE = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{7,127}")
@@ -286,7 +286,7 @@ def local_preflight(output: Path) -> dict[str, Any]:
         expected_temperature=TEMPERATURE, expected_requests=1,
     )
     report = {
-        "schema_version": "globex-s01-canary-preflight-v1",
+        "schema_version": "globex-s01-canary-preflight-v2",
         "source_commit": _source_commit(),
         "network": "httpx.MockTransport and local loopback only",
         "rejected_status": rejected.status_code,
@@ -419,8 +419,8 @@ def _safe_upstream(base_url: str) -> str:
 
 def _ag_ui_request() -> dict[str, Any]:
     return {
-        "threadId": "eval-s01-deepseek-chat-8192",
-        "runId": "eval-s01-deepseek-chat-8192-run-1",
+        "threadId": "eval-s01-deepseek-flash-8192",
+        "runId": "eval-s01-deepseek-flash-8192-run-1",
         "state": {},
         "messages": [{"id": "s01-user-1", "role": "user", "content": QUERY}],
         "tools": [], "context": [],

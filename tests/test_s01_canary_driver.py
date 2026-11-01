@@ -65,7 +65,7 @@ def test_receipt_requires_exact_frozen_paid_scope(authorization_root):
     write_receipt(path, receipt())
     assert validate_receipt(path, "receipt-s01-one", "abc123")["case_id"] == "S01"
     for field, value in (
-        ("model", "deepseek-flash"),
+        ("model", "deepseek-chat"),
         ("max_output_tokens_per_request", 1024),
         ("max_physical_requests", 5),
         ("automatic_retries", 1),
@@ -133,7 +133,7 @@ def test_proxy_command_freezes_both_output_arguments(tmp_path):
     )
     assert command[command.index("--maximum-output") + 1] == "8192"
     assert command[command.index("--expected-output") + 1] == "8192"
-    assert command[command.index("--expected-model") + 1] == "deepseek-chat"
+    assert command[command.index("--expected-model") + 1] == "deepseek-flash"
     assert command[command.index("--expected-temperature") + 1] == "0"
 
 
@@ -149,7 +149,7 @@ def test_backend_environment_disables_retry_fallback_and_budget_cap(tmp_path, mo
                    "version": "ollama-bge-m3", "dimension": 1024},
     )
     assert env["LLM_BASE_URL"] == "http://127.0.0.1:18091/v1"
-    assert env["LLM_MODEL"] == "deepseek-chat"
+    assert env["LLM_MODEL"] == "deepseek-flash"
     assert env["LLM_MAX_RETRIES"] == "0"
     assert env["LLM_FALLBACK_MODEL"] == ""
     assert env["TOKEN_BUDGET_TOTAL"] == "0"
@@ -284,7 +284,7 @@ def test_local_preflight_is_mock_only_and_rejects_before_reserve(tmp_path):
     assert report["reserved_after_rejection"] == 0
     assert report["accepted_status"] == 200
     assert report["upstream_calls"] == 1
-    assert report["forwarded_model"] == "deepseek-chat"
+    assert report["forwarded_model"] == "deepseek-flash"
     assert report["forwarded_max_tokens"] == 8192
     assert report["forwarded_temperature"] == 0
     assert report["ledger_errors"] == []
