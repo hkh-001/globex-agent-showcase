@@ -7,6 +7,7 @@ model or external network.
 from __future__ import annotations
 
 import asyncio
+import contextvars
 import json
 from types import SimpleNamespace
 
@@ -21,6 +22,11 @@ from app.infrastructure.eventbus import TradeEventBus, observe_run_events
 from app.infrastructure.persistence.in_memory_repositories import InMemoryProductRepository
 
 PROBE_FILE = "eval/agent/v1/probes/test_evidence_probe.py"
+
+
+class _EvidenceStore:
+    async def save(self, *_args, **_kwargs):
+        return "probe-ref"
 
 
 def _records(events) -> list[dict]:
@@ -44,8 +50,9 @@ def check_fields(records: list[dict], selector: str, fields: list[str]) -> tuple
 async def probe_search() -> list[dict]:
     repo = InMemoryProductRepository()
     bus = TradeEventBus()
-    tool = build_product_search_tool(CatalogSearchUseCase(repo), bus)
+    tool = build_product_search_tool(CatalogSearchUseCase(repo), bus, _EvidenceStore())
     results = []
+    context_token = ShoppingContext.set(ShoppingContextSnapshot("s", "b", "zh-CN", "CNY"))
 
     async def run(**kwargs):
         events = []
@@ -56,10 +63,10 @@ async def probe_search() -> list[dict]:
     catalog = await run(normalized_query="旅行背包", product_type="背包", ship_to="CN", top_k=5)
     ok, observed = check_fields(catalog, "tool.result:product_search_tool",
                                 ["tool", "hit_count", "recall_strategy", "total_candidates",
-                                 "query_conditions", "hits", "filtered_out"])
+                                 "query_conditions", "hits", "filtered_out", "result_ref"])
     results.append(_result("search.catalog", "event", "tool.result:product_search_tool",
                            ["tool", "hit_count", "recall_strategy", "total_candidates",
-                            "query_conditions", "hits", "filtered_out"], observed, ok, catalog))
+                            "query_conditions", "hits", "filtered_out", "result_ref"], observed, ok, catalog))
     constraints_ok, constraints_observed = check_fields(
         catalog, "tool.result:product_search_tool",
         ["query_conditions", "filtered_out"])
@@ -81,10 +88,9 @@ async def probe_search() -> list[dict]:
     ok_exact = exact_payload.get("recall_strategy") == "exact_id_lookup" and any(
         item.get("product_id") == "P1003" for item in exact_hits)
     results.append(_result("search.exact_id", "event", "tool.result:product_search_tool",
-                           ["recall_strategy", "hits[].product_id"], sorted(exact_payload),
+                           ["recall_strategy", "hits", "query_conditions"], sorted(exact_payload),
                            ok_exact, exact))
 
-    context_token = ShoppingContext.set(ShoppingContextSnapshot("s", "b", "zh-CN", "CNY"))
     guard_token = SearchConstraintScope.start("300 元以内 送到中国 的黑色旅行背包")
     try:
         await run(normalized_query="旅行背包", product_type="背包", ship_to="CN",
@@ -92,11 +98,13 @@ async def probe_search() -> list[dict]:
         carried = await run(normalized_query="轻便 旅行背包", product_type=None, ship_to=None, top_k=5)
     finally:
         SearchConstraintScope.reset(guard_token)
-        ShoppingContext.reset(context_token)
     carried_payload = next((row["payload"] for row in carried if row["type"] == "tool.result"), {})
     inherited = (carried_payload.get("constraint_continuity") or {}).get("inherited") or []
+    ShoppingContext.reset(context_token)
     results.append(_result("state.constraint_carry", "event", "tool.result:product_search_tool",
-                           ["constraint_continuity.inherited", "query_conditions"], sorted(carried_payload),
+                           ["constraint_continuity.inherited", "query_conditions.price_max_major",
+                            "query_conditions.ship_to", "query_conditions.sku_spec"],
+                           sorted(carried_payload),
                            bool(inherited), carried))
     return results
 
@@ -106,6 +114,12 @@ class _Worker:
         self._bus = bus
 
     async def reply(self, _inputs):
+        from app.infrastructure.context import ShoppingContext
+        session = ShoppingContext.current_session_id()
+        self._bus.publish(session, "tool.result", {
+            "tool": "create_order_tool",
+            "confirmation": {"payload": {"items": [{"product_id": "P1003", "sku_id": "P1003-S1"}]}},
+        })
         return SimpleNamespace(get_text_content=lambda: "done P1003")
 
 
@@ -140,9 +154,21 @@ async def probe_dispatch() -> list[dict]:
         verified = None
     results = [_result("dispatch.search", "event", "tool.result:task_dispatch",
                        ["tool", "agent", "dispatch_id", "status"], observed, ok, records)]
+    verified_ok = isinstance(verified, list) and "P1003" in verified
     results.append(_result("dispatch.search", "tool_result", "task_dispatch",
-                           ["verified_product_ids"], ["verified_product_ids"] if verified is not None else [],
-                           verified is not None, records))
+                           ["verified_product_ids", "unverified_product_ids"],
+                           ["verified_product_ids", "unverified_product_ids"] if verified is not None else [],
+                           verified_ok, records))
+    decision = {}
+    try:
+        decision = json.loads(content)
+    except Exception:
+        decision = {}
+    results[-1]["observed_values"] = {"status": decision.get("status"),
+                                      "verified_product_ids": decision.get("verified_product_ids"),
+                                      "unverified_product_ids": decision.get("unverified_product_ids")}
+    results[-1]["result"] = "pass" if (verified_ok and decision.get("status") == "completed"
+                                       and decision.get("unverified_product_ids") == []) else "fail"
 
     trade_events = []
     trade_tool = build_task_dispatch_tool(_Factory(_Worker(bus)), _Factory(_Worker(bus)), bus,
@@ -150,7 +176,7 @@ async def probe_dispatch() -> list[dict]:
     context_token = ShoppingContext.set(ShoppingContextSnapshot("s", "b", "zh-CN", "CNY"))
     try:
         with observe_run_events(trade_events.append):
-            await trade_tool("trade_agent", "prepare an order")
+            trade_chunk = await trade_tool("trade_agent", "prepare an order")
     finally:
         ShoppingContext.reset(context_token)
     trade_records = _records(trade_events)
@@ -159,6 +185,20 @@ async def probe_dispatch() -> list[dict]:
     results.append(_result("dispatch.trade", "event", "tool.result:task_dispatch",
                            ["tool", "agent", "dispatch_id", "status"], trade_observed,
                            trade_ok, trade_records))
+    trade_content = "".join(getattr(block, "text", "") for block in trade_chunk.content)
+    try:
+        trade_decision = json.loads(trade_content)
+    except Exception:
+        trade_decision = {}
+    trade_verified = trade_decision.get("verified_product_ids")
+    trade_ok_result = (trade_decision.get("status") == "completed"
+                       and isinstance(trade_verified, list) and "P1003" in trade_verified
+                       and trade_decision.get("unverified_product_ids") == [])
+    results.append(_result("dispatch.trade", "tool_result", "task_dispatch",
+                           ["verified_product_ids", "unverified_product_ids"],
+                           ["verified_product_ids", "unverified_product_ids"]
+                           if trade_verified is not None else [],
+                           trade_ok_result, trade_records))
     return results
 
 
@@ -201,18 +241,21 @@ def _result(capability_id, source, selector, required, observed, ok, records) ->
     }
 
 
-async def run_all() -> dict:
+async def _run_all() -> dict:
     records = []
     records.extend(await probe_search())
     records.extend(await probe_dispatch())
     records.extend(await probe_grounding())
     return {
         "schema_version": "agentbench-evidence-probe-v1",
-        "paid_requests": 0,
-        "external_model_requests": 0,
         "records": records,
         "capabilities": sorted({row["capability_id"] for row in records}),
     }
+
+
+def run_all() -> dict:
+    """Run probes in a copied context so no ContextVar leaks into the caller."""
+    return contextvars.copy_context().run(lambda: asyncio.run(_run_all()))
 
 
 def main() -> None:

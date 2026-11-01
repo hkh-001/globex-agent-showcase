@@ -21,8 +21,7 @@
             "tool",
             "agent",
             "dispatch_id",
-            "status",
-            "error_type"
+            "status"
           ]
         },
         {
@@ -68,8 +67,7 @@
             "tool",
             "agent",
             "dispatch_id",
-            "status",
-            "error_type"
+            "status"
           ]
         },
         {

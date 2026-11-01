@@ -162,6 +162,15 @@ def audit(matrix_path: pathlib.Path, unsupported_path: pathlib.Path,
             if item.get("verification_status") == "verified":
                 if not matching or any(row.get("result") != "pass" for row in matching):
                     errors.append(f"{cid}: verified capability has no passing probe record")
+                for observation in item.get("observations", []):
+                    covered = [row for row in matching
+                               if row.get("observation_source") == observation.get("source_type")
+                               and row.get("selector") == observation.get("selector")
+                               and row.get("result") == "pass"
+                               and set(observation.get("fields", [])) <= set(row.get("required_fields", []))]
+                    if not covered:
+                        errors.append(f"{cid}: no probe covers "
+                                      f"{observation.get('source_type')}:{observation.get('selector')}")
 
     unsupported = json.loads(unsupported_path.read_text(encoding="utf-8")).get("unsupported", [])
     for item in unsupported:

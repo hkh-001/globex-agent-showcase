@@ -5,8 +5,6 @@ and fails when any required observation is missing.  No model or network access.
 """
 from __future__ import annotations
 
-import asyncio
-
 import pytest
 
 from scripts.eval.agentbench import probes
@@ -14,7 +12,7 @@ from scripts.eval.agentbench import probes
 
 @pytest.fixture(scope="module")
 def probe_records():
-    return asyncio.run(probes.run_all())["records"]
+    return probes.run_all()["records"]
 
 
 def _assert_capability(records, capability_id):
