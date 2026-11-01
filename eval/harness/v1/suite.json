@@ -182,7 +182,8 @@
     "tests/test_s01_canary_driver.py",
     "tests/test_ag_ui_journal.py",
     "tests/test_answer_grounding_contract.py",
-    "tests/test_agentbench_stage0.py"
+    "tests/test_agentbench_stage0.py",
+    "tests/test_agentbench_inventory.py"
   ],
   "contract_allowed_skips": [
     {
