@@ -152,6 +152,7 @@ class CatalogSearchUseCase:
         hybrid_vector_weight: float = 1.0,
         recall_candidates: int = 32,
         capture_retrieval_stages: bool = False,
+        dedup_before_fusion: bool = False,
         field_lexical_enabled: bool = False,
         field_weights: dict[str, float] | None = None,
         min_relevance_score: float | None = None,
@@ -159,6 +160,7 @@ class CatalogSearchUseCase:
     ) -> None:
         # 仅评测主动开启；记录混合检索的实际阶段，不改变排序或向模型增加字段。
         self._capture_retrieval_stages = capture_retrieval_stages
+        self._dedup_before_fusion = dedup_before_fusion
         self._hybrid_enabled = hybrid_enabled or field_lexical_enabled
         self._field_lexical_enabled = field_lexical_enabled
         self._field_weights = field_weights
@@ -343,8 +345,13 @@ class CatalogSearchUseCase:
                 elif len(rejected) < _FILTERED_OUT_LIMIT:
                     rejected.append(self._to_rejected(product, spec, reason))
             return result
-        lexical_hits = eligible(lexical_hits)[:diagnostics["candidate_limit"]]
+        lexical_hits = eligible(lexical_hits)
         vector_eligible = eligible(vector_hits or [])
+        if self._dedup_before_fusion:
+            # 同款 listing 不占候选窗口：过滤之后、截断与融合之前按 canonical 留最佳代表。
+            lexical_hits = self._canonical_representatives(lexical_hits, spec)
+            vector_eligible = self._canonical_representatives(vector_eligible, spec)
+        lexical_hits = lexical_hits[:diagnostics["candidate_limit"]]
         # 单路故障时保留健康侧，不让零权重把降级结果清空。
         weights = self._fusion_weights if vector_hits is not None else (1.0, 0.0)
         scored = reciprocal_rank_fusion(lexical_hits, vector_eligible, weights=weights)
@@ -449,13 +456,31 @@ class CatalogSearchUseCase:
                 if spec.price_max_major is None or self._tariff.rates.convert(sku.price, spec.target_currency).to_major_units() <= spec.price_max_major]
 
     @staticmethod
+    def _preference_key(product: Product, spec: ProductSearchSpec) -> tuple:
+        return (
+            bool(spec.preferred_product_type) and product.effective_product_type != spec.preferred_product_type,
+            bool(spec.prefer_lightweight) and product.known_weight_kg is None,
+            product.known_weight_kg if spec.prefer_lightweight and product.known_weight_kg is not None else 0,
+        )
+
+    @classmethod
+    def _canonical_representatives(
+        cls, ranking: list[tuple[float, Product]], spec: ProductSearchSpec,
+    ) -> list[tuple[float, Product]]:
+        """每个 canonical 只留一条代表：偏好更优者优先，同偏好取分高者，保持原排序位置。"""
+        best: dict[str, tuple] = {}
+        for index, (score, product) in enumerate(ranking):
+            key = product.canonical_product_id or product.product_id
+            candidate = (cls._preference_key(product, spec), -score, index, score, product)
+            current = best.get(key)
+            if current is None or candidate[:2] < current[:2]:
+                best[key] = candidate
+        return [(score, product) for _, _, _, score, product in sorted(best.values(), key=lambda item: item[2])]
+
+    @staticmethod
     def _rank_preferences_and_deduplicate(scored: list[tuple[float, Product]], spec: ProductSearchSpec) -> list[tuple[float, Product]]:
         if spec.preferred_product_type or spec.prefer_lightweight:
-            scored = sorted(scored, key=lambda pair: (
-                bool(spec.preferred_product_type) and pair[1].effective_product_type != spec.preferred_product_type,
-                bool(spec.prefer_lightweight) and pair[1].known_weight_kg is None,
-                pair[1].known_weight_kg if spec.prefer_lightweight and pair[1].known_weight_kg is not None else 0,
-            ))
+            scored = sorted(scored, key=lambda pair: CatalogSearchUseCase._preference_key(pair[1], spec))
         deduped, seen = [], set()
         for score, product in scored:
             key = product.canonical_product_id or product.product_id

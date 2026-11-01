@@ -340,3 +340,78 @@ async def test_exact_id_detail_does_not_inherit_a_search_sku_spec():
     assert seen[1].product_id == "P1003"
     assert seen[1].sku_spec is None
     assert seen[1].ship_to == "CN"
+
+
+def _listing(product_id: str, canonical: str, price: float, weight: float):
+    return {
+        "product_id": product_id,
+        "canonical_product_id": canonical,
+        "title": "轻便 旅行背包 30L",
+        "brand": "TestBrand",
+        "category": "旅行装备",
+        "description": "轻便 旅行 背包 防水",
+        "highlights": [{"label": "重量", "detail": f"{weight}kg"}],
+        "material_tags": ["尼龙"],
+        "origin_country": "CN",
+        "ships_to": ["CN"],
+        "tax_category": "旅行装备",
+        "weight_kg": weight,
+        "skus": [{"sku_id": f"{product_id}-S1", "spec": "黑色", "price_major": price,
+                  "currency": "CNY", "stock": 10}],
+        "external_product_id": f"test-{product_id}",
+        "source_platform": "test",
+        "dimensions_cm": {"length": 10, "width": 10, "height": 10},
+        "rating_summary": {"average": 4.0, "review_count": 1},
+        "updated_at": "2026-08-01",
+    }
+
+
+async def test_canonical_dedup_before_fusion_keeps_the_preferred_listing():
+    from app.application.usecases.catalog_search import CatalogSearchUseCase
+    from app.domain.catalog.product_search_spec import ProductSearchSpec
+    from app.infrastructure.persistence.in_memory_repositories import InMemoryProductRepository
+    from app.infrastructure.persistence.seed_products import _product_from_record
+
+    repo = InMemoryProductRepository([
+        _product_from_record(_listing("L1", "CAN-1", 100, 0.9)),
+        _product_from_record(_listing("L2", "CAN-1", 120, 0.4)),
+        _product_from_record(_listing("L3", "CAN-2", 90, 0.5)),
+    ])
+    usecase = CatalogSearchUseCase(
+        repo, hybrid_enabled=True, dedup_before_fusion=True, capture_retrieval_stages=True,
+    )
+
+    result = await usecase.execute(ProductSearchSpec(
+        normalized_query="旅行背包", top_k=5, prefer_lightweight=True,
+    ))
+
+    merged = result["retrieval_stages"]["merged_candidates"]
+    # 同 canonical 只占一个候选位，且留下的是更轻的那条
+    assert merged.count("L1") + merged.count("L2") == 1
+    assert "L2" in merged and "L1" not in merged
+    # 用户可见结果仍按 canonical 唯一
+    assert [h["product_id"] for h in result["hits"]].count("L1") == 0
+
+
+async def test_canonical_dedup_happens_after_hard_constraints():
+    from app.application.usecases.catalog_search import CatalogSearchUseCase
+    from app.domain.catalog.product_search_spec import ProductSearchSpec
+    from app.infrastructure.persistence.in_memory_repositories import InMemoryProductRepository
+    from app.infrastructure.persistence.seed_products import _product_from_record
+
+    repo = InMemoryProductRepository([
+        _product_from_record(_listing("CHEAP", "CAN-9", 90, 0.9)),
+        _product_from_record(_listing("PRICEY", "CAN-9", 900, 0.3)),
+    ])
+    usecase = CatalogSearchUseCase(
+        repo, hybrid_enabled=True, dedup_before_fusion=True, capture_retrieval_stages=True,
+    )
+
+    result = await usecase.execute(ProductSearchSpec(
+        normalized_query="旅行背包", top_k=5, price_max_major=300,
+    ))
+
+    merged = result["retrieval_stages"]["merged_candidates"]
+    # 先过滤再代表：超预算那条不能因为"更轻/更便宜"被选中
+    assert "PRICEY" not in merged
+    assert merged == ["CHEAP"]
