@@ -52,7 +52,7 @@ def validate(path: pathlib.Path) -> list[str]:
 
 def main() -> None:
     import sys
-    path = pathlib.Path(sys.argv[1]) if len(sys.argv) > 1 else ROOT / "eval/agent/v2/pilot-candidates.json"
+    path = pathlib.Path(sys.argv[1]) if len(sys.argv) > 1 else ROOT / "stage2/pilot/pilot-candidates.json"
     errors = validate(path)
     print(json.dumps({"passed": not errors, "errors": errors}, ensure_ascii=False, indent=2))
     raise SystemExit(0 if not errors else 1)

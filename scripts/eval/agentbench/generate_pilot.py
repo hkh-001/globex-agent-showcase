@@ -124,7 +124,7 @@ def build() -> dict:
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--out", type=pathlib.Path, default=ROOT / "eval/agent/v2/pilot-candidates.json")
+    parser.add_argument("--out", type=pathlib.Path, default=ROOT / "stage2/pilot/pilot-candidates.json")
     args = parser.parse_args()
     payload = build()
     args.out.parent.mkdir(parents=True, exist_ok=True)

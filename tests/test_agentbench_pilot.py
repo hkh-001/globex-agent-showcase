@@ -9,7 +9,7 @@ from scripts.eval.agentbench import generate_pilot, validate_pilot
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 CATALOG = ROOT / "eval/agent/v1/template-catalog.json"
 MATRIX = ROOT / "eval/agent/v1/capability-matrix.json"
-PILOT = ROOT / "eval/agent/v2/pilot-candidates.json"
+PILOT = ROOT / "stage2/pilot/pilot-candidates.json"
 
 
 def test_generation_is_deterministic():

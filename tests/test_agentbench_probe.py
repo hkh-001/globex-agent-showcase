@@ -169,7 +169,9 @@ def test_missing_value_assertion_fails(tmp_path):
 def test_wrong_expected_value_fails(tmp_path):
     def mutate(records):
         record = next(row for row in records if row["capability_id"] == "search.exact_id")
-        record["value_assertions"][0]["expected"] = "wrong"
+        assertion = record["value_assertions"][0]
+        assertion["operator"] = "equals"
+        assertion["expected"] = "wrong"
     errors = _tampered_evidence(tmp_path, mutate)
     assert any("expected" in error for error in errors)
 
