@@ -1,7 +1,5 @@
 {
   "schema_version": "agentbench-evidence-probe-v1",
-  "paid_requests": 0,
-  "external_model_requests": 0,
   "records": [
     {
       "capability_id": "search.catalog",
@@ -15,7 +13,8 @@
         "total_candidates",
         "query_conditions",
         "hits",
-        "filtered_out"
+        "filtered_out",
+        "result_ref"
       ],
       "observed_fields": [
         "constraint_continuity",
@@ -25,12 +24,15 @@
         "query_conditions",
         "recall_strategy",
         "rerank_applied",
+        "result_ref",
         "reused_duplicate",
         "tool",
         "total_candidates"
       ],
       "result": "pass",
-      "event_count": 2
+      "event_count": 2,
+      "run_id": "8092ec02ed024fcdbf4a0a8eb2a58d24",
+      "source_commit": "f1d01ba5bb43882c78875b145aa8fe067587c447"
     },
     {
       "capability_id": "search.constraints",
@@ -49,12 +51,15 @@
         "query_conditions",
         "recall_strategy",
         "rerank_applied",
+        "result_ref",
         "reused_duplicate",
         "tool",
         "total_candidates"
       ],
       "result": "pass",
-      "event_count": 2
+      "event_count": 2,
+      "run_id": "8092ec02ed024fcdbf4a0a8eb2a58d24",
+      "source_commit": "f1d01ba5bb43882c78875b145aa8fe067587c447"
     },
     {
       "capability_id": "search.landed_price",
@@ -79,7 +84,9 @@
         "tariff_rate"
       ],
       "result": "pass",
-      "event_count": 2
+      "event_count": 2,
+      "run_id": "8092ec02ed024fcdbf4a0a8eb2a58d24",
+      "source_commit": "f1d01ba5bb43882c78875b145aa8fe067587c447"
     },
     {
       "capability_id": "search.exact_id",
@@ -88,30 +95,7 @@
       "selector": "tool.result:product_search_tool",
       "required_fields": [
         "recall_strategy",
-        "hits[].product_id"
-      ],
-      "observed_fields": [
-        "constraint_continuity",
-        "filtered_out",
-        "hit_count",
         "hits",
-        "query_conditions",
-        "recall_strategy",
-        "rerank_applied",
-        "reused_duplicate",
-        "tool",
-        "total_candidates"
-      ],
-      "result": "pass",
-      "event_count": 2
-    },
-    {
-      "capability_id": "state.constraint_carry",
-      "test_nodeid": "eval/agent/v1/probes/test_evidence_probe.py::test_state_constraint_carry",
-      "observation_source": "event",
-      "selector": "tool.result:product_search_tool",
-      "required_fields": [
-        "constraint_continuity.inherited",
         "query_conditions"
       ],
       "observed_fields": [
@@ -122,12 +106,44 @@
         "query_conditions",
         "recall_strategy",
         "rerank_applied",
+        "result_ref",
         "reused_duplicate",
         "tool",
         "total_candidates"
       ],
       "result": "pass",
-      "event_count": 2
+      "event_count": 2,
+      "run_id": "8092ec02ed024fcdbf4a0a8eb2a58d24",
+      "source_commit": "f1d01ba5bb43882c78875b145aa8fe067587c447"
+    },
+    {
+      "capability_id": "state.constraint_carry",
+      "test_nodeid": "eval/agent/v1/probes/test_evidence_probe.py::test_state_constraint_carry",
+      "observation_source": "event",
+      "selector": "tool.result:product_search_tool",
+      "required_fields": [
+        "constraint_continuity.inherited",
+        "query_conditions.price_max_major",
+        "query_conditions.ship_to",
+        "query_conditions.sku_spec"
+      ],
+      "observed_fields": [
+        "constraint_continuity",
+        "filtered_out",
+        "hit_count",
+        "hits",
+        "query_conditions",
+        "recall_strategy",
+        "rerank_applied",
+        "result_ref",
+        "reused_duplicate",
+        "tool",
+        "total_candidates"
+      ],
+      "result": "pass",
+      "event_count": 2,
+      "run_id": "8092ec02ed024fcdbf4a0a8eb2a58d24",
+      "source_commit": "f1d01ba5bb43882c78875b145aa8fe067587c447"
     },
     {
       "capability_id": "dispatch.search",
@@ -150,7 +166,9 @@
         "tool"
       ],
       "result": "pass",
-      "event_count": 2
+      "event_count": 3,
+      "run_id": "8092ec02ed024fcdbf4a0a8eb2a58d24",
+      "source_commit": "f1d01ba5bb43882c78875b145aa8fe067587c447"
     },
     {
       "capability_id": "dispatch.search",
@@ -158,13 +176,25 @@
       "observation_source": "tool_result",
       "selector": "task_dispatch",
       "required_fields": [
-        "verified_product_ids"
+        "verified_product_ids",
+        "unverified_product_ids"
       ],
       "observed_fields": [
-        "verified_product_ids"
+        "verified_product_ids",
+        "unverified_product_ids"
       ],
       "result": "pass",
-      "event_count": 2
+      "event_count": 3,
+      "observed_values": {
+        "status": "completed",
+        "verified_product_ids": [
+          "P1003",
+          "P1003-S1"
+        ],
+        "unverified_product_ids": []
+      },
+      "run_id": "8092ec02ed024fcdbf4a0a8eb2a58d24",
+      "source_commit": "f1d01ba5bb43882c78875b145aa8fe067587c447"
     },
     {
       "capability_id": "dispatch.trade",
@@ -187,7 +217,27 @@
         "tool"
       ],
       "result": "pass",
-      "event_count": 2
+      "event_count": 3,
+      "run_id": "8092ec02ed024fcdbf4a0a8eb2a58d24",
+      "source_commit": "f1d01ba5bb43882c78875b145aa8fe067587c447"
+    },
+    {
+      "capability_id": "dispatch.trade",
+      "test_nodeid": "eval/agent/v1/probes/test_evidence_probe.py::test_dispatch_trade",
+      "observation_source": "tool_result",
+      "selector": "task_dispatch",
+      "required_fields": [
+        "verified_product_ids",
+        "unverified_product_ids"
+      ],
+      "observed_fields": [
+        "verified_product_ids",
+        "unverified_product_ids"
+      ],
+      "result": "pass",
+      "event_count": 3,
+      "run_id": "8092ec02ed024fcdbf4a0a8eb2a58d24",
+      "source_commit": "f1d01ba5bb43882c78875b145aa8fe067587c447"
     },
     {
       "capability_id": "harness.grounding_gate",
@@ -203,7 +253,9 @@
         "message"
       ],
       "result": "pass",
-      "event_count": 1
+      "event_count": 1,
+      "run_id": "8092ec02ed024fcdbf4a0a8eb2a58d24",
+      "source_commit": "f1d01ba5bb43882c78875b145aa8fe067587c447"
     },
     {
       "capability_id": "harness.grounding_gate",
@@ -225,7 +277,9 @@
         "violations"
       ],
       "result": "pass",
-      "event_count": 1
+      "event_count": 1,
+      "run_id": "8092ec02ed024fcdbf4a0a8eb2a58d24",
+      "source_commit": "f1d01ba5bb43882c78875b145aa8fe067587c447"
     }
   ],
   "capabilities": [
@@ -238,9 +292,12 @@
     "search.landed_price",
     "state.constraint_carry"
   ],
-  "run_id": "248d3729323d4d0199e4e7cbd7a325fa",
-  "generated_at": "2026-11-01T13:05:01.980004+00:00",
-  "source_commit": "f9a8815af79d4cc1237661ee521e1944bc9d29a2",
-  "scanner_sha256": "69b050310e9e505d0380fac5ffc338a7e9e0e160d8c77370c4d105618251d7d1",
-  "records_sha256": "db7c868dc0160da86480afd522a31eb6bea54f72e3480c7a83c1e1b14f495eb5"
+  "external_connect_attempts": 0,
+  "paid_requests": 0,
+  "external_model_requests": 0,
+  "run_id": "8092ec02ed024fcdbf4a0a8eb2a58d24",
+  "generated_at": "2026-11-01T13:24:06.848067+00:00",
+  "source_commit": "f1d01ba5bb43882c78875b145aa8fe067587c447",
+  "scanner_sha256": "72b11648e924643c39cf7fdb13f69d530b59067aed4ad14232f9cc2df344fd8e",
+  "records_sha256": "3f906859011609c251071e96291a3cbdda6a3ee4c295112d4ca757b08ef70909"
 }
