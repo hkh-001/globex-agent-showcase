@@ -290,3 +290,22 @@ def test_local_preflight_is_mock_only_and_rejects_before_reserve(tmp_path):
     assert report["ledger_errors"] == []
     assert report["passed"] is True
     assert (output / "manifest.json").is_file()
+
+
+def test_event_contract_accepts_a_buffered_snapshot_answer():
+    from scripts.eval.run_s01_canary import event_contract
+
+    events = [
+        {"type": "RUN_STARTED"},
+        {"type": "TOOL_CALL_START", "toolCallId": "t1", "toolCallName": "product_search_tool"},
+        {"type": "TOOL_CALL_RESULT", "toolCallId": "t1", "content": "{\"hits\": []}"},
+        {"type": "MESSAGES_SNAPSHOT", "messages": [
+            {"role": "user", "content": "q"},
+            {"role": "assistant", "content": "以下为目录工具返回的可核验商品信息：…"},
+        ]},
+        {"type": "RUN_FINISHED"},
+    ]
+    contract = event_contract(events)
+    assert contract["checks"]["assistant_text_present"] is True
+    assert contract["assistant_text_chars"] > 0
+    assert contract["passed"] is True

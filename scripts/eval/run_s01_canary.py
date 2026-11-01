@@ -365,12 +365,28 @@ def _parse_sse(response: httpx.Response) -> list[dict[str, Any]]:
     return events
 
 
-def event_contract(events: list[dict[str, Any]]) -> dict[str, Any]:
-    types = [event.get("type") for event in events]
-    text = "".join(
+def assistant_text(events: list[dict[str, Any]]) -> str:
+    """Answer text, from the stream or from the buffered snapshot the gate publishes."""
+    streamed = "".join(
         str(event.get("delta", "")) for event in events
         if event.get("type") == "TEXT_MESSAGE_CONTENT"
     ).strip()
+    if streamed:
+        return streamed
+    for event in reversed(events):
+        if event.get("type") != "MESSAGES_SNAPSHOT":
+            continue
+        for message in reversed(event.get("messages") or []):
+            content = message.get("content") if isinstance(message, dict) else None
+            if isinstance(message, dict) and message.get("role") == "assistant" \
+                    and isinstance(content, str) and content.strip():
+                return content.strip()
+    return ""
+
+
+def event_contract(events: list[dict[str, Any]]) -> dict[str, Any]:
+    types = [event.get("type") for event in events]
+    text = assistant_text(events)
     search_starts = {
         event.get("toolCallId"): index for index, event in enumerate(events)
         if event.get("type") == "TOOL_CALL_START"
