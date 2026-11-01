@@ -35,8 +35,132 @@
         "top_product_id": "P1018",
         "result_ref": "probe-ref"
       },
-      "run_id": "6cdabed130ad4695b0f859283a2afc19",
-      "source_commit": "18b92a00ab6e6a207903880e23244f34cfd32bf4"
+      "value_assertions": [
+        {
+          "field": "tool",
+          "projection": "tool",
+          "operator": "equals",
+          "actual": "product_search_tool",
+          "expected": "product_search_tool"
+        },
+        {
+          "field": "hit_count",
+          "projection": null,
+          "operator": "equals",
+          "actual": 3,
+          "expected": 3
+        },
+        {
+          "field": "recall_strategy",
+          "projection": null,
+          "operator": "equals",
+          "actual": "keyword_2gram",
+          "expected": "keyword_2gram"
+        },
+        {
+          "field": "total_candidates",
+          "projection": null,
+          "operator": "equals",
+          "actual": 3,
+          "expected": 3
+        },
+        {
+          "field": "query_conditions",
+          "projection": "query_conditions",
+          "operator": "nonempty",
+          "actual": {
+            "normalized_query": "旅行背包",
+            "category": null,
+            "ship_to": "CN",
+            "top_k": 5,
+            "price_max_major": null,
+            "target_currency": "CNY",
+            "excluded_material_tags": [],
+            "required_material_tags": [],
+            "product_id": null,
+            "sku_id": null,
+            "sku_spec": null,
+            "product_type": "背包",
+            "max_weight_kg": null,
+            "preferred_product_type": null,
+            "prefer_lightweight": false
+          },
+          "expected": true
+        },
+        {
+          "field": "hits",
+          "projection": "first.product_id",
+          "operator": "equals",
+          "actual": "P1018",
+          "expected": "P1018"
+        },
+        {
+          "field": "filtered_out",
+          "projection": "filtered_out",
+          "operator": "equals",
+          "actual": [
+            {
+              "product_id": "P3000",
+              "title": "Roamix 登山背包 GX-01-1 15L 无防雨罩",
+              "category": "旅行装备",
+              "price_major": 59.0,
+              "currency": "CNY",
+              "reason": "out_of_stock"
+            },
+            {
+              "product_id": "P3001",
+              "title": "Roamix 登山背包 GX-01-1 15L 无防雨罩",
+              "category": "旅行装备",
+              "price_major": 74.98,
+              "currency": "CNY",
+              "reason": "product_type_unknown"
+            },
+            {
+              "product_id": "P3002",
+              "title": "Roamix 登山背包 GX-01-1 15L 无防雨罩",
+              "category": "旅行装备",
+              "price_major": 73.01,
+              "currency": "CNY",
+              "reason": "product_type_unknown"
+            }
+          ],
+          "expected": [
+            {
+              "product_id": "P3000",
+              "title": "Roamix 登山背包 GX-01-1 15L 无防雨罩",
+              "category": "旅行装备",
+              "price_major": 59.0,
+              "currency": "CNY",
+              "reason": "out_of_stock"
+            },
+            {
+              "product_id": "P3001",
+              "title": "Roamix 登山背包 GX-01-1 15L 无防雨罩",
+              "category": "旅行装备",
+              "price_major": 74.98,
+              "currency": "CNY",
+              "reason": "product_type_unknown"
+            },
+            {
+              "product_id": "P3002",
+              "title": "Roamix 登山背包 GX-01-1 15L 无防雨罩",
+              "category": "旅行装备",
+              "price_major": 73.01,
+              "currency": "CNY",
+              "reason": "product_type_unknown"
+            }
+          ]
+        },
+        {
+          "field": "result_ref",
+          "projection": null,
+          "operator": "equals",
+          "actual": "probe-ref",
+          "expected": "probe-ref"
+        }
+      ],
+      "run_id": "c3ea86d4dc634676adfb42a276160eef",
+      "source_commit": "19cc941e1a440ef7171af6d7da9a8b3b84ab2649"
     },
     {
       "capability_id": "search.constraints",
@@ -58,8 +182,90 @@
         "product_type": "背包",
         "filtered_out_count": 3
       },
-      "run_id": "6cdabed130ad4695b0f859283a2afc19",
-      "source_commit": "18b92a00ab6e6a207903880e23244f34cfd32bf4"
+      "value_assertions": [
+        {
+          "field": "query_conditions",
+          "projection": "query_conditions",
+          "operator": "nonempty",
+          "actual": {
+            "normalized_query": "旅行背包",
+            "category": null,
+            "ship_to": "CN",
+            "top_k": 5,
+            "price_max_major": null,
+            "target_currency": "CNY",
+            "excluded_material_tags": [],
+            "required_material_tags": [],
+            "product_id": null,
+            "sku_id": null,
+            "sku_spec": null,
+            "product_type": "背包",
+            "max_weight_kg": null,
+            "preferred_product_type": null,
+            "prefer_lightweight": false
+          },
+          "expected": true
+        },
+        {
+          "field": "filtered_out",
+          "projection": "filtered_out",
+          "operator": "equals",
+          "actual": [
+            {
+              "product_id": "P3000",
+              "title": "Roamix 登山背包 GX-01-1 15L 无防雨罩",
+              "category": "旅行装备",
+              "price_major": 59.0,
+              "currency": "CNY",
+              "reason": "out_of_stock"
+            },
+            {
+              "product_id": "P3001",
+              "title": "Roamix 登山背包 GX-01-1 15L 无防雨罩",
+              "category": "旅行装备",
+              "price_major": 74.98,
+              "currency": "CNY",
+              "reason": "product_type_unknown"
+            },
+            {
+              "product_id": "P3002",
+              "title": "Roamix 登山背包 GX-01-1 15L 无防雨罩",
+              "category": "旅行装备",
+              "price_major": 73.01,
+              "currency": "CNY",
+              "reason": "product_type_unknown"
+            }
+          ],
+          "expected": [
+            {
+              "product_id": "P3000",
+              "title": "Roamix 登山背包 GX-01-1 15L 无防雨罩",
+              "category": "旅行装备",
+              "price_major": 59.0,
+              "currency": "CNY",
+              "reason": "out_of_stock"
+            },
+            {
+              "product_id": "P3001",
+              "title": "Roamix 登山背包 GX-01-1 15L 无防雨罩",
+              "category": "旅行装备",
+              "price_major": 74.98,
+              "currency": "CNY",
+              "reason": "product_type_unknown"
+            },
+            {
+              "product_id": "P3002",
+              "title": "Roamix 登山背包 GX-01-1 15L 无防雨罩",
+              "category": "旅行装备",
+              "price_major": 73.01,
+              "currency": "CNY",
+              "reason": "product_type_unknown"
+            }
+          ]
+        }
+      ],
+      "run_id": "c3ea86d4dc634676adfb42a276160eef",
+      "source_commit": "19cc941e1a440ef7171af6d7da9a8b3b84ab2649"
     },
     {
       "capability_id": "search.landed_price",
@@ -89,8 +295,45 @@
         "landed_total_major": 244.0,
         "currency": "CNY"
       },
-      "run_id": "6cdabed130ad4695b0f859283a2afc19",
-      "source_commit": "18b92a00ab6e6a207903880e23244f34cfd32bf4"
+      "value_assertions": [
+        {
+          "field": "hits[].landed_price.subtotal_major",
+          "projection": "first.landed_price.subtotal_major",
+          "operator": "equals",
+          "actual": 219.0,
+          "expected": 219.0
+        },
+        {
+          "field": "hits[].landed_price.freight_major",
+          "projection": "first.landed_price.freight_major",
+          "operator": "equals",
+          "actual": 25.0,
+          "expected": 25.0
+        },
+        {
+          "field": "hits[].landed_price.tariff_major",
+          "projection": "first.landed_price.tariff_major",
+          "operator": "equals",
+          "actual": 0.0,
+          "expected": 0.0
+        },
+        {
+          "field": "hits[].landed_price.landed_total_major",
+          "projection": "first.landed_price.landed_total_major",
+          "operator": "equals",
+          "actual": 244.0,
+          "expected": 244.0
+        },
+        {
+          "field": "hits[].landed_price.currency",
+          "projection": "first.landed_price.currency",
+          "operator": "equals",
+          "actual": "CNY",
+          "expected": "CNY"
+        }
+      ],
+      "run_id": "c3ea86d4dc634676adfb42a276160eef",
+      "source_commit": "19cc941e1a440ef7171af6d7da9a8b3b84ab2649"
     },
     {
       "capability_id": "search.exact_id",
@@ -121,8 +364,47 @@
         "recall_strategy": "exact_id_lookup",
         "first_product_id": "P1003"
       },
-      "run_id": "6cdabed130ad4695b0f859283a2afc19",
-      "source_commit": "18b92a00ab6e6a207903880e23244f34cfd32bf4"
+      "value_assertions": [
+        {
+          "field": "recall_strategy",
+          "projection": null,
+          "operator": "equals",
+          "actual": "exact_id_lookup",
+          "expected": "exact_id_lookup"
+        },
+        {
+          "field": "hits",
+          "projection": "first.product_id",
+          "operator": "equals",
+          "actual": "P1003",
+          "expected": "P1003"
+        },
+        {
+          "field": "query_conditions",
+          "projection": "query_conditions",
+          "operator": "nonempty",
+          "actual": {
+            "normalized_query": "",
+            "category": null,
+            "ship_to": "CN",
+            "top_k": 5,
+            "price_max_major": null,
+            "target_currency": "CNY",
+            "excluded_material_tags": [],
+            "required_material_tags": [],
+            "product_id": "P1003",
+            "sku_id": null,
+            "sku_spec": null,
+            "product_type": null,
+            "max_weight_kg": null,
+            "preferred_product_type": null,
+            "prefer_lightweight": false
+          },
+          "expected": true
+        }
+      ],
+      "run_id": "c3ea86d4dc634676adfb42a276160eef",
+      "source_commit": "19cc941e1a440ef7171af6d7da9a8b3b84ab2649"
     },
     {
       "capability_id": "state.constraint_carry",
@@ -151,8 +433,48 @@
           "sku_spec"
         ]
       },
-      "run_id": "6cdabed130ad4695b0f859283a2afc19",
-      "source_commit": "18b92a00ab6e6a207903880e23244f34cfd32bf4"
+      "value_assertions": [
+        {
+          "field": "constraint_continuity.inherited",
+          "projection": "constraint_continuity.inherited",
+          "operator": "equals",
+          "actual": [
+            "price_max_major",
+            "product_type",
+            "ship_to",
+            "sku_spec"
+          ],
+          "expected": [
+            "price_max_major",
+            "product_type",
+            "ship_to",
+            "sku_spec"
+          ]
+        },
+        {
+          "field": "query_conditions.price_max_major",
+          "projection": "query_conditions.price_max_major",
+          "operator": "equals",
+          "actual": 300,
+          "expected": 300
+        },
+        {
+          "field": "query_conditions.ship_to",
+          "projection": "query_conditions.ship_to",
+          "operator": "equals",
+          "actual": "CN",
+          "expected": "CN"
+        },
+        {
+          "field": "query_conditions.sku_spec",
+          "projection": "query_conditions.sku_spec",
+          "operator": "equals",
+          "actual": "黑色",
+          "expected": "黑色"
+        }
+      ],
+      "run_id": "c3ea86d4dc634676adfb42a276160eef",
+      "source_commit": "19cc941e1a440ef7171af6d7da9a8b3b84ab2649"
     },
     {
       "capability_id": "dispatch.search",
@@ -174,12 +496,42 @@
       "result": "pass",
       "event_count": 3,
       "observed_values": {
-        "agent": null,
-        "dispatch_id": null,
-        "status": null
+        "agent": "search_agent",
+        "dispatch_id": "dispatch-4ba03688baaf47f1b10835c80b0b6fea",
+        "status": "completed"
       },
-      "run_id": "6cdabed130ad4695b0f859283a2afc19",
-      "source_commit": "18b92a00ab6e6a207903880e23244f34cfd32bf4"
+      "value_assertions": [
+        {
+          "field": "tool",
+          "projection": "tool",
+          "operator": "equals",
+          "actual": "task_dispatch",
+          "expected": "task_dispatch"
+        },
+        {
+          "field": "agent",
+          "projection": null,
+          "operator": "equals",
+          "actual": "search_agent",
+          "expected": "search_agent"
+        },
+        {
+          "field": "dispatch_id",
+          "projection": null,
+          "operator": "equals",
+          "actual": "dispatch-4ba03688baaf47f1b10835c80b0b6fea",
+          "expected": "dispatch-4ba03688baaf47f1b10835c80b0b6fea"
+        },
+        {
+          "field": "status",
+          "projection": null,
+          "operator": "equals",
+          "actual": "completed",
+          "expected": "completed"
+        }
+      ],
+      "run_id": "c3ea86d4dc634676adfb42a276160eef",
+      "source_commit": "19cc941e1a440ef7171af6d7da9a8b3b84ab2649"
     },
     {
       "capability_id": "dispatch.search",
@@ -204,8 +556,30 @@
         ],
         "unverified_product_ids": []
       },
-      "run_id": "6cdabed130ad4695b0f859283a2afc19",
-      "source_commit": "18b92a00ab6e6a207903880e23244f34cfd32bf4"
+      "value_assertions": [
+        {
+          "field": "verified_product_ids",
+          "projection": null,
+          "operator": "equals",
+          "actual": [
+            "P1003",
+            "P1003-S1"
+          ],
+          "expected": [
+            "P1003",
+            "P1003-S1"
+          ]
+        },
+        {
+          "field": "unverified_product_ids",
+          "projection": null,
+          "operator": "equals",
+          "actual": [],
+          "expected": []
+        }
+      ],
+      "run_id": "c3ea86d4dc634676adfb42a276160eef",
+      "source_commit": "19cc941e1a440ef7171af6d7da9a8b3b84ab2649"
     },
     {
       "capability_id": "dispatch.trade",
@@ -227,12 +601,42 @@
       "result": "pass",
       "event_count": 3,
       "observed_values": {
-        "agent": null,
-        "dispatch_id": null,
-        "status": null
+        "agent": "trade_agent",
+        "dispatch_id": "dispatch-0b8b6a003f7e4a8493b3d8ffbf04fd20",
+        "status": "completed"
       },
-      "run_id": "6cdabed130ad4695b0f859283a2afc19",
-      "source_commit": "18b92a00ab6e6a207903880e23244f34cfd32bf4"
+      "value_assertions": [
+        {
+          "field": "tool",
+          "projection": "tool",
+          "operator": "equals",
+          "actual": "task_dispatch",
+          "expected": "task_dispatch"
+        },
+        {
+          "field": "agent",
+          "projection": null,
+          "operator": "equals",
+          "actual": "trade_agent",
+          "expected": "trade_agent"
+        },
+        {
+          "field": "dispatch_id",
+          "projection": null,
+          "operator": "equals",
+          "actual": "dispatch-0b8b6a003f7e4a8493b3d8ffbf04fd20",
+          "expected": "dispatch-0b8b6a003f7e4a8493b3d8ffbf04fd20"
+        },
+        {
+          "field": "status",
+          "projection": null,
+          "operator": "equals",
+          "actual": "completed",
+          "expected": "completed"
+        }
+      ],
+      "run_id": "c3ea86d4dc634676adfb42a276160eef",
+      "source_commit": "19cc941e1a440ef7171af6d7da9a8b3b84ab2649"
     },
     {
       "capability_id": "dispatch.trade",
@@ -257,8 +661,30 @@
         ],
         "unverified_product_ids": []
       },
-      "run_id": "6cdabed130ad4695b0f859283a2afc19",
-      "source_commit": "18b92a00ab6e6a207903880e23244f34cfd32bf4"
+      "value_assertions": [
+        {
+          "field": "verified_product_ids",
+          "projection": null,
+          "operator": "equals",
+          "actual": [
+            "P1003",
+            "P1003-S1"
+          ],
+          "expected": [
+            "P1003",
+            "P1003-S1"
+          ]
+        },
+        {
+          "field": "unverified_product_ids",
+          "projection": null,
+          "operator": "equals",
+          "actual": [],
+          "expected": []
+        }
+      ],
+      "run_id": "c3ea86d4dc634676adfb42a276160eef",
+      "source_commit": "19cc941e1a440ef7171af6d7da9a8b3b84ab2649"
     },
     {
       "capability_id": "harness.grounding_gate",
@@ -276,11 +702,33 @@
       "result": "pass",
       "event_count": 1,
       "observed_values": {
-        "message": null,
-        "claim_guard": null
+        "message": "商品摘要已按目录工具事实生成",
+        "claim_guard": [
+          "carry_on"
+        ]
       },
-      "run_id": "6cdabed130ad4695b0f859283a2afc19",
-      "source_commit": "18b92a00ab6e6a207903880e23244f34cfd32bf4"
+      "value_assertions": [
+        {
+          "field": "message",
+          "projection": null,
+          "operator": "equals",
+          "actual": "商品摘要已按目录工具事实生成",
+          "expected": "商品摘要已按目录工具事实生成"
+        },
+        {
+          "field": "claim_guard",
+          "projection": null,
+          "operator": "equals",
+          "actual": [
+            "carry_on"
+          ],
+          "expected": [
+            "carry_on"
+          ]
+        }
+      ],
+      "run_id": "c3ea86d4dc634676adfb42a276160eef",
+      "source_commit": "19cc941e1a440ef7171af6d7da9a8b3b84ab2649"
     },
     {
       "capability_id": "harness.grounding_gate",
@@ -309,8 +757,28 @@
           "carry_on"
         ]
       },
-      "run_id": "6cdabed130ad4695b0f859283a2afc19",
-      "source_commit": "18b92a00ab6e6a207903880e23244f34cfd32bf4"
+      "value_assertions": [
+        {
+          "field": "replacement_kind",
+          "projection": null,
+          "operator": "equals",
+          "actual": "grounded_product_fallback",
+          "expected": "grounded_product_fallback"
+        },
+        {
+          "field": "violations",
+          "projection": null,
+          "operator": "equals",
+          "actual": [
+            "carry_on"
+          ],
+          "expected": [
+            "carry_on"
+          ]
+        }
+      ],
+      "run_id": "c3ea86d4dc634676adfb42a276160eef",
+      "source_commit": "19cc941e1a440ef7171af6d7da9a8b3b84ab2649"
     },
     {
       "capability_id": "memory.remember",
@@ -328,8 +796,17 @@
       "observed_values": {
         "saved": "喜欢轻便背包"
       },
-      "run_id": "6cdabed130ad4695b0f859283a2afc19",
-      "source_commit": "18b92a00ab6e6a207903880e23244f34cfd32bf4"
+      "value_assertions": [
+        {
+          "field": "saved",
+          "projection": null,
+          "operator": "equals",
+          "actual": "喜欢轻便背包",
+          "expected": "喜欢轻便背包"
+        }
+      ],
+      "run_id": "c3ea86d4dc634676adfb42a276160eef",
+      "source_commit": "19cc941e1a440ef7171af6d7da9a8b3b84ab2649"
     },
     {
       "capability_id": "memory.remember",
@@ -350,8 +827,24 @@
         "action": "保存",
         "statement": "喜欢轻便背包"
       },
-      "run_id": "6cdabed130ad4695b0f859283a2afc19",
-      "source_commit": "18b92a00ab6e6a207903880e23244f34cfd32bf4"
+      "value_assertions": [
+        {
+          "field": "action",
+          "projection": null,
+          "operator": "equals",
+          "actual": "保存",
+          "expected": "保存"
+        },
+        {
+          "field": "statement",
+          "projection": null,
+          "operator": "equals",
+          "actual": "喜欢轻便背包",
+          "expected": "喜欢轻便背包"
+        }
+      ],
+      "run_id": "c3ea86d4dc634676adfb42a276160eef",
+      "source_commit": "19cc941e1a440ef7171af6d7da9a8b3b84ab2649"
     },
     {
       "capability_id": "memory.update",
@@ -370,8 +863,17 @@
         "updated": true,
         "stored_statement": "喜欢超轻背包"
       },
-      "run_id": "6cdabed130ad4695b0f859283a2afc19",
-      "source_commit": "18b92a00ab6e6a207903880e23244f34cfd32bf4"
+      "value_assertions": [
+        {
+          "field": "updated",
+          "projection": null,
+          "operator": "equals",
+          "actual": true,
+          "expected": true
+        }
+      ],
+      "run_id": "c3ea86d4dc634676adfb42a276160eef",
+      "source_commit": "19cc941e1a440ef7171af6d7da9a8b3b84ab2649"
     },
     {
       "capability_id": "memory.update",
@@ -389,8 +891,17 @@
       "observed_values": {
         "action": "更新"
       },
-      "run_id": "6cdabed130ad4695b0f859283a2afc19",
-      "source_commit": "18b92a00ab6e6a207903880e23244f34cfd32bf4"
+      "value_assertions": [
+        {
+          "field": "action",
+          "projection": null,
+          "operator": "equals",
+          "actual": "更新",
+          "expected": "更新"
+        }
+      ],
+      "run_id": "c3ea86d4dc634676adfb42a276160eef",
+      "source_commit": "19cc941e1a440ef7171af6d7da9a8b3b84ab2649"
     },
     {
       "capability_id": "memory.forget",
@@ -409,8 +920,17 @@
         "deleted": "喜欢超轻背包",
         "remaining": 0
       },
-      "run_id": "6cdabed130ad4695b0f859283a2afc19",
-      "source_commit": "18b92a00ab6e6a207903880e23244f34cfd32bf4"
+      "value_assertions": [
+        {
+          "field": "deleted",
+          "projection": null,
+          "operator": "equals",
+          "actual": "喜欢超轻背包",
+          "expected": "喜欢超轻背包"
+        }
+      ],
+      "run_id": "c3ea86d4dc634676adfb42a276160eef",
+      "source_commit": "19cc941e1a440ef7171af6d7da9a8b3b84ab2649"
     },
     {
       "capability_id": "memory.forget",
@@ -431,8 +951,24 @@
         "action": "删除",
         "statement": "喜欢超轻背包"
       },
-      "run_id": "6cdabed130ad4695b0f859283a2afc19",
-      "source_commit": "18b92a00ab6e6a207903880e23244f34cfd32bf4"
+      "value_assertions": [
+        {
+          "field": "action",
+          "projection": null,
+          "operator": "equals",
+          "actual": "删除",
+          "expected": "删除"
+        },
+        {
+          "field": "statement",
+          "projection": null,
+          "operator": "equals",
+          "actual": "喜欢超轻背包",
+          "expected": "喜欢超轻背包"
+        }
+      ],
+      "run_id": "c3ea86d4dc634676adfb42a276160eef",
+      "source_commit": "19cc941e1a440ef7171af6d7da9a8b3b84ab2649"
     },
     {
       "capability_id": "state.session_isolation",
@@ -459,8 +995,36 @@
           "sha256:fa57a52dbf08190218529730"
         ]
       },
-      "run_id": "6cdabed130ad4695b0f859283a2afc19",
-      "source_commit": "18b92a00ab6e6a207903880e23244f34cfd32bf4"
+      "value_assertions": [
+        {
+          "field": "shopping_session_id",
+          "projection": null,
+          "operator": "equals",
+          "actual": [
+            "session-a",
+            "session-b"
+          ],
+          "expected": [
+            "session-a",
+            "session-b"
+          ]
+        },
+        {
+          "field": "correlation.session_id",
+          "projection": null,
+          "operator": "equals",
+          "actual": [
+            "sha256:e8de016fbd70182f6d2325e8",
+            "sha256:fa57a52dbf08190218529730"
+          ],
+          "expected": [
+            "sha256:e8de016fbd70182f6d2325e8",
+            "sha256:fa57a52dbf08190218529730"
+          ]
+        }
+      ],
+      "run_id": "c3ea86d4dc634676adfb42a276160eef",
+      "source_commit": "19cc941e1a440ef7171af6d7da9a8b3b84ab2649"
     },
     {
       "capability_id": "state.session_isolation",
@@ -487,8 +1051,33 @@
           "buyer-b": "喜欢黑色"
         }
       },
-      "run_id": "6cdabed130ad4695b0f859283a2afc19",
-      "source_commit": "18b92a00ab6e6a207903880e23244f34cfd32bf4"
+      "value_assertions": [
+        {
+          "field": "buyer_id",
+          "projection": null,
+          "operator": "equals",
+          "actual": [
+            "buyer-a",
+            "buyer-b"
+          ],
+          "expected": [
+            "buyer-a",
+            "buyer-b"
+          ]
+        },
+        {
+          "field": "statement",
+          "projection": null,
+          "operator": "nonempty",
+          "actual": {
+            "buyer-a": "喜欢军绿色",
+            "buyer-b": "喜欢黑色"
+          },
+          "expected": true
+        }
+      ],
+      "run_id": "c3ea86d4dc634676adfb42a276160eef",
+      "source_commit": "19cc941e1a440ef7171af6d7da9a8b3b84ab2649"
     },
     {
       "capability_id": "trade.prepare",
@@ -512,8 +1101,8 @@
       "result": "pass",
       "event_count": 3,
       "observed_values": {
-        "confirmation_id": "423c8b1b379d40c1a1bcf97bd94aa0b1",
-        "snapshot_hash": "3df061d9346143466dd47d7d21ec9dcdad538ca89a09413db0b70786e80cf03b",
+        "confirmation_id": "b3ee13da817540dca63162d4c200b449",
+        "snapshot_hash": "38aaa40a81cdb15ad9755619a1bce948382221685e868a5a5553f8060ddb8d71",
         "status": "pending",
         "payload_keys": [
           "amount_scope",
@@ -535,8 +1124,80 @@
           "total_amount_minor"
         ]
       },
-      "run_id": "6cdabed130ad4695b0f859283a2afc19",
-      "source_commit": "18b92a00ab6e6a207903880e23244f34cfd32bf4"
+      "value_assertions": [
+        {
+          "field": "confirmation_required",
+          "projection": "confirmation_required",
+          "operator": "equals",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "field": "confirmation.confirmation_id",
+          "projection": "confirmation.confirmation_id",
+          "operator": "equals",
+          "actual": "b3ee13da817540dca63162d4c200b449",
+          "expected": "b3ee13da817540dca63162d4c200b449"
+        },
+        {
+          "field": "confirmation.snapshot_hash",
+          "projection": "confirmation.snapshot_hash",
+          "operator": "equals",
+          "actual": "38aaa40a81cdb15ad9755619a1bce948382221685e868a5a5553f8060ddb8d71",
+          "expected": "38aaa40a81cdb15ad9755619a1bce948382221685e868a5a5553f8060ddb8d71"
+        },
+        {
+          "field": "confirmation.status",
+          "projection": "confirmation.status",
+          "operator": "equals",
+          "actual": "pending",
+          "expected": "pending"
+        },
+        {
+          "field": "confirmation.payload",
+          "projection": "confirmation.payload",
+          "operator": "nonempty",
+          "actual": {
+            "items": [
+              {
+                "product_id": "P1001",
+                "sku_id": "P1001-S1",
+                "title": "Nomadica 旅行三件套（收纳袋+颈枕+眼罩）（军绿色）",
+                "unit_price_minor": 18900,
+                "currency": "CNY",
+                "quantity": 1
+              }
+            ],
+            "shipping_address": {
+              "recipient_name": "张三",
+              "country": "CN",
+              "state": "浙江",
+              "city": "杭州",
+              "address_line": "西湖区某路 1 号",
+              "postal_code": "310000",
+              "phone": "13800000000"
+            },
+            "amount_scope": "landed_total",
+            "order_kind": "purchase_intent",
+            "source_currency": "CNY",
+            "quote_currency": "CNY",
+            "currency": "CNY",
+            "ship_to": "CN",
+            "category": "旅行装备",
+            "quantity": 1,
+            "merchandise_subtotal_minor": 18900,
+            "freight_minor": 2500,
+            "tariff_minor": 0,
+            "total_amount_minor": 21400,
+            "tariff_rate": 0.09,
+            "de_minimis_applied": true,
+            "pricing_revision": "515b5a61ff800537144e7355e29b8931bc13a3f1e38ab776d94f94cc56579fa6"
+          },
+          "expected": true
+        }
+      ],
+      "run_id": "c3ea86d4dc634676adfb42a276160eef",
+      "source_commit": "19cc941e1a440ef7171af6d7da9a8b3b84ab2649"
     },
     {
       "capability_id": "trade.prepare",
@@ -568,8 +1229,42 @@
         },
         "inventory_delta": 0
       },
-      "run_id": "6cdabed130ad4695b0f859283a2afc19",
-      "source_commit": "18b92a00ab6e6a207903880e23244f34cfd32bf4"
+      "value_assertions": [
+        {
+          "field": "order_count_before",
+          "projection": null,
+          "operator": "equals",
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "field": "order_count_after",
+          "projection": null,
+          "operator": "equals",
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "field": "inventory_before",
+          "projection": null,
+          "operator": "nonempty",
+          "actual": {
+            "P1001-S1": 50
+          },
+          "expected": true
+        },
+        {
+          "field": "inventory_after",
+          "projection": null,
+          "operator": "nonempty",
+          "actual": {
+            "P1001-S1": 50
+          },
+          "expected": true
+        }
+      ],
+      "run_id": "c3ea86d4dc634676adfb42a276160eef",
+      "source_commit": "19cc941e1a440ef7171af6d7da9a8b3b84ab2649"
     },
     {
       "capability_id": "trade.query",
@@ -586,11 +1281,53 @@
       "result": "pass",
       "event_count": 2,
       "observed_values": {
-        "order_id": "fc5d29bcea6140068ddb9288ae41ba92",
+        "order_id": "39efc990841644d6b217c1304481b6b2",
         "status": "CONFIRMED"
       },
-      "run_id": "6cdabed130ad4695b0f859283a2afc19",
-      "source_commit": "18b92a00ab6e6a207903880e23244f34cfd32bf4"
+      "value_assertions": [
+        {
+          "field": "order",
+          "projection": "order",
+          "operator": "nonempty",
+          "actual": {
+            "order_id": "39efc990841644d6b217c1304481b6b2",
+            "buyer_id": "buyer-trade",
+            "status": "CONFIRMED",
+            "total_amount_major": 214.0,
+            "currency": "CNY",
+            "shipping_address": "CN 浙江 杭州 西湖区某路 1 号（张三 13800000000）",
+            "lines": [
+              {
+                "product_id": "P1001",
+                "sku_id": "P1001-S1",
+                "title": "Nomadica 旅行三件套（收纳袋+颈枕+眼罩）（军绿色）",
+                "unit_price_major": 189.0,
+                "currency": "CNY",
+                "quantity": 1
+              }
+            ],
+            "created_at": "2026-11-01T16:24:51.474001+00:00",
+            "cancel_reason": null,
+            "total_amount_minor": 21400,
+            "amount_scope": "landed_total",
+            "order_kind": "purchase_intent",
+            "source_currency": "CNY",
+            "quote_currency": "CNY",
+            "ship_to": "CN",
+            "category": "旅行装备",
+            "quantity": 1,
+            "merchandise_subtotal_minor": 18900,
+            "freight_minor": 2500,
+            "tariff_minor": 0,
+            "tariff_rate": 0.09,
+            "de_minimis_applied": true,
+            "pricing_revision": "515b5a61ff800537144e7355e29b8931bc13a3f1e38ab776d94f94cc56579fa6"
+          },
+          "expected": true
+        }
+      ],
+      "run_id": "c3ea86d4dc634676adfb42a276160eef",
+      "source_commit": "19cc941e1a440ef7171af6d7da9a8b3b84ab2649"
     },
     {
       "capability_id": "search.category_insight",
@@ -618,8 +1355,37 @@
           "not_policy"
         ]
       },
-      "run_id": "6cdabed130ad4695b0f859283a2afc19",
-      "source_commit": "18b92a00ab6e6a207903880e23244f34cfd32bf4"
+      "value_assertions": [
+        {
+          "field": "hit_count",
+          "projection": null,
+          "operator": "equals",
+          "actual": 2,
+          "expected": 2
+        },
+        {
+          "field": "abstained",
+          "projection": null,
+          "operator": "equals",
+          "actual": false,
+          "expected": false
+        },
+        {
+          "field": "policy_fact_statuses",
+          "projection": null,
+          "operator": "equals",
+          "actual": [
+            "not_policy",
+            "not_policy"
+          ],
+          "expected": [
+            "not_policy",
+            "not_policy"
+          ]
+        }
+      ],
+      "run_id": "c3ea86d4dc634676adfb42a276160eef",
+      "source_commit": "19cc941e1a440ef7171af6d7da9a8b3b84ab2649"
     },
     {
       "capability_id": "search.category_insight",
@@ -643,8 +1409,31 @@
         "source_reference": "未登记的临时知识文档",
         "source_type": "unversioned_fixture"
       },
-      "run_id": "6cdabed130ad4695b0f859283a2afc19",
-      "source_commit": "18b92a00ab6e6a207903880e23244f34cfd32bf4"
+      "value_assertions": [
+        {
+          "field": "insights[].source",
+          "projection": "first.source",
+          "operator": "equals",
+          "actual": "guide.md",
+          "expected": "guide.md"
+        },
+        {
+          "field": "insights[].metadata.source_reference",
+          "projection": "first.metadata.source_reference",
+          "operator": "equals",
+          "actual": "未登记的临时知识文档",
+          "expected": "未登记的临时知识文档"
+        },
+        {
+          "field": "insights[].metadata.source_type",
+          "projection": "first.metadata.source_type",
+          "operator": "equals",
+          "actual": "unversioned_fixture",
+          "expected": "unversioned_fixture"
+        }
+      ],
+      "run_id": "c3ea86d4dc634676adfb42a276160eef",
+      "source_commit": "19cc941e1a440ef7171af6d7da9a8b3b84ab2649"
     },
     {
       "capability_id": "search.category_insight",
@@ -670,8 +1459,31 @@
         "hit_count": 0,
         "reason": "当前知识库没有足够相关且可验证的资料，不能据此作确定性回答"
       },
-      "run_id": "6cdabed130ad4695b0f859283a2afc19",
-      "source_commit": "18b92a00ab6e6a207903880e23244f34cfd32bf4"
+      "value_assertions": [
+        {
+          "field": "abstained",
+          "projection": null,
+          "operator": "equals",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "field": "hit_count",
+          "projection": null,
+          "operator": "equals",
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "field": "reason",
+          "projection": null,
+          "operator": "equals",
+          "actual": "当前知识库没有足够相关且可验证的资料，不能据此作确定性回答",
+          "expected": "当前知识库没有足够相关且可验证的资料，不能据此作确定性回答"
+        }
+      ],
+      "run_id": "c3ea86d4dc634676adfb42a276160eef",
+      "source_commit": "19cc941e1a440ef7171af6d7da9a8b3b84ab2649"
     },
     {
       "capability_id": "search.category_insight",
@@ -694,8 +1506,24 @@
         "unanswerable": true,
         "reason": "当前知识库没有足够相关且可验证的资料，不能据此作确定性回答"
       },
-      "run_id": "6cdabed130ad4695b0f859283a2afc19",
-      "source_commit": "18b92a00ab6e6a207903880e23244f34cfd32bf4"
+      "value_assertions": [
+        {
+          "field": "unanswerable",
+          "projection": null,
+          "operator": "equals",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "field": "reason",
+          "projection": null,
+          "operator": "equals",
+          "actual": "当前知识库没有足够相关且可验证的资料，不能据此作确定性回答",
+          "expected": "当前知识库没有足够相关且可验证的资料，不能据此作确定性回答"
+        }
+      ],
+      "run_id": "c3ea86d4dc634676adfb42a276160eef",
+      "source_commit": "19cc941e1a440ef7171af6d7da9a8b3b84ab2649"
     },
     {
       "capability_id": "trade.approve",
@@ -715,10 +1543,26 @@
       "case": "approved",
       "observed_values": {
         "status": "approved",
-        "order_id": "3700fc3c0ddc47ab9d86f49fcfcd3d9c"
+        "order_id": "8f1325921a1d4e6a98b2e958711f37cf"
       },
-      "run_id": "6cdabed130ad4695b0f859283a2afc19",
-      "source_commit": "18b92a00ab6e6a207903880e23244f34cfd32bf4"
+      "value_assertions": [
+        {
+          "field": "confirmation.status",
+          "projection": "confirmation.status",
+          "operator": "equals",
+          "actual": "approved",
+          "expected": "approved"
+        },
+        {
+          "field": "confirmation.result.order_id",
+          "projection": "confirmation.result.order_id",
+          "operator": "equals",
+          "actual": "8f1325921a1d4e6a98b2e958711f37cf",
+          "expected": "8f1325921a1d4e6a98b2e958711f37cf"
+        }
+      ],
+      "run_id": "c3ea86d4dc634676adfb42a276160eef",
+      "source_commit": "19cc941e1a440ef7171af6d7da9a8b3b84ab2649"
     },
     {
       "capability_id": "trade.approve",
@@ -750,11 +1594,45 @@
           "P1001-S1": 49
         },
         "inventory_delta": -1,
-        "order_id": "3700fc3c0ddc47ab9d86f49fcfcd3d9c",
+        "order_id": "8f1325921a1d4e6a98b2e958711f37cf",
         "order_status": "CONFIRMED"
       },
-      "run_id": "6cdabed130ad4695b0f859283a2afc19",
-      "source_commit": "18b92a00ab6e6a207903880e23244f34cfd32bf4"
+      "value_assertions": [
+        {
+          "field": "order_count_before",
+          "projection": null,
+          "operator": "equals",
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "field": "order_count_after",
+          "projection": null,
+          "operator": "equals",
+          "actual": 1,
+          "expected": 1
+        },
+        {
+          "field": "inventory_before",
+          "projection": null,
+          "operator": "nonempty",
+          "actual": {
+            "P1001-S1": 50
+          },
+          "expected": true
+        },
+        {
+          "field": "inventory_after",
+          "projection": null,
+          "operator": "nonempty",
+          "actual": {
+            "P1001-S1": 49
+          },
+          "expected": true
+        }
+      ],
+      "run_id": "c3ea86d4dc634676adfb42a276160eef",
+      "source_commit": "19cc941e1a440ef7171af6d7da9a8b3b84ab2649"
     },
     {
       "capability_id": "trade.approve",
@@ -773,8 +1651,17 @@
       "observed_values": {
         "status": "rejected"
       },
-      "run_id": "6cdabed130ad4695b0f859283a2afc19",
-      "source_commit": "18b92a00ab6e6a207903880e23244f34cfd32bf4"
+      "value_assertions": [
+        {
+          "field": "confirmation.status",
+          "projection": "confirmation.status",
+          "operator": "equals",
+          "actual": "rejected",
+          "expected": "rejected"
+        }
+      ],
+      "run_id": "c3ea86d4dc634676adfb42a276160eef",
+      "source_commit": "19cc941e1a440ef7171af6d7da9a8b3b84ab2649"
     },
     {
       "capability_id": "trade.approve",
@@ -809,8 +1696,42 @@
         "order_id": null,
         "order_status": null
       },
-      "run_id": "6cdabed130ad4695b0f859283a2afc19",
-      "source_commit": "18b92a00ab6e6a207903880e23244f34cfd32bf4"
+      "value_assertions": [
+        {
+          "field": "order_count_before",
+          "projection": null,
+          "operator": "equals",
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "field": "order_count_after",
+          "projection": null,
+          "operator": "equals",
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "field": "inventory_before",
+          "projection": null,
+          "operator": "nonempty",
+          "actual": {
+            "P1001-S1": 50
+          },
+          "expected": true
+        },
+        {
+          "field": "inventory_after",
+          "projection": null,
+          "operator": "nonempty",
+          "actual": {
+            "P1001-S1": 50
+          },
+          "expected": true
+        }
+      ],
+      "run_id": "c3ea86d4dc634676adfb42a276160eef",
+      "source_commit": "19cc941e1a440ef7171af6d7da9a8b3b84ab2649"
     },
     {
       "capability_id": "trade.cancel",
@@ -834,10 +1755,40 @@
       "observed_values": {
         "status": "approved",
         "action": "cancel",
-        "order_id": "95ae3a7c36bd4e18950b8fd823a64792"
+        "order_id": "65537f59f6ea45c6b7bb47a81420d8a1"
       },
-      "run_id": "6cdabed130ad4695b0f859283a2afc19",
-      "source_commit": "18b92a00ab6e6a207903880e23244f34cfd32bf4"
+      "value_assertions": [
+        {
+          "field": "confirmation.status",
+          "projection": "confirmation.status",
+          "operator": "equals",
+          "actual": "approved",
+          "expected": "approved"
+        },
+        {
+          "field": "confirmation.action",
+          "projection": "confirmation.action",
+          "operator": "equals",
+          "actual": "cancel",
+          "expected": "cancel"
+        },
+        {
+          "field": "confirmation.result.order_id",
+          "projection": "confirmation.result.order_id",
+          "operator": "equals",
+          "actual": "65537f59f6ea45c6b7bb47a81420d8a1",
+          "expected": "65537f59f6ea45c6b7bb47a81420d8a1"
+        },
+        {
+          "field": "confirmation.result.status",
+          "projection": "confirmation.result.status",
+          "operator": "equals",
+          "actual": "CANCELLED",
+          "expected": "CANCELLED"
+        }
+      ],
+      "run_id": "c3ea86d4dc634676adfb42a276160eef",
+      "source_commit": "19cc941e1a440ef7171af6d7da9a8b3b84ab2649"
     },
     {
       "capability_id": "trade.cancel",
@@ -861,10 +1812,10 @@
       "observed_values": {
         "order_count_before": 2,
         "order_count_after": 2,
-        "target_order_id": "95ae3a7c36bd4e18950b8fd823a64792",
+        "target_order_id": "65537f59f6ea45c6b7bb47a81420d8a1",
         "target_status_before": "CONFIRMED",
         "target_status_after": "CANCELLED",
-        "unaffected_order_id": "2f31351c1b8044f080a5d7cd318c7b8b",
+        "unaffected_order_id": "ca5f5ce1ebb340e8b03ff34ac3d97669",
         "unaffected_status_before": "CONFIRMED",
         "unaffected_status_after": "CONFIRMED",
         "inventory_before": {
@@ -875,8 +1826,42 @@
         },
         "inventory_delta": 1
       },
-      "run_id": "6cdabed130ad4695b0f859283a2afc19",
-      "source_commit": "18b92a00ab6e6a207903880e23244f34cfd32bf4"
+      "value_assertions": [
+        {
+          "field": "order_count_before",
+          "projection": null,
+          "operator": "equals",
+          "actual": 2,
+          "expected": 2
+        },
+        {
+          "field": "order_count_after",
+          "projection": null,
+          "operator": "equals",
+          "actual": 2,
+          "expected": 2
+        },
+        {
+          "field": "inventory_before",
+          "projection": null,
+          "operator": "nonempty",
+          "actual": {
+            "P1001-S1": 48
+          },
+          "expected": true
+        },
+        {
+          "field": "inventory_after",
+          "projection": null,
+          "operator": "nonempty",
+          "actual": {
+            "P1001-S1": 49
+          },
+          "expected": true
+        }
+      ],
+      "run_id": "c3ea86d4dc634676adfb42a276160eef",
+      "source_commit": "19cc941e1a440ef7171af6d7da9a8b3b84ab2649"
     },
     {
       "capability_id": "trade.idempotency",
@@ -895,10 +1880,26 @@
       "event_count": 1,
       "observed_values": {
         "status": "approved",
-        "order_id": "13a38535b1624db08972ba85dda96a9d"
+        "order_id": "e1ed37e068254f43bbd94f3f45cd1271"
       },
-      "run_id": "6cdabed130ad4695b0f859283a2afc19",
-      "source_commit": "18b92a00ab6e6a207903880e23244f34cfd32bf4"
+      "value_assertions": [
+        {
+          "field": "confirmation.status",
+          "projection": "confirmation.status",
+          "operator": "equals",
+          "actual": "approved",
+          "expected": "approved"
+        },
+        {
+          "field": "confirmation.result.order_id",
+          "projection": "confirmation.result.order_id",
+          "operator": "equals",
+          "actual": "e1ed37e068254f43bbd94f3f45cd1271",
+          "expected": "e1ed37e068254f43bbd94f3f45cd1271"
+        }
+      ],
+      "run_id": "c3ea86d4dc634676adfb42a276160eef",
+      "source_commit": "19cc941e1a440ef7171af6d7da9a8b3b84ab2649"
     },
     {
       "capability_id": "trade.idempotency",
@@ -917,10 +1918,26 @@
       "event_count": 1,
       "observed_values": {
         "status": "approved",
-        "order_id": "13a38535b1624db08972ba85dda96a9d"
+        "order_id": "e1ed37e068254f43bbd94f3f45cd1271"
       },
-      "run_id": "6cdabed130ad4695b0f859283a2afc19",
-      "source_commit": "18b92a00ab6e6a207903880e23244f34cfd32bf4"
+      "value_assertions": [
+        {
+          "field": "confirmation.status",
+          "projection": "confirmation.status",
+          "operator": "equals",
+          "actual": "approved",
+          "expected": "approved"
+        },
+        {
+          "field": "confirmation.result.order_id",
+          "projection": "confirmation.result.order_id",
+          "operator": "equals",
+          "actual": "e1ed37e068254f43bbd94f3f45cd1271",
+          "expected": "e1ed37e068254f43bbd94f3f45cd1271"
+        }
+      ],
+      "run_id": "c3ea86d4dc634676adfb42a276160eef",
+      "source_commit": "19cc941e1a440ef7171af6d7da9a8b3b84ab2649"
     },
     {
       "capability_id": "trade.idempotency",
@@ -945,8 +1962,8 @@
         "order_count_before": 0,
         "order_count_after": 1,
         "order_count_after_first": 1,
-        "first_order_id": "13a38535b1624db08972ba85dda96a9d",
-        "second_order_id": "13a38535b1624db08972ba85dda96a9d",
+        "first_order_id": "e1ed37e068254f43bbd94f3f45cd1271",
+        "second_order_id": "e1ed37e068254f43bbd94f3f45cd1271",
         "inventory_before": {
           "P1001-S1": 50
         },
@@ -958,8 +1975,42 @@
         },
         "inventory_delta_second": 0
       },
-      "run_id": "6cdabed130ad4695b0f859283a2afc19",
-      "source_commit": "18b92a00ab6e6a207903880e23244f34cfd32bf4"
+      "value_assertions": [
+        {
+          "field": "order_count_before",
+          "projection": null,
+          "operator": "equals",
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "field": "order_count_after",
+          "projection": null,
+          "operator": "equals",
+          "actual": 1,
+          "expected": 1
+        },
+        {
+          "field": "inventory_before",
+          "projection": null,
+          "operator": "nonempty",
+          "actual": {
+            "P1001-S1": 50
+          },
+          "expected": true
+        },
+        {
+          "field": "inventory_after",
+          "projection": null,
+          "operator": "nonempty",
+          "actual": {
+            "P1001-S1": 49
+          },
+          "expected": true
+        }
+      ],
+      "run_id": "c3ea86d4dc634676adfb42a276160eef",
+      "source_commit": "19cc941e1a440ef7171af6d7da9a8b3b84ab2649"
     }
   ],
   "capabilities": [
@@ -985,10 +2036,10 @@
   "external_connect_attempts": 0,
   "paid_requests": 0,
   "external_model_requests": 0,
-  "run_id": "6cdabed130ad4695b0f859283a2afc19",
-  "generated_at": "2026-11-01T16:10:36.199638+00:00",
-  "source_commit": "18b92a00ab6e6a207903880e23244f34cfd32bf4",
+  "run_id": "c3ea86d4dc634676adfb42a276160eef",
+  "generated_at": "2026-11-01T16:24:52.875446+00:00",
+  "source_commit": "19cc941e1a440ef7171af6d7da9a8b3b84ab2649",
   "tracked_worktree_clean": true,
-  "scanner_sha256": "74d3a445f3c522f86941ff8fe7be3913d04096ea2461afd454bc9d4d5fab8ead",
-  "records_sha256": "7245a1053695e6ae90ea6294b6f8d86518ed516d1ceaa71976dd1fda96f41f36"
+  "scanner_sha256": "c83812ad592d8c3209792944392e6b589d1095984b545428e5461ea404bb4f38",
+  "records_sha256": "e5cebea975d138515ceba00ac0d985d0b53a0056fe5acceb79f73539ae140025"
 }
