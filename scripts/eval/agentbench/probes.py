@@ -21,6 +21,7 @@ from app.infrastructure.context import ShoppingContext, ShoppingContextSnapshot
 from app.infrastructure.eventbus import TradeEventBus, observe_run_events
 from app.infrastructure.persistence.in_memory_repositories import InMemoryProductRepository
 from app.infrastructure.persistence.json_file_stores import JsonFilePreferenceStore
+from scripts.eval.agentbench import value_assertions
 from app.application.tools.remember_preference_tool import build_remember_preference_tool
 from app.application.tools.update_preference_tool import build_update_preference_tool
 from app.application.tools.forget_preference_tool import build_forget_preference_tool
@@ -69,6 +70,20 @@ def check_fields(records: list[dict], selector: str, fields: list[str]) -> tuple
     payload = matching[-1]["payload"] or {}
     observed = [field for field in fields if _present(payload, field)]
     return len(observed) == len(fields), observed
+
+
+def _payload_from(records):
+    for row in records:
+        if isinstance(row, dict) and row.get("type") == "tool.result":
+            return row.get("payload") or {}
+        if getattr(row, "type", None) == "tool.result":
+            return getattr(row, "payload", {}) or {}
+    for row in records:
+        if isinstance(row, dict) and row.get("payload"):
+            return row["payload"]
+        if getattr(row, "payload", None):
+            return row.payload
+    return {}
 
 
 def first_payload(records):
@@ -200,12 +215,15 @@ async def probe_dispatch() -> list[dict]:
         verified = decision.get("verified_product_ids")
     except Exception:
         verified = None
-    dispatch_payload = first_payload(records)
+    dispatch_payload = next((row["payload"] for row in records
+                             if row["type"] == "tool.result"
+                             and row["payload"].get("tool") == "task_dispatch"), {})
     results = [_result("dispatch.search", "event", "tool.result:task_dispatch",
                        ["tool", "agent", "dispatch_id", "status"], observed, ok, records,
                        observed_values={"agent": dispatch_payload.get("agent"),
                                         "dispatch_id": dispatch_payload.get("dispatch_id"),
-                                        "status": dispatch_payload.get("status")})]
+                                        "status": dispatch_payload.get("status")},
+                       payload=dispatch_payload)]
     verified_ok = isinstance(verified, list) and "P1003" in verified
     results.append(_result("dispatch.search", "tool_result", "task_dispatch",
                            ["verified_product_ids", "unverified_product_ids"],
@@ -238,13 +256,16 @@ async def probe_dispatch() -> list[dict]:
     trade_records = _records(trade_events)
     trade_ok, trade_observed = check_fields(trade_records, "tool.result:task_dispatch",
                                             ["tool", "agent", "dispatch_id", "status"])
-    trade_payload = first_payload(trade_records)
+    trade_payload = next((row["payload"] for row in trade_records
+                          if row["type"] == "tool.result"
+                          and row["payload"].get("tool") == "task_dispatch"), {})
     results.append(_result("dispatch.trade", "event", "tool.result:task_dispatch",
                            ["tool", "agent", "dispatch_id", "status"], trade_observed,
                            trade_ok, trade_records,
                            observed_values={"agent": trade_payload.get("agent"),
                                             "dispatch_id": trade_payload.get("dispatch_id"),
-                                            "status": trade_payload.get("status")}))
+                                            "status": trade_payload.get("status")},
+                           payload=trade_payload))
     trade_content = "".join(getattr(block, "text", "") for block in trade_chunk.content)
     try:
         trade_decision = json.loads(trade_content)
@@ -284,11 +305,12 @@ async def probe_grounding(tmp_path=None) -> list[dict]:
     audit_rows = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
     row = audit_rows[-1] if audit_rows else {}
     fields = ["replacement_kind", "violations"]
-    error_payload = first_payload(records)
+    error_payload = next((row["payload"] for row in records if row["type"] == "error"), {})
     results = [_result("harness.grounding_gate", "event", "error", ["message", "claim_guard"],
                        observed, ok_event, records,
                        observed_values={"message": error_payload.get("message"),
-                                        "claim_guard": error_payload.get("claim_guard")}),
+                                        "claim_guard": error_payload.get("claim_guard")},
+                       payload=error_payload),
                _result("harness.grounding_gate", "private_artifact", "grounding_audit.jsonl",
                        fields, sorted(row), all(name in row for name in fields), records,
                        observed_values={name: row.get(name) for name in fields})]
@@ -296,7 +318,7 @@ async def probe_grounding(tmp_path=None) -> list[dict]:
 
 
 def _result(capability_id, source, selector, required, observed, ok, records, case=None,
-            observed_values=None) -> dict:
+            observed_values=None, payload=None) -> dict:
     result = {
         "capability_id": capability_id,
         "test_nodeid": f"{PROBE_FILE}::test_{capability_id.replace('.', '_')}",
@@ -311,6 +333,9 @@ def _result(capability_id, source, selector, required, observed, ok, records, ca
         result["case"] = case
     if observed_values is not None:
         result["observed_values"] = observed_values
+    payload = payload if payload is not None else _payload_from(records)
+    result["value_assertions"] = [value_assertions.build(field, payload, observed_values or {})
+                                  for field in required]
     return result
 
 

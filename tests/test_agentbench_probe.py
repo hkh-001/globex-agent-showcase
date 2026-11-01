@@ -144,3 +144,48 @@ def test_pass_record_without_values_fails(tmp_path):
     errors = capability_audit.audit(MATRIX, ROOT / "eval/agent/v1/unsupported-capabilities.json",
                                     ROOT / "eval/agent/v1/template-catalog.json", None, path)
     assert any("has no observed_values" in error for error in errors)
+
+
+def _tampered_evidence(tmp_path, mutate):
+    import hashlib
+    evidence = json.loads(EVIDENCE.read_text(encoding="utf-8"))
+    mutate(evidence["records"])
+    evidence["records_sha256"] = hashlib.sha256(
+        json.dumps(evidence["records"], ensure_ascii=False, sort_keys=True).encode()).hexdigest()
+    path = tmp_path / "evidence.json"
+    path.write_text(json.dumps(evidence), encoding="utf-8")
+    return capability_audit.audit(MATRIX, ROOT / "eval/agent/v1/unsupported-capabilities.json",
+                                  ROOT / "eval/agent/v1/template-catalog.json", None, path)
+
+
+def test_missing_value_assertion_fails(tmp_path):
+    def mutate(records):
+        record = next(row for row in records if row["capability_id"] == "search.catalog")
+        record["value_assertions"] = record["value_assertions"][1:]
+    errors = _tampered_evidence(tmp_path, mutate)
+    assert any("has no value assertion" in error for error in errors)
+
+
+def test_wrong_expected_value_fails(tmp_path):
+    def mutate(records):
+        record = next(row for row in records if row["capability_id"] == "search.exact_id")
+        record["value_assertions"][0]["expected"] = "wrong"
+    errors = _tampered_evidence(tmp_path, mutate)
+    assert any("expected" in error for error in errors)
+
+
+def test_wrong_projection_fails(tmp_path):
+    def mutate(records):
+        record = next(row for row in records if row["capability_id"] == "search.catalog")
+        record["value_assertions"][0]["projection"] = "bad projection!"
+    errors = _tampered_evidence(tmp_path, mutate)
+    assert any("invalid projection" in error for error in errors)
+
+
+def test_unrelated_dict_does_not_pass(tmp_path):
+    def mutate(records):
+        record = next(row for row in records if row["capability_id"] == "memory.update")
+        record["value_assertions"] = [{"field": "unrelated", "projection": None,
+                                       "operator": "equals", "actual": 1, "expected": 1}]
+    errors = _tampered_evidence(tmp_path, mutate)
+    assert any("unrelated assertion field" in error for error in errors)

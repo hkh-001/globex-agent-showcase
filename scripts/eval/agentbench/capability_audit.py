@@ -118,6 +118,11 @@ def _probe_integrity_errors(probe: dict) -> list[str]:
         if required and not required <= observed:
             errors.append(f"record {row.get('capability_id')} observed_fields miss "
                           f"{sorted(required - observed)}")
+        if row.get("result") == "pass":
+            from scripts.eval.agentbench import value_assertions
+            errors.extend(f"record {row.get('capability_id')}: {message}" for message in
+                          value_assertions.validate(row.get("required_fields") or [],
+                                                    row.get("value_assertions")))
         if row.get("result") == "pass" and not (row.get("observed_values") or {}):
             errors.append(f"record {row.get('capability_id')} has no observed_values")
         if row.get("observation_source") == "state_snapshot" and row.get("result") == "pass":
