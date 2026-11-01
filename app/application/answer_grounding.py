@@ -113,7 +113,13 @@ def grounded_product_fallback(
         price = hit.get("price_major")
         currency = str(hit.get("currency") or "").strip()
         price_text = f"，商品价 {price} {currency}" if price is not None else ""
-        lines.append(f"• {title}（{product_id}）{price_text}。")
+        landed = hit.get("landed_price")
+        landed_text = ""
+        if isinstance(landed, dict) and landed.get("landed_total_major") is not None:
+            landed_currency = str(landed.get("currency") or currency).strip()
+            parts = f"商品 {landed.get('subtotal_major')} + 运费 {landed.get('freight_major')} + 关税 {landed.get('tariff_major')}"
+            landed_text = f"；到手价 {landed['landed_total_major']} {landed_currency}（{parts}）"
+        lines.append(f"• {title}（{product_id}）{price_text}{landed_text}。")
     lines.append("如需比较容量、重量或是否适合登机，请以商品详情和承运方规则为准。")
     for order in (turn_trade or {}).get("orders", []):
         if order.get("order_id"):

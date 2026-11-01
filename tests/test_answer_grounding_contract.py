@@ -5,6 +5,7 @@ from app.application.agents.orchestrator import MainAgentOrchestrator
 from app.application.answer_grounding import (
     has_concrete_product_claim,
     grounded_confirmation_fallback,
+    grounded_product_fallback,
     grounded_trade_fallback,
     is_product_recommendation_intent,
     product_claim_violations,
@@ -85,3 +86,29 @@ def test_orchestrator_fails_closed_for_concrete_product_claim_without_tool_evide
         ["remember_preference_tool"], [True], memory_result={"action": "保存"},
     )
     assert "订单" not in grounded_confirmation_fallback(["remember_preference_tool"], [True])
+
+
+def test_product_fallback_reports_landed_price_with_fee_breakdown():
+    payload = {"hits": [{
+        "product_id": "P1049", "title": "BudgetPack 20L 简易背包",
+        "price_major": 39, "currency": "CNY",
+        "landed_price": {"subtotal_major": 39, "freight_major": 25, "tariff_major": 0,
+                         "landed_total_major": 64, "currency": "CNY"},
+    }]}
+
+    text = grounded_product_fallback(payload)
+
+    assert "商品价 39 CNY" in text
+    assert "到手价 64 CNY" in text
+    assert "运费 25" in text and "关税 0" in text
+
+
+def test_product_fallback_does_not_invent_landed_price_without_evidence():
+    payload = {"hits": [{
+        "product_id": "P1", "title": "旅行背包 30L", "price_major": 129, "currency": "CNY",
+    }]}
+
+    text = grounded_product_fallback(payload)
+
+    assert "商品价 129 CNY" in text
+    assert "到手价" not in text
