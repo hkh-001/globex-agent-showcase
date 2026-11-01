@@ -1,21 +1,38 @@
 {
-  "schema_version": "agentbench-capability-matrix-v1",
+  "schema_version": "agentbench-capability-matrix-v1.1",
   "source_inventory": ".globex-runtime/agentbench-stage1-v22-final-20261101T182613/source-inventory.json",
   "source_commit": "af9ee8c",
+  "source_inventory_sha256": "ea8341dc7f043c34dcddff7616209affcd35742e2141828af15c9406291a681b",
+  "record_index_sha256": "213537505fd8b6af",
+  "deterministic_payload_sha256": "741a81f666341b30",
   "capabilities": [
     {
       "capability_id": "dispatch.search",
-      "code_entry": "app/application/tools/task_dispatch_tool.py:51",
-      "observable_events": [
-        "agent.dispatch",
-        "tool.result:task_dispatch"
-      ],
-      "assertable_fields": [
-        "payload.agent",
-        "payload.dispatch_id",
-        "payload.status",
-        "payload.error_type",
-        "payload.verified_product_ids"
+      "code_entry": {
+        "path": "app/application/tools/task_dispatch_tool.py",
+        "symbol": "build_task_dispatch_tool",
+        "line": 51
+      },
+      "observations": [
+        {
+          "source_type": "event",
+          "selector": "tool.result:task_dispatch",
+          "fields": [
+            "tool",
+            "agent",
+            "dispatch_id",
+            "status",
+            "error_type"
+          ]
+        },
+        {
+          "source_type": "tool_result",
+          "selector": "task_dispatch",
+          "fields": [
+            "verified_product_ids",
+            "unverified_product_ids"
+          ]
+        }
       ],
       "allowed_paths": [
         "main_agent->search_agent"
@@ -26,6 +43,10 @@
       "oracle_type": "deterministic",
       "status": "supported",
       "needs_new_instrumentation": false,
+      "remediation_kind": null,
+      "evidence_test_nodeids": [
+        "tests/test_agentbench_stage0.py::test_parallel_dispatches_keep_distinct_contextvar_ownership"
+      ],
       "candidate_asset_families": [
         "agent-cases-v1",
         "harness-cases"
@@ -33,16 +54,31 @@
     },
     {
       "capability_id": "dispatch.trade",
-      "code_entry": "app/application/tools/task_dispatch_tool.py:51",
-      "observable_events": [
-        "agent.dispatch",
-        "tool.result:task_dispatch"
-      ],
-      "assertable_fields": [
-        "payload.agent",
-        "payload.dispatch_id",
-        "payload.status",
-        "payload.verified_product_ids"
+      "code_entry": {
+        "path": "app/application/tools/task_dispatch_tool.py",
+        "symbol": "build_task_dispatch_tool",
+        "line": 51
+      },
+      "observations": [
+        {
+          "source_type": "event",
+          "selector": "tool.result:task_dispatch",
+          "fields": [
+            "tool",
+            "agent",
+            "dispatch_id",
+            "status",
+            "error_type"
+          ]
+        },
+        {
+          "source_type": "tool_result",
+          "selector": "task_dispatch",
+          "fields": [
+            "verified_product_ids",
+            "unverified_product_ids"
+          ]
+        }
       ],
       "allowed_paths": [
         "main_agent->trade_agent"
@@ -53,6 +89,10 @@
       "oracle_type": "deterministic",
       "status": "supported",
       "needs_new_instrumentation": false,
+      "remediation_kind": null,
+      "evidence_test_nodeids": [
+        "tests/test_agentbench_stage0.py::test_failed_dispatch_emits_terminal_event_and_scores_task_failed"
+      ],
       "candidate_asset_families": [
         "agent-cases-v1",
         "harness-cases"
@@ -60,20 +100,25 @@
     },
     {
       "capability_id": "search.catalog",
-      "code_entry": "app/application/tools/product_search_tool.py:78",
-      "observable_events": [
-        "tool.invoke:product_search_tool",
-        "tool.result:product_search_tool"
-      ],
-      "assertable_fields": [
-        "payload.hits[].product_id",
-        "payload.hits[].title",
-        "payload.hits[].price_major",
-        "payload.hits[].currency",
-        "payload.recall_strategy",
-        "payload.total_candidates",
-        "payload.query_conditions",
-        "payload.result_ref"
+      "code_entry": {
+        "path": "app/application/tools/product_search_tool.py",
+        "symbol": "build_product_search_tool",
+        "line": 78
+      },
+      "observations": [
+        {
+          "source_type": "event",
+          "selector": "tool.result:product_search_tool",
+          "fields": [
+            "tool",
+            "hit_count",
+            "recall_strategy",
+            "total_candidates",
+            "query_conditions",
+            "hits",
+            "result_ref"
+          ]
+        }
       ],
       "allowed_paths": [
         "main_agent->product_search_tool",
@@ -85,6 +130,10 @@
       "oracle_type": "deterministic",
       "status": "supported",
       "needs_new_instrumentation": false,
+      "remediation_kind": null,
+      "evidence_test_nodeids": [
+        "tests/test_search_constraint_continuity.py::test_rewrite_inherits_type_budget_destination_and_material_constraints"
+      ],
       "candidate_asset_families": [
         "retrieval-v1",
         "retrieval-v2",
@@ -95,18 +144,20 @@
     },
     {
       "capability_id": "search.constraints",
-      "code_entry": "app/application/tools/product_search_tool.py:78",
-      "observable_events": [
-        "tool.result:product_search_tool"
-      ],
-      "assertable_fields": [
-        "payload.query_conditions.price_max_major",
-        "payload.query_conditions.ship_to",
-        "payload.query_conditions.product_type",
-        "payload.query_conditions.sku_spec",
-        "payload.query_conditions.excluded_material_tags",
-        "payload.filtered_out[].reason",
-        "payload.filtered_out[].product_id"
+      "code_entry": {
+        "path": "app/application/tools/product_search_tool.py",
+        "symbol": "build_product_search_tool",
+        "line": 78
+      },
+      "observations": [
+        {
+          "source_type": "event",
+          "selector": "tool.result:product_search_tool",
+          "fields": [
+            "query_conditions",
+            "filtered_out"
+          ]
+        }
       ],
       "allowed_paths": [
         "main_agent->product_search_tool",
@@ -118,21 +169,32 @@
       "oracle_type": "deterministic",
       "status": "supported",
       "needs_new_instrumentation": false,
+      "remediation_kind": null,
+      "evidence_test_nodeids": [
+        "tests/test_search_constraint_continuity.py::test_identical_effective_request_reuses_previous_result_within_turn"
+      ],
       "candidate_asset_families": [
         "retrieval-v2",
-        "retrieval-contract"
+        "optimization-contract"
       ]
     },
     {
       "capability_id": "search.exact_id",
-      "code_entry": "app/application/tools/product_search_tool.py:78",
-      "observable_events": [
-        "tool.result:product_search_tool"
-      ],
-      "assertable_fields": [
-        "payload.recall_strategy",
-        "payload.hits[].product_id",
-        "payload.query_conditions.product_id"
+      "code_entry": {
+        "path": "app/application/tools/product_search_tool.py",
+        "symbol": "build_product_search_tool",
+        "line": 78
+      },
+      "observations": [
+        {
+          "source_type": "event",
+          "selector": "tool.result:product_search_tool",
+          "fields": [
+            "recall_strategy",
+            "hits",
+            "query_conditions"
+          ]
+        }
       ],
       "allowed_paths": [
         "main_agent->product_search_tool",
@@ -144,22 +206,33 @@
       "oracle_type": "deterministic",
       "status": "supported",
       "needs_new_instrumentation": false,
+      "remediation_kind": null,
+      "evidence_test_nodeids": [
+        "tests/test_search_constraint_continuity.py::test_exact_id_detail_does_not_inherit_a_search_sku_spec"
+      ],
       "candidate_asset_families": [
         "retrieval-v2"
       ]
     },
     {
       "capability_id": "search.landed_price",
-      "code_entry": "app/application/tools/product_search_tool.py:78",
-      "observable_events": [
-        "tool.result:product_search_tool"
-      ],
-      "assertable_fields": [
-        "payload.hits[].landed_price.subtotal_major",
-        "payload.hits[].landed_price.freight_major",
-        "payload.hits[].landed_price.tariff_major",
-        "payload.hits[].landed_price.landed_total_major",
-        "payload.hits[].landed_price.currency"
+      "code_entry": {
+        "path": "app/application/tools/product_search_tool.py",
+        "symbol": "build_product_search_tool",
+        "line": 78
+      },
+      "observations": [
+        {
+          "source_type": "event",
+          "selector": "tool.result:product_search_tool",
+          "fields": [
+            "hits[].landed_price.subtotal_major",
+            "hits[].landed_price.freight_major",
+            "hits[].landed_price.tariff_major",
+            "hits[].landed_price.landed_total_major",
+            "hits[].landed_price.currency"
+          ]
+        }
       ],
       "allowed_paths": [
         "main_agent->product_search_tool",
@@ -171,26 +244,42 @@
       "oracle_type": "deterministic",
       "status": "supported",
       "needs_new_instrumentation": false,
+      "remediation_kind": null,
+      "evidence_test_nodeids": [
+        "tests/test_answer_grounding_contract.py::test_product_fallback_reports_landed_price_with_fee_breakdown"
+      ],
       "candidate_asset_families": [
         "retrieval-v2",
-        "retrieval-contract"
+        "optimization-contract"
       ]
     },
     {
       "capability_id": "search.category_insight",
-      "code_entry": "app/application/tools/category_insight_tool.py:37",
-      "observable_events": [
-        "tool.invoke:category_insight_tool",
-        "tool.result:category_insight_tool",
-        "TOOL_CALL_RESULT:category_insight_tool"
-      ],
-      "assertable_fields": [
-        "payload.hit_count",
-        "payload.abstained",
-        "payload.retrieval_mode",
-        "payload.policy_fact_statuses",
-        "content.insights[].metadata.document_id",
-        "content.insights[].metadata.source"
+      "code_entry": {
+        "path": "app/application/tools/category_insight_tool.py",
+        "symbol": "build_category_insight_tool",
+        "line": 37
+      },
+      "observations": [
+        {
+          "source_type": "event",
+          "selector": "tool.result:category_insight_tool",
+          "fields": [
+            "hit_count",
+            "abstained",
+            "retrieval_mode",
+            "policy_fact_statuses"
+          ]
+        },
+        {
+          "source_type": "tool_result",
+          "selector": "category_insight_tool",
+          "fields": [
+            "insights[].source",
+            "insights[].metadata.source_reference",
+            "insights[].metadata.source_type"
+          ]
+        }
       ],
       "allowed_paths": [
         "main_agent->category_insight_tool",
@@ -202,19 +291,30 @@
       "oracle_type": "deterministic",
       "status": "supported",
       "needs_new_instrumentation": false,
+      "remediation_kind": null,
+      "evidence_test_nodeids": [
+        "tests/test_harness_guards.py::TestSchemaAssertion::test_accepts_dict_input",
+        "tests/test_knowledge_fixture.py::test_knowledge_fixture_has_versioned_metadata_and_required_document_count"
+      ],
       "candidate_asset_families": [
         "knowledge-v1"
       ]
     },
     {
       "capability_id": "search.web",
-      "code_entry": "app/application/tools/web_search_tool.py:24",
-      "observable_events": [
-        "tool.invoke:web_search_tool",
-        "tool.result:web_search_tool"
-      ],
-      "assertable_fields": [
-        "payload.error"
+      "code_entry": {
+        "path": "app/application/tools/web_search_tool.py",
+        "symbol": "build_web_search_tool",
+        "line": 24
+      },
+      "observations": [
+        {
+          "source_type": "event",
+          "selector": "tool.result:web_search_tool",
+          "fields": [
+            "error"
+          ]
+        }
       ],
       "allowed_paths": [
         "main_agent->web_search_tool",
@@ -226,19 +326,31 @@
       "oracle_type": "none",
       "status": "not_supported",
       "needs_new_instrumentation": true,
+      "remediation_kind": [
+        "configuration",
+        "external_data"
+      ],
+      "evidence_test_nodeids": [],
       "candidate_asset_families": []
     },
     {
       "capability_id": "evidence.fact_lookup",
-      "code_entry": "app/application/tools/conversation_fact_lookup.py:41",
-      "observable_events": [
-        "TOOL_CALL_RESULT:conversation_fact_lookup"
-      ],
-      "assertable_fields": [
-        "content.product_id",
-        "content.sku_id",
-        "content.price_major",
-        "content.stock"
+      "code_entry": {
+        "path": "app/application/tools/conversation_fact_lookup.py",
+        "symbol": "build_conversation_fact_lookup",
+        "line": 41
+      },
+      "observations": [
+        {
+          "source_type": "tool_result",
+          "selector": "conversation_fact_lookup",
+          "fields": [
+            "product_id",
+            "sku_id",
+            "price_major",
+            "stock"
+          ]
+        }
       ],
       "allowed_paths": [
         "main_agent->conversation_fact_lookup",
@@ -250,21 +362,35 @@
       "oracle_type": "deterministic",
       "status": "instrumentation_required",
       "needs_new_instrumentation": true,
+      "remediation_kind": "instrumentation",
+      "evidence_test_nodeids": [],
       "candidate_asset_families": [
         "context-cases"
       ]
     },
     {
       "capability_id": "memory.remember",
-      "code_entry": "app/application/tools/remember_preference_tool.py:22",
-      "observable_events": [
-        "tool.invoke:remember_preference_tool",
-        "tool.result:remember_preference_tool"
-      ],
-      "assertable_fields": [
-        "payload.saved",
-        "memory_result.action",
-        "memory_result.statement"
+      "code_entry": {
+        "path": "app/application/tools/remember_preference_tool.py",
+        "symbol": "build_remember_preference_tool",
+        "line": 22
+      },
+      "observations": [
+        {
+          "source_type": "event",
+          "selector": "tool.result:remember_preference_tool",
+          "fields": [
+            "saved"
+          ]
+        },
+        {
+          "source_type": "verified_result",
+          "selector": "memory_write",
+          "fields": [
+            "action",
+            "statement"
+          ]
+        }
       ],
       "allowed_paths": [
         "main_agent->remember_preference_tool"
@@ -275,6 +401,10 @@
       "oracle_type": "deterministic",
       "status": "supported",
       "needs_new_instrumentation": false,
+      "remediation_kind": null,
+      "evidence_test_nodeids": [
+        "tests/test_memory_upgrade.py::test_stable_id_versions_aba_and_delete_audit"
+      ],
       "candidate_asset_families": [
         "memory-cases",
         "skill-cases"
@@ -282,14 +412,27 @@
     },
     {
       "capability_id": "memory.update",
-      "code_entry": "app/application/tools/update_preference_tool.py:10",
-      "observable_events": [
-        "tool.invoke:update_preference_tool",
-        "tool.result:update_preference_tool"
-      ],
-      "assertable_fields": [
-        "payload.updated",
-        "memory_result.action"
+      "code_entry": {
+        "path": "app/application/tools/update_preference_tool.py",
+        "symbol": "build_update_preference_tool",
+        "line": 10
+      },
+      "observations": [
+        {
+          "source_type": "event",
+          "selector": "tool.result:update_preference_tool",
+          "fields": [
+            "updated"
+          ]
+        },
+        {
+          "source_type": "verified_result",
+          "selector": "memory_write",
+          "fields": [
+            "action",
+            "statement"
+          ]
+        }
       ],
       "allowed_paths": [
         "main_agent->update_preference_tool"
@@ -300,20 +443,37 @@
       "oracle_type": "deterministic",
       "status": "supported",
       "needs_new_instrumentation": false,
+      "remediation_kind": null,
+      "evidence_test_nodeids": [
+        "tests/test_memory_upgrade.py::test_concurrent_edit_only_one_version_wins"
+      ],
       "candidate_asset_families": [
         "memory-cases"
       ]
     },
     {
       "capability_id": "memory.forget",
-      "code_entry": "app/application/tools/forget_preference_tool.py:23",
-      "observable_events": [
-        "tool.invoke:forget_preference_tool",
-        "tool.result:forget_preference_tool"
-      ],
-      "assertable_fields": [
-        "payload.deleted",
-        "payload.preference_id"
+      "code_entry": {
+        "path": "app/application/tools/forget_preference_tool.py",
+        "symbol": "build_forget_preference_tool",
+        "line": 23
+      },
+      "observations": [
+        {
+          "source_type": "event",
+          "selector": "tool.result:forget_preference_tool",
+          "fields": [
+            "deleted"
+          ]
+        },
+        {
+          "source_type": "verified_result",
+          "selector": "memory_write",
+          "fields": [
+            "action",
+            "statement"
+          ]
+        }
       ],
       "allowed_paths": [
         "main_agent->forget_preference_tool"
@@ -324,21 +484,32 @@
       "oracle_type": "deterministic",
       "status": "supported",
       "needs_new_instrumentation": false,
+      "remediation_kind": null,
+      "evidence_test_nodeids": [
+        "tests/test_memory_upgrade.py::test_stable_id_versions_aba_and_delete_audit"
+      ],
       "candidate_asset_families": [
         "memory-cases"
       ]
     },
     {
       "capability_id": "state.constraint_carry",
-      "code_entry": "app/application/search_constraint_guard.py:1",
-      "observable_events": [
-        "tool.result:product_search_tool"
-      ],
-      "assertable_fields": [
-        "payload.constraint_continuity.inherited",
-        "payload.query_conditions.price_max_major",
-        "payload.query_conditions.ship_to",
-        "payload.query_conditions.sku_spec"
+      "code_entry": {
+        "path": "app/application/search_constraint_guard.py",
+        "symbol": "SearchConstraintGuard.reconcile",
+        "line": 60
+      },
+      "observations": [
+        {
+          "source_type": "event",
+          "selector": "tool.result:product_search_tool",
+          "fields": [
+            "constraint_continuity.inherited",
+            "query_conditions.price_max_major",
+            "query_conditions.ship_to",
+            "query_conditions.sku_spec"
+          ]
+        }
       ],
       "allowed_paths": [
         "main_agent->product_search_tool",
@@ -350,6 +521,10 @@
       "oracle_type": "deterministic",
       "status": "supported",
       "needs_new_instrumentation": false,
+      "remediation_kind": null,
+      "evidence_test_nodeids": [
+        "tests/test_search_constraint_continuity.py::test_rewrite_inherits_type_budget_destination_and_material_constraints"
+      ],
       "candidate_asset_families": [
         "context-cases",
         "harness-cases"
@@ -357,16 +532,28 @@
     },
     {
       "capability_id": "state.session_isolation",
-      "code_entry": "app/infrastructure/context.py:40",
-      "observable_events": [
-        "tool.result",
-        "usage.summary"
-      ],
-      "assertable_fields": [
-        "correlation.session_id",
-        "correlation.agent",
-        "payload.order.buyer_id",
-        "payload.order.shopping_session_id"
+      "code_entry": {
+        "path": "app/infrastructure/context.py",
+        "symbol": "ShoppingContext",
+        "line": 40
+      },
+      "observations": [
+        {
+          "source_type": "event",
+          "selector": "TradeEvent",
+          "fields": [
+            "shopping_session_id",
+            "correlation.session_id"
+          ]
+        },
+        {
+          "source_type": "state_snapshot",
+          "selector": "order_repository",
+          "fields": [
+            "buyer_id",
+            "shopping_session_id"
+          ]
+        }
       ],
       "allowed_paths": [
         "main_agent->*",
@@ -379,22 +566,30 @@
       "oracle_type": "deterministic",
       "status": "supported",
       "needs_new_instrumentation": false,
+      "remediation_kind": null,
+      "evidence_test_nodeids": [
+        "tests/test_session_fencing.py::test_new_claim_invalidates_old_writer_before_new_owner_has_saved"
+      ],
       "candidate_asset_families": [
         "harness-cases"
       ]
     },
     {
       "capability_id": "trade.prepare",
-      "code_entry": "app/application/tools/order_tools.py:89",
-      "observable_events": [
-        "tool.invoke:create_order_tool",
-        "tool.result:create_order_tool"
-      ],
-      "assertable_fields": [
-        "payload.confirmation_required",
-        "payload.confirmation.pending",
-        "payload.confirmation.payload.snapshot_hash",
-        "payload.confirmation.confirmation_id"
+      "code_entry": {
+        "path": "app/application/tools/order_tools.py",
+        "symbol": "build_create_order_tool",
+        "line": 89
+      },
+      "observations": [
+        {
+          "source_type": "event",
+          "selector": "tool.result:create_order_tool",
+          "fields": [
+            "confirmation_required",
+            "confirmation"
+          ]
+        }
       ],
       "allowed_paths": [
         "main_agent->create_order_tool",
@@ -406,6 +601,10 @@
       "oracle_type": "deterministic",
       "status": "supported",
       "needs_new_instrumentation": false,
+      "remediation_kind": null,
+      "evidence_test_nodeids": [
+        "tests/test_confirmation_service.py::test_prepare_exposes_authoritative_snapshot_without_creating_order_or_deducting_stock"
+      ],
       "candidate_asset_families": [
         "product-dev",
         "business-public"
@@ -413,16 +612,28 @@
     },
     {
       "capability_id": "trade.approve",
-      "code_entry": "app/application/usecases/confirmation_service.py:158",
-      "observable_events": [
-        "tool.result:create_order_tool",
-        "usage.summary"
-      ],
-      "assertable_fields": [
-        "turn_trade.orders[].order_id",
-        "turn_trade.orders[].status",
-        "confirmation.pending",
-        "inventory_delta"
+      "code_entry": {
+        "path": "app/application/usecases/confirmation_service.py",
+        "symbol": "ConfirmationService.resolve",
+        "line": 158
+      },
+      "observations": [
+        {
+          "source_type": "event",
+          "selector": "tool.result:create_order_tool",
+          "fields": [
+            "order",
+            "confirmation"
+          ]
+        },
+        {
+          "source_type": "state_snapshot",
+          "selector": "inventory_repository",
+          "fields": [
+            "before",
+            "after"
+          ]
+        }
       ],
       "allowed_paths": [
         "main_agent->confirmation_input"
@@ -434,6 +645,10 @@
       "oracle_type": "deterministic",
       "status": "supported",
       "needs_new_instrumentation": false,
+      "remediation_kind": null,
+      "evidence_test_nodeids": [
+        "tests/test_trade_store.py::test_create_commits_order_inventory_and_decision_together"
+      ],
       "candidate_asset_families": [
         "product-dev",
         "business-public"
@@ -441,15 +656,19 @@
     },
     {
       "capability_id": "trade.query",
-      "code_entry": "app/application/tools/order_tools.py:153",
-      "observable_events": [
-        "tool.invoke:query_order_tool",
-        "tool.result:query_order_tool"
-      ],
-      "assertable_fields": [
-        "payload.order.order_id",
-        "payload.order.status",
-        "payload.order.lines"
+      "code_entry": {
+        "path": "app/application/tools/order_tools.py",
+        "symbol": "build_query_order_tool",
+        "line": 153
+      },
+      "observations": [
+        {
+          "source_type": "event",
+          "selector": "tool.result:query_order_tool",
+          "fields": [
+            "order"
+          ]
+        }
       ],
       "allowed_paths": [
         "main_agent->query_order_tool",
@@ -461,6 +680,10 @@
       "oracle_type": "deterministic",
       "status": "supported",
       "needs_new_instrumentation": false,
+      "remediation_kind": null,
+      "evidence_test_nodeids": [
+        "tests/test_trade_store.py::test_create_commits_order_inventory_and_decision_together"
+      ],
       "candidate_asset_families": [
         "product-dev",
         "business-public"
@@ -468,15 +691,28 @@
     },
     {
       "capability_id": "trade.cancel",
-      "code_entry": "app/application/tools/order_tools.py:177",
-      "observable_events": [
-        "tool.invoke:cancel_order_tool",
-        "tool.result:cancel_order_tool"
-      ],
-      "assertable_fields": [
-        "payload.confirmation_required",
-        "payload.order.status",
-        "inventory_delta"
+      "code_entry": {
+        "path": "app/application/tools/order_tools.py",
+        "symbol": "build_cancel_order_tool",
+        "line": 177
+      },
+      "observations": [
+        {
+          "source_type": "event",
+          "selector": "tool.result:cancel_order_tool",
+          "fields": [
+            "confirmation_required",
+            "order"
+          ]
+        },
+        {
+          "source_type": "state_snapshot",
+          "selector": "inventory_repository",
+          "fields": [
+            "before",
+            "after"
+          ]
+        }
       ],
       "allowed_paths": [
         "main_agent->cancel_order_tool",
@@ -490,6 +726,10 @@
       "oracle_type": "deterministic",
       "status": "supported",
       "needs_new_instrumentation": false,
+      "remediation_kind": null,
+      "evidence_test_nodeids": [
+        "tests/test_confirmation_service.py::test_landed_quote_survives_approval_query_and_cancel_after_rules_change"
+      ],
       "candidate_asset_families": [
         "product-dev",
         "business-public"
@@ -497,13 +737,27 @@
     },
     {
       "capability_id": "trade.idempotency",
-      "code_entry": "app/application/usecases/confirmation_service.py:158",
-      "observable_events": [
-        "tool.result:create_order_tool"
-      ],
-      "assertable_fields": [
-        "turn_trade.orders[].order_id",
-        "inventory_delta"
+      "code_entry": {
+        "path": "app/application/usecases/confirmation_service.py",
+        "symbol": "ConfirmationService.resolve",
+        "line": 158
+      },
+      "observations": [
+        {
+          "source_type": "event",
+          "selector": "tool.result:create_order_tool",
+          "fields": [
+            "order"
+          ]
+        },
+        {
+          "source_type": "state_snapshot",
+          "selector": "order_repository",
+          "fields": [
+            "before",
+            "after"
+          ]
+        }
       ],
       "allowed_paths": [
         "main_agent->confirmation_input"
@@ -514,6 +768,10 @@
       "oracle_type": "deterministic",
       "status": "supported",
       "needs_new_instrumentation": false,
+      "remediation_kind": null,
+      "evidence_test_nodeids": [
+        "tests/test_trade_store.py::test_prepare_replay_returns_existing_even_with_new_expiry"
+      ],
       "candidate_asset_families": [
         "product-dev",
         "business-public"
@@ -521,16 +779,28 @@
     },
     {
       "capability_id": "harness.grounding_gate",
-      "code_entry": "app/application/agents/orchestrator.py:236",
-      "observable_events": [
-        "MESSAGES_SNAPSHOT",
-        "error:claim_guard"
-      ],
-      "assertable_fields": [
-        "payload.message",
-        "payload.claim_guard",
-        "grounding_audit.replacement_kind",
-        "grounding_audit.violations"
+      "code_entry": {
+        "path": "app/application/agents/orchestrator.py",
+        "symbol": "MainAgentOrchestrator._guard_final_text",
+        "line": 236
+      },
+      "observations": [
+        {
+          "source_type": "event",
+          "selector": "error",
+          "fields": [
+            "message",
+            "claim_guard"
+          ]
+        },
+        {
+          "source_type": "private_artifact",
+          "selector": "grounding_audit.jsonl",
+          "fields": [
+            "replacement_kind",
+            "violations"
+          ]
+        }
       ],
       "allowed_paths": [
         "system"
@@ -541,19 +811,29 @@
       "oracle_type": "deterministic",
       "status": "supported",
       "needs_new_instrumentation": false,
+      "remediation_kind": null,
+      "evidence_test_nodeids": [
+        "tests/test_answer_grounding_contract.py::test_orchestrator_replaces_unsupported_claims_with_verified_catalog_facts"
+      ],
       "candidate_asset_families": [
         "harness-cases"
       ]
     },
     {
       "capability_id": "harness.output_redaction",
-      "code_entry": "app/infrastructure/security/output_guard.py:50",
-      "observable_events": [
-        "error:output_guard"
-      ],
-      "assertable_fields": [
-        "payload.message",
-        "cleaned_text"
+      "code_entry": {
+        "path": "app/infrastructure/security/output_guard.py",
+        "symbol": "audit_output",
+        "line": 50
+      },
+      "observations": [
+        {
+          "source_type": "event",
+          "selector": "error",
+          "fields": [
+            "message"
+          ]
+        }
       ],
       "allowed_paths": [
         "system"
@@ -564,17 +844,26 @@
       "oracle_type": "deterministic",
       "status": "instrumentation_required",
       "needs_new_instrumentation": true,
+      "remediation_kind": "instrumentation",
+      "evidence_test_nodeids": [],
       "candidate_asset_families": []
     },
     {
       "capability_id": "ui.form_surface",
-      "code_entry": "app/application/tools/shopping_form_tool.py:9",
-      "observable_events": [
-        "ui.surface"
-      ],
-      "assertable_fields": [
-        "payload.form",
-        "payload.buyer_id"
+      "code_entry": {
+        "path": "app/application/tools/shopping_form_tool.py",
+        "symbol": "build_shopping_form_tool",
+        "line": 9
+      },
+      "observations": [
+        {
+          "source_type": "event",
+          "selector": "ui.surface",
+          "fields": [
+            "form",
+            "buyer_id"
+          ]
+        }
       ],
       "allowed_paths": [
         "main_agent->shopping_form_tool"
@@ -583,18 +872,27 @@
         "none"
       ],
       "oracle_type": "deterministic",
-      "status": "supported",
-      "needs_new_instrumentation": false,
+      "status": "instrumentation_required",
+      "needs_new_instrumentation": true,
+      "remediation_kind": "eval_harness",
+      "evidence_test_nodeids": [],
       "candidate_asset_families": []
     },
     {
       "capability_id": "comparison.recommendation",
-      "code_entry": "app/application/agents/orchestrator.py:236",
-      "observable_events": [
-        "MESSAGES_SNAPSHOT"
-      ],
-      "assertable_fields": [
-        "floating_text"
+      "code_entry": {
+        "path": "app/application/agents/orchestrator.py",
+        "symbol": "MainAgentOrchestrator._guard_final_text",
+        "line": 236
+      },
+      "observations": [
+        {
+          "source_type": "event",
+          "selector": "MESSAGES_SNAPSHOT",
+          "fields": [
+            "messages[].content"
+          ]
+        }
       ],
       "allowed_paths": [
         "main_agent->*"
@@ -605,12 +903,11 @@
       "oracle_type": "human",
       "status": "instrumentation_required",
       "needs_new_instrumentation": true,
+      "remediation_kind": "eval_harness",
+      "evidence_test_nodeids": [],
       "candidate_asset_families": [
         "agent-cases-v1"
       ]
     }
-  ],
-  "source_inventory_sha256": "ea8341dc7f043c34dcddff7616209affcd35742e2141828af15c9406291a681b",
-  "record_index_sha256": "213537505fd8b6af04a200e9297e7b90d704fcc631b9c9f456721916b76029f3",
-  "deterministic_payload_sha256": "741a81f666341b30af376d461f8858cc06e264fca8a58374a777cb9325858769"
+  ]
 }
