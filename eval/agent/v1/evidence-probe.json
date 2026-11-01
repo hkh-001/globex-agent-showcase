@@ -28,8 +28,15 @@
       ],
       "result": "pass",
       "event_count": 2,
-      "run_id": "999c7e5bc1d44fb1941c36d9cb28504c",
-      "source_commit": "3668ea4d641642149a8fc31a58ebc5c8f91c01d3"
+      "observed_values": {
+        "hit_count": 3,
+        "recall_strategy": "keyword_2gram",
+        "total_candidates": 3,
+        "top_product_id": "P1018",
+        "result_ref": "probe-ref"
+      },
+      "run_id": "6cdabed130ad4695b0f859283a2afc19",
+      "source_commit": "18b92a00ab6e6a207903880e23244f34cfd32bf4"
     },
     {
       "capability_id": "search.constraints",
@@ -46,8 +53,13 @@
       ],
       "result": "pass",
       "event_count": 2,
-      "run_id": "999c7e5bc1d44fb1941c36d9cb28504c",
-      "source_commit": "3668ea4d641642149a8fc31a58ebc5c8f91c01d3"
+      "observed_values": {
+        "ship_to": "CN",
+        "product_type": "背包",
+        "filtered_out_count": 3
+      },
+      "run_id": "6cdabed130ad4695b0f859283a2afc19",
+      "source_commit": "18b92a00ab6e6a207903880e23244f34cfd32bf4"
     },
     {
       "capability_id": "search.landed_price",
@@ -70,8 +82,15 @@
       ],
       "result": "pass",
       "event_count": 2,
-      "run_id": "999c7e5bc1d44fb1941c36d9cb28504c",
-      "source_commit": "3668ea4d641642149a8fc31a58ebc5c8f91c01d3"
+      "observed_values": {
+        "subtotal_major": 219.0,
+        "freight_major": 25.0,
+        "tariff_major": 0.0,
+        "landed_total_major": 244.0,
+        "currency": "CNY"
+      },
+      "run_id": "6cdabed130ad4695b0f859283a2afc19",
+      "source_commit": "18b92a00ab6e6a207903880e23244f34cfd32bf4"
     },
     {
       "capability_id": "search.exact_id",
@@ -98,8 +117,12 @@
       ],
       "result": "pass",
       "event_count": 2,
-      "run_id": "999c7e5bc1d44fb1941c36d9cb28504c",
-      "source_commit": "3668ea4d641642149a8fc31a58ebc5c8f91c01d3"
+      "observed_values": {
+        "recall_strategy": "exact_id_lookup",
+        "first_product_id": "P1003"
+      },
+      "run_id": "6cdabed130ad4695b0f859283a2afc19",
+      "source_commit": "18b92a00ab6e6a207903880e23244f34cfd32bf4"
     },
     {
       "capability_id": "state.constraint_carry",
@@ -120,8 +143,16 @@
       ],
       "result": "pass",
       "event_count": 2,
-      "run_id": "999c7e5bc1d44fb1941c36d9cb28504c",
-      "source_commit": "3668ea4d641642149a8fc31a58ebc5c8f91c01d3"
+      "observed_values": {
+        "inherited": [
+          "price_max_major",
+          "product_type",
+          "ship_to",
+          "sku_spec"
+        ]
+      },
+      "run_id": "6cdabed130ad4695b0f859283a2afc19",
+      "source_commit": "18b92a00ab6e6a207903880e23244f34cfd32bf4"
     },
     {
       "capability_id": "dispatch.search",
@@ -142,8 +173,13 @@
       ],
       "result": "pass",
       "event_count": 3,
-      "run_id": "999c7e5bc1d44fb1941c36d9cb28504c",
-      "source_commit": "3668ea4d641642149a8fc31a58ebc5c8f91c01d3"
+      "observed_values": {
+        "agent": null,
+        "dispatch_id": null,
+        "status": null
+      },
+      "run_id": "6cdabed130ad4695b0f859283a2afc19",
+      "source_commit": "18b92a00ab6e6a207903880e23244f34cfd32bf4"
     },
     {
       "capability_id": "dispatch.search",
@@ -168,8 +204,8 @@
         ],
         "unverified_product_ids": []
       },
-      "run_id": "999c7e5bc1d44fb1941c36d9cb28504c",
-      "source_commit": "3668ea4d641642149a8fc31a58ebc5c8f91c01d3"
+      "run_id": "6cdabed130ad4695b0f859283a2afc19",
+      "source_commit": "18b92a00ab6e6a207903880e23244f34cfd32bf4"
     },
     {
       "capability_id": "dispatch.trade",
@@ -190,8 +226,13 @@
       ],
       "result": "pass",
       "event_count": 3,
-      "run_id": "999c7e5bc1d44fb1941c36d9cb28504c",
-      "source_commit": "3668ea4d641642149a8fc31a58ebc5c8f91c01d3"
+      "observed_values": {
+        "agent": null,
+        "dispatch_id": null,
+        "status": null
+      },
+      "run_id": "6cdabed130ad4695b0f859283a2afc19",
+      "source_commit": "18b92a00ab6e6a207903880e23244f34cfd32bf4"
     },
     {
       "capability_id": "dispatch.trade",
@@ -208,8 +249,16 @@
       ],
       "result": "pass",
       "event_count": 3,
-      "run_id": "999c7e5bc1d44fb1941c36d9cb28504c",
-      "source_commit": "3668ea4d641642149a8fc31a58ebc5c8f91c01d3"
+      "observed_values": {
+        "status": "completed",
+        "verified_product_ids": [
+          "P1003",
+          "P1003-S1"
+        ],
+        "unverified_product_ids": []
+      },
+      "run_id": "6cdabed130ad4695b0f859283a2afc19",
+      "source_commit": "18b92a00ab6e6a207903880e23244f34cfd32bf4"
     },
     {
       "capability_id": "harness.grounding_gate",
@@ -226,8 +275,12 @@
       ],
       "result": "pass",
       "event_count": 1,
-      "run_id": "999c7e5bc1d44fb1941c36d9cb28504c",
-      "source_commit": "3668ea4d641642149a8fc31a58ebc5c8f91c01d3"
+      "observed_values": {
+        "message": null,
+        "claim_guard": null
+      },
+      "run_id": "6cdabed130ad4695b0f859283a2afc19",
+      "source_commit": "18b92a00ab6e6a207903880e23244f34cfd32bf4"
     },
     {
       "capability_id": "harness.grounding_gate",
@@ -250,8 +303,14 @@
       ],
       "result": "pass",
       "event_count": 1,
-      "run_id": "999c7e5bc1d44fb1941c36d9cb28504c",
-      "source_commit": "3668ea4d641642149a8fc31a58ebc5c8f91c01d3"
+      "observed_values": {
+        "replacement_kind": "grounded_product_fallback",
+        "violations": [
+          "carry_on"
+        ]
+      },
+      "run_id": "6cdabed130ad4695b0f859283a2afc19",
+      "source_commit": "18b92a00ab6e6a207903880e23244f34cfd32bf4"
     },
     {
       "capability_id": "memory.remember",
@@ -266,8 +325,11 @@
       ],
       "result": "pass",
       "event_count": 2,
-      "run_id": "999c7e5bc1d44fb1941c36d9cb28504c",
-      "source_commit": "3668ea4d641642149a8fc31a58ebc5c8f91c01d3"
+      "observed_values": {
+        "saved": "喜欢轻便背包"
+      },
+      "run_id": "6cdabed130ad4695b0f859283a2afc19",
+      "source_commit": "18b92a00ab6e6a207903880e23244f34cfd32bf4"
     },
     {
       "capability_id": "memory.remember",
@@ -284,8 +346,12 @@
       ],
       "result": "pass",
       "event_count": 2,
-      "run_id": "999c7e5bc1d44fb1941c36d9cb28504c",
-      "source_commit": "3668ea4d641642149a8fc31a58ebc5c8f91c01d3"
+      "observed_values": {
+        "action": "保存",
+        "statement": "喜欢轻便背包"
+      },
+      "run_id": "6cdabed130ad4695b0f859283a2afc19",
+      "source_commit": "18b92a00ab6e6a207903880e23244f34cfd32bf4"
     },
     {
       "capability_id": "memory.update",
@@ -300,8 +366,12 @@
       ],
       "result": "pass",
       "event_count": 2,
-      "run_id": "999c7e5bc1d44fb1941c36d9cb28504c",
-      "source_commit": "3668ea4d641642149a8fc31a58ebc5c8f91c01d3"
+      "observed_values": {
+        "updated": true,
+        "stored_statement": "喜欢超轻背包"
+      },
+      "run_id": "6cdabed130ad4695b0f859283a2afc19",
+      "source_commit": "18b92a00ab6e6a207903880e23244f34cfd32bf4"
     },
     {
       "capability_id": "memory.update",
@@ -316,8 +386,11 @@
       ],
       "result": "pass",
       "event_count": 2,
-      "run_id": "999c7e5bc1d44fb1941c36d9cb28504c",
-      "source_commit": "3668ea4d641642149a8fc31a58ebc5c8f91c01d3"
+      "observed_values": {
+        "action": "更新"
+      },
+      "run_id": "6cdabed130ad4695b0f859283a2afc19",
+      "source_commit": "18b92a00ab6e6a207903880e23244f34cfd32bf4"
     },
     {
       "capability_id": "memory.forget",
@@ -332,8 +405,12 @@
       ],
       "result": "pass",
       "event_count": 2,
-      "run_id": "999c7e5bc1d44fb1941c36d9cb28504c",
-      "source_commit": "3668ea4d641642149a8fc31a58ebc5c8f91c01d3"
+      "observed_values": {
+        "deleted": "喜欢超轻背包",
+        "remaining": 0
+      },
+      "run_id": "6cdabed130ad4695b0f859283a2afc19",
+      "source_commit": "18b92a00ab6e6a207903880e23244f34cfd32bf4"
     },
     {
       "capability_id": "memory.forget",
@@ -350,8 +427,12 @@
       ],
       "result": "pass",
       "event_count": 2,
-      "run_id": "999c7e5bc1d44fb1941c36d9cb28504c",
-      "source_commit": "3668ea4d641642149a8fc31a58ebc5c8f91c01d3"
+      "observed_values": {
+        "action": "删除",
+        "statement": "喜欢超轻背包"
+      },
+      "run_id": "6cdabed130ad4695b0f859283a2afc19",
+      "source_commit": "18b92a00ab6e6a207903880e23244f34cfd32bf4"
     },
     {
       "capability_id": "state.session_isolation",
@@ -368,8 +449,18 @@
       ],
       "result": "pass",
       "event_count": 4,
-      "run_id": "999c7e5bc1d44fb1941c36d9cb28504c",
-      "source_commit": "3668ea4d641642149a8fc31a58ebc5c8f91c01d3"
+      "observed_values": {
+        "shopping_session_id": [
+          "session-a",
+          "session-b"
+        ],
+        "correlation.session_id": [
+          "sha256:e8de016fbd70182f6d2325e8",
+          "sha256:fa57a52dbf08190218529730"
+        ]
+      },
+      "run_id": "6cdabed130ad4695b0f859283a2afc19",
+      "source_commit": "18b92a00ab6e6a207903880e23244f34cfd32bf4"
     },
     {
       "capability_id": "state.session_isolation",
@@ -396,8 +487,8 @@
           "buyer-b": "喜欢黑色"
         }
       },
-      "run_id": "999c7e5bc1d44fb1941c36d9cb28504c",
-      "source_commit": "3668ea4d641642149a8fc31a58ebc5c8f91c01d3"
+      "run_id": "6cdabed130ad4695b0f859283a2afc19",
+      "source_commit": "18b92a00ab6e6a207903880e23244f34cfd32bf4"
     },
     {
       "capability_id": "trade.prepare",
@@ -420,8 +511,32 @@
       ],
       "result": "pass",
       "event_count": 3,
-      "run_id": "999c7e5bc1d44fb1941c36d9cb28504c",
-      "source_commit": "3668ea4d641642149a8fc31a58ebc5c8f91c01d3"
+      "observed_values": {
+        "confirmation_id": "423c8b1b379d40c1a1bcf97bd94aa0b1",
+        "snapshot_hash": "3df061d9346143466dd47d7d21ec9dcdad538ca89a09413db0b70786e80cf03b",
+        "status": "pending",
+        "payload_keys": [
+          "amount_scope",
+          "category",
+          "currency",
+          "de_minimis_applied",
+          "freight_minor",
+          "items",
+          "merchandise_subtotal_minor",
+          "order_kind",
+          "pricing_revision",
+          "quantity",
+          "quote_currency",
+          "ship_to",
+          "shipping_address",
+          "source_currency",
+          "tariff_minor",
+          "tariff_rate",
+          "total_amount_minor"
+        ]
+      },
+      "run_id": "6cdabed130ad4695b0f859283a2afc19",
+      "source_commit": "18b92a00ab6e6a207903880e23244f34cfd32bf4"
     },
     {
       "capability_id": "trade.prepare",
@@ -453,8 +568,8 @@
         },
         "inventory_delta": 0
       },
-      "run_id": "999c7e5bc1d44fb1941c36d9cb28504c",
-      "source_commit": "3668ea4d641642149a8fc31a58ebc5c8f91c01d3"
+      "run_id": "6cdabed130ad4695b0f859283a2afc19",
+      "source_commit": "18b92a00ab6e6a207903880e23244f34cfd32bf4"
     },
     {
       "capability_id": "trade.query",
@@ -470,8 +585,12 @@
       ],
       "result": "pass",
       "event_count": 2,
-      "run_id": "999c7e5bc1d44fb1941c36d9cb28504c",
-      "source_commit": "3668ea4d641642149a8fc31a58ebc5c8f91c01d3"
+      "observed_values": {
+        "order_id": "fc5d29bcea6140068ddb9288ae41ba92",
+        "status": "CONFIRMED"
+      },
+      "run_id": "6cdabed130ad4695b0f859283a2afc19",
+      "source_commit": "18b92a00ab6e6a207903880e23244f34cfd32bf4"
     },
     {
       "capability_id": "search.category_insight",
@@ -491,8 +610,16 @@
       ],
       "result": "pass",
       "event_count": 2,
-      "run_id": "999c7e5bc1d44fb1941c36d9cb28504c",
-      "source_commit": "3668ea4d641642149a8fc31a58ebc5c8f91c01d3"
+      "observed_values": {
+        "hit_count": 2,
+        "abstained": false,
+        "policy_fact_statuses": [
+          "not_policy",
+          "not_policy"
+        ]
+      },
+      "run_id": "6cdabed130ad4695b0f859283a2afc19",
+      "source_commit": "18b92a00ab6e6a207903880e23244f34cfd32bf4"
     },
     {
       "capability_id": "search.category_insight",
@@ -511,8 +638,13 @@
       ],
       "result": "pass",
       "event_count": 2,
-      "run_id": "999c7e5bc1d44fb1941c36d9cb28504c",
-      "source_commit": "3668ea4d641642149a8fc31a58ebc5c8f91c01d3"
+      "observed_values": {
+        "source": "guide.md",
+        "source_reference": "未登记的临时知识文档",
+        "source_type": "unversioned_fixture"
+      },
+      "run_id": "6cdabed130ad4695b0f859283a2afc19",
+      "source_commit": "18b92a00ab6e6a207903880e23244f34cfd32bf4"
     },
     {
       "capability_id": "search.category_insight",
@@ -533,8 +665,13 @@
       "result": "pass",
       "event_count": 2,
       "case": "abstain",
-      "run_id": "999c7e5bc1d44fb1941c36d9cb28504c",
-      "source_commit": "3668ea4d641642149a8fc31a58ebc5c8f91c01d3"
+      "observed_values": {
+        "abstained": true,
+        "hit_count": 0,
+        "reason": "当前知识库没有足够相关且可验证的资料，不能据此作确定性回答"
+      },
+      "run_id": "6cdabed130ad4695b0f859283a2afc19",
+      "source_commit": "18b92a00ab6e6a207903880e23244f34cfd32bf4"
     },
     {
       "capability_id": "search.category_insight",
@@ -553,8 +690,12 @@
       "result": "pass",
       "event_count": 2,
       "case": "abstain",
-      "run_id": "999c7e5bc1d44fb1941c36d9cb28504c",
-      "source_commit": "3668ea4d641642149a8fc31a58ebc5c8f91c01d3"
+      "observed_values": {
+        "unanswerable": true,
+        "reason": "当前知识库没有足够相关且可验证的资料，不能据此作确定性回答"
+      },
+      "run_id": "6cdabed130ad4695b0f859283a2afc19",
+      "source_commit": "18b92a00ab6e6a207903880e23244f34cfd32bf4"
     },
     {
       "capability_id": "trade.approve",
@@ -574,10 +715,10 @@
       "case": "approved",
       "observed_values": {
         "status": "approved",
-        "order_id": "a6c3523651cc41079363582bbb97ea9e"
+        "order_id": "3700fc3c0ddc47ab9d86f49fcfcd3d9c"
       },
-      "run_id": "999c7e5bc1d44fb1941c36d9cb28504c",
-      "source_commit": "3668ea4d641642149a8fc31a58ebc5c8f91c01d3"
+      "run_id": "6cdabed130ad4695b0f859283a2afc19",
+      "source_commit": "18b92a00ab6e6a207903880e23244f34cfd32bf4"
     },
     {
       "capability_id": "trade.approve",
@@ -609,11 +750,11 @@
           "P1001-S1": 49
         },
         "inventory_delta": -1,
-        "order_id": "a6c3523651cc41079363582bbb97ea9e",
+        "order_id": "3700fc3c0ddc47ab9d86f49fcfcd3d9c",
         "order_status": "CONFIRMED"
       },
-      "run_id": "999c7e5bc1d44fb1941c36d9cb28504c",
-      "source_commit": "3668ea4d641642149a8fc31a58ebc5c8f91c01d3"
+      "run_id": "6cdabed130ad4695b0f859283a2afc19",
+      "source_commit": "18b92a00ab6e6a207903880e23244f34cfd32bf4"
     },
     {
       "capability_id": "trade.approve",
@@ -632,8 +773,8 @@
       "observed_values": {
         "status": "rejected"
       },
-      "run_id": "999c7e5bc1d44fb1941c36d9cb28504c",
-      "source_commit": "3668ea4d641642149a8fc31a58ebc5c8f91c01d3"
+      "run_id": "6cdabed130ad4695b0f859283a2afc19",
+      "source_commit": "18b92a00ab6e6a207903880e23244f34cfd32bf4"
     },
     {
       "capability_id": "trade.approve",
@@ -668,8 +809,8 @@
         "order_id": null,
         "order_status": null
       },
-      "run_id": "999c7e5bc1d44fb1941c36d9cb28504c",
-      "source_commit": "3668ea4d641642149a8fc31a58ebc5c8f91c01d3"
+      "run_id": "6cdabed130ad4695b0f859283a2afc19",
+      "source_commit": "18b92a00ab6e6a207903880e23244f34cfd32bf4"
     },
     {
       "capability_id": "trade.cancel",
@@ -693,10 +834,10 @@
       "observed_values": {
         "status": "approved",
         "action": "cancel",
-        "order_id": "765a5890797c4844812208b3bb0f26c2"
+        "order_id": "95ae3a7c36bd4e18950b8fd823a64792"
       },
-      "run_id": "999c7e5bc1d44fb1941c36d9cb28504c",
-      "source_commit": "3668ea4d641642149a8fc31a58ebc5c8f91c01d3"
+      "run_id": "6cdabed130ad4695b0f859283a2afc19",
+      "source_commit": "18b92a00ab6e6a207903880e23244f34cfd32bf4"
     },
     {
       "capability_id": "trade.cancel",
@@ -720,10 +861,10 @@
       "observed_values": {
         "order_count_before": 2,
         "order_count_after": 2,
-        "target_order_id": "765a5890797c4844812208b3bb0f26c2",
+        "target_order_id": "95ae3a7c36bd4e18950b8fd823a64792",
         "target_status_before": "CONFIRMED",
         "target_status_after": "CANCELLED",
-        "unaffected_order_id": "41b5f0c9142f4ca8bcf4e05e535d8dca",
+        "unaffected_order_id": "2f31351c1b8044f080a5d7cd318c7b8b",
         "unaffected_status_before": "CONFIRMED",
         "unaffected_status_after": "CONFIRMED",
         "inventory_before": {
@@ -734,8 +875,8 @@
         },
         "inventory_delta": 1
       },
-      "run_id": "999c7e5bc1d44fb1941c36d9cb28504c",
-      "source_commit": "3668ea4d641642149a8fc31a58ebc5c8f91c01d3"
+      "run_id": "6cdabed130ad4695b0f859283a2afc19",
+      "source_commit": "18b92a00ab6e6a207903880e23244f34cfd32bf4"
     },
     {
       "capability_id": "trade.idempotency",
@@ -754,10 +895,10 @@
       "event_count": 1,
       "observed_values": {
         "status": "approved",
-        "order_id": "84ca48ead5e94a2b8f219a48b237a40d"
+        "order_id": "13a38535b1624db08972ba85dda96a9d"
       },
-      "run_id": "999c7e5bc1d44fb1941c36d9cb28504c",
-      "source_commit": "3668ea4d641642149a8fc31a58ebc5c8f91c01d3"
+      "run_id": "6cdabed130ad4695b0f859283a2afc19",
+      "source_commit": "18b92a00ab6e6a207903880e23244f34cfd32bf4"
     },
     {
       "capability_id": "trade.idempotency",
@@ -776,10 +917,10 @@
       "event_count": 1,
       "observed_values": {
         "status": "approved",
-        "order_id": "84ca48ead5e94a2b8f219a48b237a40d"
+        "order_id": "13a38535b1624db08972ba85dda96a9d"
       },
-      "run_id": "999c7e5bc1d44fb1941c36d9cb28504c",
-      "source_commit": "3668ea4d641642149a8fc31a58ebc5c8f91c01d3"
+      "run_id": "6cdabed130ad4695b0f859283a2afc19",
+      "source_commit": "18b92a00ab6e6a207903880e23244f34cfd32bf4"
     },
     {
       "capability_id": "trade.idempotency",
@@ -804,8 +945,8 @@
         "order_count_before": 0,
         "order_count_after": 1,
         "order_count_after_first": 1,
-        "first_order_id": "84ca48ead5e94a2b8f219a48b237a40d",
-        "second_order_id": "84ca48ead5e94a2b8f219a48b237a40d",
+        "first_order_id": "13a38535b1624db08972ba85dda96a9d",
+        "second_order_id": "13a38535b1624db08972ba85dda96a9d",
         "inventory_before": {
           "P1001-S1": 50
         },
@@ -817,8 +958,8 @@
         },
         "inventory_delta_second": 0
       },
-      "run_id": "999c7e5bc1d44fb1941c36d9cb28504c",
-      "source_commit": "3668ea4d641642149a8fc31a58ebc5c8f91c01d3"
+      "run_id": "6cdabed130ad4695b0f859283a2afc19",
+      "source_commit": "18b92a00ab6e6a207903880e23244f34cfd32bf4"
     }
   ],
   "capabilities": [
@@ -844,10 +985,10 @@
   "external_connect_attempts": 0,
   "paid_requests": 0,
   "external_model_requests": 0,
-  "run_id": "999c7e5bc1d44fb1941c36d9cb28504c",
-  "generated_at": "2026-11-01T15:04:32.608880+00:00",
-  "source_commit": "3668ea4d641642149a8fc31a58ebc5c8f91c01d3",
+  "run_id": "6cdabed130ad4695b0f859283a2afc19",
+  "generated_at": "2026-11-01T16:10:36.199638+00:00",
+  "source_commit": "18b92a00ab6e6a207903880e23244f34cfd32bf4",
   "tracked_worktree_clean": true,
-  "scanner_sha256": "25e34a5ca8cb2fc87700e03f498f8a3000d22af349ae61400c1deca28e98ea65",
-  "records_sha256": "09c580666b7496a828462416218aa0adfa658b9bda4f16f5ec5fcdf2db61da66"
+  "scanner_sha256": "74d3a445f3c522f86941ff8fe7be3913d04096ea2461afd454bc9d4d5fab8ead",
+  "records_sha256": "7245a1053695e6ae90ea6294b6f8d86518ed516d1ceaa71976dd1fda96f41f36"
 }
