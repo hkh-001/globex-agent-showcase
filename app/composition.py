@@ -373,6 +373,7 @@ async def build_container() -> Container:
         session_lease_factory=task_queue.session_lease if task_queue is not None else None,
         evidence_store=search_factory.evidence_store,
         trade_state_provider=confirmations.agent_state,
+        grounding_audit_path=settings.data_dir / "grounding_audit.jsonl",
     )
 
     from app.application.agents.context_service import ContextService

@@ -112,3 +112,25 @@ def test_product_fallback_does_not_invent_landed_price_without_evidence():
 
     assert "商品价 129 CNY" in text
     assert "到手价" not in text
+
+
+def test_replaced_model_text_is_kept_in_private_audit(tmp_path):
+    init_budget(0)
+    remember_verified_result("products", {"hits": [{
+        "product_id": "P1", "title": "旅行背包 30L", "price_major": 129, "currency": "CNY",
+    }]})
+    audit = tmp_path / "grounding_audit.jsonl"
+    orchestrator = object.__new__(MainAgentOrchestrator)
+    orchestrator._bus = SimpleNamespace(publish=lambda *args, **kwargs: None)
+    orchestrator._output_guard_enabled = False
+    orchestrator._grounding_audit_path = audit
+
+    returned = orchestrator._guard_final_text("s1", "这款有背负结构，能登机。")
+
+    assert "背负结构" not in returned and "能登机" not in returned
+    rows = [__import__("json").loads(line) for line in audit.read_text(encoding="utf-8").splitlines()]
+    assert len(rows) == 1
+    assert rows[0]["session_id"] == "s1"
+    assert rows[0]["original_text"] == "这款有背负结构，能登机。"
+    assert set(rows[0]["violations"]) == {"back_support", "carry_on"}
+    assert rows[0]["replacement_kind"] == "grounded_product_fallback"

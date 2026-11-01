@@ -64,6 +64,7 @@ from app.infrastructure.cache.semantic_cache import SemanticCache
 from app.infrastructure.context import ShoppingContext, ShoppingContextSnapshot
 from app.infrastructure.eventbus import TradeEventBus, observe_run_events
 from app.infrastructure.budget import init_budget, remember_verified_result, get_budget, rule_fallback_text, verified_result
+from app.application.grounding_audit import record as record_grounding_replacement
 from app.application.answer_grounding import (
     grounded_product_fallback,
     grounded_confirmation_fallback,
@@ -138,8 +139,10 @@ class MainAgentOrchestrator:
         session_lease_factory: Callable[..., Any] | None = None,
         trade_state_provider: Callable[[str, str], Awaitable[dict]] | None = None,
         evidence_store: Any = None,
+        grounding_audit_path: Path | None = None,
     ) -> None:
         self._evidence_store = evidence_store
+        self._grounding_audit_path = grounding_audit_path
         self._trade_state_provider = trade_state_provider
         self._session_lease_factory = session_lease_factory
         self._sessions = sessions
@@ -203,13 +206,23 @@ class MainAgentOrchestrator:
         if products is not None:
             violations = product_claim_violations(text, products)
             logger.info("商品最终回复已由结构化工具事实生成（会话 %s）", session_id)
+            replacement = grounded_product_fallback(
+                products, turn_trade=turn_trade, confirmation=confirmation,
+            )
+            audit_path = getattr(self, "_grounding_audit_path", None)
+            if audit_path is not None:
+                try:
+                    record_grounding_replacement(
+                        audit_path, session_id=session_id, violations=violations,
+                        original=text, replacement=replacement,
+                    )
+                except OSError as error:
+                    logger.warning("门禁替换原文未能写入本地审计（会话 %s）：%s", session_id, type(error).__name__)
             self._bus.publish(session_id, "error", {
                 "message": "商品摘要已按目录工具事实生成",
                 "claim_guard": violations,
             })
-            text = grounded_product_fallback(
-                products, turn_trade=turn_trade, confirmation=confirmation,
-            )
+            text = replacement
         elif products is None and (require_product_evidence or has_concrete_product_claim(text)):
             logger.warning("回复声明具体商品但本轮没有已校验商品证据（会话 %s）", session_id)
             self._bus.publish(session_id, "error", {
