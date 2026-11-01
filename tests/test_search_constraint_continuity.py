@@ -313,3 +313,30 @@ def test_request_fingerprint_is_derived_from_the_normalized_spec():
     # 任一约束变化必须改变指纹
     assert request_fingerprint(replace(base, ship_to="US")) != request_fingerprint(base)
     assert request_fingerprint(replace(base, top_k=4)) != request_fingerprint(base)
+
+
+async def test_exact_id_detail_does_not_inherit_a_search_sku_spec():
+    seen = []
+
+    class UseCase:
+        async def execute(self, spec):
+            seen.append(spec)
+            return {"hits": [{"product_id": spec.product_id or "P1"}],
+                    "recall_strategy": "exact_id_lookup" if spec.product_id else "keyword_2gram",
+                    "total_candidates": 1, "rerank_applied": False}
+
+    tool = build_product_search_tool(UseCase(), TradeEventBus())
+    context_token = ShoppingContext.set(ShoppingContextSnapshot("s", "b", "zh-CN", "CNY"))
+    guard_token = SearchConstraintScope.start("300 元以内、送到中国、黑色旅行背包")
+    try:
+        await tool(normalized_query="旅行背包", product_type="背包", sku_spec="黑色", ship_to="CN")
+        await tool(normalized_query="", product_id="P1003")
+    finally:
+        SearchConstraintScope.reset(guard_token)
+        ShoppingContext.reset(context_token)
+
+    assert seen[0].sku_spec == "黑色"
+    # 详情查询要能看到该商品的全部可售规格，不能被上一轮的“黑色”卡死
+    assert seen[1].product_id == "P1003"
+    assert seen[1].sku_spec is None
+    assert seen[1].ship_to == "CN"

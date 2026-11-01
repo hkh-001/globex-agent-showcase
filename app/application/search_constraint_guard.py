@@ -88,7 +88,9 @@ class SearchConstraintGuard:
                     args["product_type"] = kind
                     inferred.append("product_type")
             # 单值约束不得静默切换；明确的跨类型比较允许多个类型各自检索。
-            scalar_keys = ("ship_to", "target_currency", "sku_spec") if exact_id else (
+            # 精确商品查询不继承检索期的类型与规格：详情要展示该商品的全部可售规格，
+            # 否则上一轮的“黑色”会把一个确实存在、只是没有黑色规格的商品判成不可用。
+            scalar_keys = ("ship_to", "target_currency") if exact_id else (
                 "product_type", "ship_to", "target_currency", "sku_spec",
             )
             for key in scalar_keys:
