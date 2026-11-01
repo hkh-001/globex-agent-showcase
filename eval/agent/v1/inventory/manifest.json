@@ -1,7 +1,9 @@
 {
   "schema_version": "agentbench-frozen-inventory-v1",
-  "source_commit": "af9ee8c699548b7c30a95caafdfeae7d9315e1a0",
-  "source_tree": "7577123b8df816c5c24e81e1605d2e9d46077e06",
+  "inventory_source_commit": "af9ee8c699548b7c30a95caafdfeae7d9315e1a0",
+  "inventory_source_tree": "6c24714362e8bec16feba9acafd7fadb6243ad10",
+  "freeze_implementation_commit": "c248afd0fd650389ba7a5c511f076c7df4440348",
+  "freeze_implementation_tree": "714b16ddd8be8d09bbca65775e0588769cb0687f",
   "tracked_worktree_clean": true,
   "scanner_sha256": "b1ae9bbfd298415cd2ceb3a91bbb04f4d711d2aaad74d2ceaace34353d887bba",
   "generator_sha256": "1b32c9b19b215898da42f2b113534ed2b48fe7d2111a6e11c8d181b40c718695",
@@ -16,5 +18,5 @@
   "prompt_normalization": "nfkc+whitespace-v1",
   "record_semantics": "2131 asset records, not 2131 executable agent tasks",
   "command": "python -m scripts.eval.agentbench.freeze_inventory --inventory <evidence-dir> --out eval/agent/v1/inventory",
-  "generated_at": "2026-11-01T15:41:09.504726+00:00"
+  "generated_at": "2026-11-01T15:53:26.095213+00:00"
 }
