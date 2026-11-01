@@ -25,7 +25,8 @@ from app.application.tools.remember_preference_tool import build_remember_prefer
 from app.application.tools.update_preference_tool import build_update_preference_tool
 from app.application.tools.forget_preference_tool import build_forget_preference_tool
 from app.infrastructure.budget import verified_result
-from app.application.usecases.order_usecases import PlaceOrderUseCase, QueryOrderUseCase
+from app.application.usecases.order_usecases import OrderItemInput, PlaceOrderUseCase, QueryOrderUseCase
+from app.domain.order.address import Address
 from app.application.usecases.confirmation_service import ConfirmationService
 from app.application.tools.order_tools import build_create_order_tool, build_query_order_tool
 from app.infrastructure.persistence.sql.repositories import bootstrap_schema, create_engine
@@ -253,8 +254,8 @@ async def probe_grounding(tmp_path=None) -> list[dict]:
     return results
 
 
-def _result(capability_id, source, selector, required, observed, ok, records) -> dict:
-    return {
+def _result(capability_id, source, selector, required, observed, ok, records, case=None) -> dict:
+    result = {
         "capability_id": capability_id,
         "test_nodeid": f"{PROBE_FILE}::test_{capability_id.replace('.', '_')}",
         "observation_source": source,
@@ -264,6 +265,9 @@ def _result(capability_id, source, selector, required, observed, ok, records) ->
         "result": "pass" if ok else "fail",
         "event_count": len(records),
     }
+    if case:
+        result["case"] = case
+    return result
 
 
 async def probe_memory(tmp_path) -> list[dict]:
@@ -480,20 +484,206 @@ async def probe_knowledge(tmp_path) -> list[dict]:
                and bool(metadata.get("source_type")))
     abstain_events = []
     with observe_run_events(abstain_events.append):
-        await tool(question="火星种土豆", top_k=2)
+        abstain_chunk = await tool(question="火星种土豆", top_k=2)
+    try:
+        abstain_content = json.loads(abstain_chunk.content[0].text)
+    except Exception:
+        abstain_content = {}
     abstain_payload = next((row["payload"] for row in _records(abstain_events)
                             if row["type"] == "tool.result"), {})
-    abstain_ok = abstain_payload.get("abstained") is True or abstain_payload.get("hit_count", 0) == 0
+    abstain_ok = (abstain_payload.get("abstained") is True
+                  and abstain_payload.get("hit_count") == 0
+                  and bool(abstain_payload.get("reason"))
+                  and abstain_content.get("unanswerable") is True
+                  and bool(abstain_content.get("reason")))
     return [
         _result("search.category_insight", "event", "tool.result:category_insight_tool",
                 ["hit_count", "abstained", "policy_fact_statuses"],
-                sorted(payload), event_ok and abstain_ok, records),
+                sorted(payload), event_ok, records),
         _result("search.category_insight", "tool_result", "category_insight_tool",
                 ["insights[].source", "insights[].metadata.source_reference",
                  "insights[].metadata.source_type"],
                 ["insights[].source", "insights[].metadata.source_reference",
                  "insights[].metadata.source_type"] if tool_ok else [], tool_ok, records),
+        _result("search.category_insight", "event", "tool.result:category_insight_tool",
+                ["abstained", "hit_count", "reason"], sorted(abstain_payload),
+                abstain_ok, abstain_events, case="abstain"),
+        _result("search.category_insight", "tool_result", "category_insight_tool",
+                ["unanswerable", "reason"], sorted(abstain_content),
+                abstain_ok, abstain_events, case="abstain"),
     ]
+
+
+def _trade_address() -> Address:
+    return Address("张三", "CN", "浙江", "杭州", "西湖区某路 1 号", "310000", "13800000000")
+
+
+async def _new_trade_env(base):
+    import pathlib
+    base = pathlib.Path(base)
+    base.mkdir(parents=True, exist_ok=True)
+    engine = create_engine(f"sqlite+aiosqlite:///{base / 'trade.db'}")
+    store = SqlTradeStore(engine)
+    products = InMemoryProductRepository()
+    bus = TradeEventBus()
+    service = ConfirmationService(products, store, bus)
+    await bootstrap_schema(engine)
+    await store.initialize_inventory(await products.list_all())
+    return engine, store, products, bus, service
+
+
+async def _prepare(service, buyer_id, session_id, quantity=1):
+    return await service.prepare_order(
+        buyer_id, session_id, [OrderItemInput("P1001", "P1001-S1", quantity)], _trade_address())
+
+
+def _snapshot_record(capability_id, ok, records, case=None):
+    fields = ["order_count_before", "order_count_after", "inventory_before", "inventory_after"]
+    return _result(capability_id, "state_snapshot", "trade_repository", fields,
+                   fields if ok else [], ok, records, case=case)
+
+
+async def probe_trade_approve(tmp_path) -> list[dict]:
+    import pathlib
+    base = pathlib.Path(tmp_path)
+    records_out = []
+    # approved path
+    engine, store, products, bus, service = await _new_trade_env(base / "approve")
+    buyer, session = "buyer-approve", "session-approve"
+    try:
+        inventory_before = await store.get_inventory(["P1001-S1"])
+        orders_before = await store.list_orders(buyer_id=buyer)
+        prepared = await _prepare(service, buyer, session)
+        confirmation = prepared["confirmation"]
+        events = []
+        with observe_run_events(events.append):
+            await service.resolve(confirmation["confirmation_id"], buyer, session,
+                                  confirmation["snapshot_hash"], True)
+        orders_after = await store.list_orders(buyer_id=buyer)
+        inventory_after = await store.get_inventory(["P1001-S1"])
+        resolved = next((row for row in _records(events) if row["type"] == "confirmation.resolved"), {})
+        inner = (resolved.get("payload") or {}).get("confirmation") or {}
+        order = (orders_after.get("orders") or [{}])[0]
+        ok = (inner.get("status") == "approved"
+              and (inner.get("result") or {}).get("order_id") == order.get("order_id")
+              and len(orders_after.get("orders") or []) == 1
+              and inventory_after.get("P1001-S1") == inventory_before.get("P1001-S1") - 1)
+        fields = ["confirmation.status", "confirmation.result.order_id"]
+        records_out.append(_result("trade.approve", "event", "confirmation.resolved", fields,
+                                   [field for field in fields if _present(resolved.get("payload") or {}, field)],
+                                   ok, events, case="approved"))
+        records_out.append(_snapshot_record("trade.approve", ok, events, case="approved"))
+    finally:
+        await engine.dispose()
+
+    # rejected path
+    engine, store, products, bus, service = await _new_trade_env(base / "reject")
+    buyer, session = "buyer-reject", "session-reject"
+    try:
+        inventory_before = await store.get_inventory(["P1001-S1"])
+        prepared = await _prepare(service, buyer, session)
+        confirmation = prepared["confirmation"]
+        events = []
+        with observe_run_events(events.append):
+            await service.resolve(confirmation["confirmation_id"], buyer, session,
+                                  confirmation["snapshot_hash"], False)
+        orders_after = await store.list_orders(buyer_id=buyer)
+        inventory_after = await store.get_inventory(["P1001-S1"])
+        resolved = next((row for row in _records(events) if row["type"] == "confirmation.resolved"), {})
+        inner = (resolved.get("payload") or {}).get("confirmation") or {}
+        ok = (inner.get("status") == "rejected"
+              and (orders_after.get("orders") or []) == []
+              and inventory_after == inventory_before)
+        records_out.append(_result("trade.approve", "event", "confirmation.resolved",
+                                   ["confirmation.status"], ["confirmation.status"] if ok else [],
+                                   ok, events, case="rejected"))
+        records_out.append(_snapshot_record("trade.approve", ok, events, case="rejected"))
+    finally:
+        await engine.dispose()
+    return records_out
+
+
+async def probe_trade_cancel(tmp_path) -> list[dict]:
+    import pathlib
+    base = pathlib.Path(tmp_path)
+    engine, store, products, bus, service = await _new_trade_env(base / "cancel")
+    buyer, session = "buyer-cancel", "session-cancel"
+    try:
+        inventory_start = await store.get_inventory(["P1001-S1"])
+        first = (await _prepare(service, buyer, session))["confirmation"]
+        await service.resolve(first["confirmation_id"], buyer, session, first["snapshot_hash"], True)
+        second = (await _prepare(service, buyer, session))["confirmation"]
+        await service.resolve(second["confirmation_id"], buyer, session, second["snapshot_hash"], True)
+        orders = await store.list_orders(buyer_id=buyer)
+        keep, cancel = orders["orders"][0], orders["orders"][1]
+        inventory_before = await store.get_inventory(["P1001-S1"])
+
+        prepared = await service.prepare_cancel(buyer, session, cancel["order_id"], "不需要了")
+        confirmation = prepared["confirmation"]
+        events = []
+        with observe_run_events(events.append):
+            await service.resolve(confirmation["confirmation_id"], buyer, session,
+                                  confirmation["snapshot_hash"], True)
+        inventory_after = await store.get_inventory(["P1001-S1"])
+        orders_after = await store.list_orders(buyer_id=buyer)
+        by_id = {item["order_id"]: item for item in orders_after["orders"]}
+        resolved = next((row for row in _records(events) if row["type"] == "confirmation.resolved"), {})
+        inner = (resolved.get("payload") or {}).get("confirmation") or {}
+        result = inner.get("result") or {}
+        ok = (inner.get("status") == "approved"
+              and inner.get("action") == "cancel"
+              and result.get("order_id") == cancel["order_id"]
+              and by_id[cancel["order_id"]]["status"] == "CANCELLED"
+              and by_id[keep["order_id"]]["status"] == "CONFIRMED"
+              and inventory_after.get("P1001-S1") == inventory_before.get("P1001-S1") + 1)
+        fields = ["confirmation.status", "confirmation.action",
+                  "confirmation.result.order_id", "confirmation.result.status"]
+        records_out = [_result("trade.cancel", "event", "confirmation.resolved", fields,
+                               [field for field in fields if _present(resolved.get("payload") or {}, field)],
+                               ok, events)]
+        records_out.append(_snapshot_record("trade.cancel", ok, events))
+    finally:
+        await engine.dispose()
+    return records_out
+
+
+async def probe_trade_idempotency(tmp_path) -> list[dict]:
+    import pathlib
+    base = pathlib.Path(tmp_path)
+    engine, store, products, bus, service = await _new_trade_env(base / "idempotency")
+    buyer, session = "buyer-idem", "session-idem"
+    try:
+        inventory_before = await store.get_inventory(["P1001-S1"])
+        prepared = await _prepare(service, buyer, session)
+        confirmation = prepared["confirmation"]
+        first_events = []
+        with observe_run_events(first_events.append):
+            first = await service.resolve(confirmation["confirmation_id"], buyer, session,
+                                          confirmation["snapshot_hash"], True)
+        inventory_mid = await store.get_inventory(["P1001-S1"])
+        second_events = []
+        with observe_run_events(second_events.append):
+            second = await service.resolve(confirmation["confirmation_id"], buyer, session,
+                                           confirmation["snapshot_hash"], True)
+        inventory_after = await store.get_inventory(["P1001-S1"])
+        orders = await store.list_orders(buyer_id=buyer)
+        first_order = ((first.get("confirmation") or {}).get("result") or {}).get("order_id")
+        second_order = ((second.get("confirmation") or {}).get("result") or {}).get("order_id")
+        ok = (first_order and first_order == second_order
+              and len(orders.get("orders") or []) == 1
+              and inventory_mid == inventory_after
+              and inventory_after.get("P1001-S1") == inventory_before.get("P1001-S1") - 1)
+        records_out = []
+        for events in (first_events, second_events):
+            resolved = next((row for row in _records(events) if row["type"] == "confirmation.resolved"), {})
+            fields = ["confirmation.status", "confirmation.result.order_id"]
+            records_out.append(_result("trade.idempotency", "event", "confirmation.resolved", fields,
+                                       [field for field in fields if _present(resolved.get("payload") or {}, field)],
+                                       ok, events))
+        records_out.append(_snapshot_record("trade.idempotency", ok, second_events))
+        return records_out
+    finally:
+        await engine.dispose()
 
 
 async def _run_all(tmp_path=None) -> dict:
@@ -508,6 +698,9 @@ async def _run_all(tmp_path=None) -> dict:
     records.extend(await probe_session(root / "session"))
     records.extend(await probe_trade(root / "trade"))
     records.extend(await probe_knowledge(root / "knowledge"))
+    records.extend(await probe_trade_approve(root / "approve"))
+    records.extend(await probe_trade_cancel(root / "cancel"))
+    records.extend(await probe_trade_idempotency(root / "idempotency"))
     return {
         "schema_version": "agentbench-evidence-probe-v1",
         "records": records,

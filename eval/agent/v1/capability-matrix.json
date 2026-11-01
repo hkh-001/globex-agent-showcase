@@ -644,18 +644,20 @@
       "observations": [
         {
           "source_type": "event",
-          "selector": "tool.result:create_order_tool",
+          "selector": "confirmation.resolved",
           "fields": [
-            "order",
-            "confirmation"
+            "confirmation.status",
+            "confirmation.result.order_id"
           ]
         },
         {
           "source_type": "state_snapshot",
-          "selector": "inventory_repository",
+          "selector": "trade_repository",
           "fields": [
-            "before",
-            "after"
+            "order_count_before",
+            "order_count_after",
+            "inventory_before",
+            "inventory_after"
           ]
         }
       ],
@@ -667,17 +669,17 @@
         "inventory_decrement"
       ],
       "oracle_type": "deterministic",
-      "status": "instrumentation_required",
-      "needs_new_instrumentation": true,
-      "remediation_kind": "eval_harness",
+      "status": "supported",
+      "needs_new_instrumentation": false,
+      "remediation_kind": null,
       "evidence_test_nodeids": [
-        "tests/test_trade_store.py::test_create_commits_order_inventory_and_decision_together"
+        "eval/agent/v1/probes/test_evidence_probe.py::test_trade_approve"
       ],
       "candidate_asset_families": [
         "product-dev",
         "business-public"
       ],
-      "verification_status": "pending"
+      "verification_status": "verified"
     },
     {
       "capability_id": "trade.query",
@@ -725,18 +727,22 @@
       "observations": [
         {
           "source_type": "event",
-          "selector": "tool.result:cancel_order_tool",
+          "selector": "confirmation.resolved",
           "fields": [
-            "confirmation_required",
-            "order"
+            "confirmation.status",
+            "confirmation.action",
+            "confirmation.result.order_id",
+            "confirmation.result.status"
           ]
         },
         {
           "source_type": "state_snapshot",
-          "selector": "inventory_repository",
+          "selector": "trade_repository",
           "fields": [
-            "before",
-            "after"
+            "order_count_before",
+            "order_count_after",
+            "inventory_before",
+            "inventory_after"
           ]
         }
       ],
@@ -750,17 +756,17 @@
         "inventory_restore"
       ],
       "oracle_type": "deterministic",
-      "status": "instrumentation_required",
-      "needs_new_instrumentation": true,
-      "remediation_kind": "eval_harness",
+      "status": "supported",
+      "needs_new_instrumentation": false,
+      "remediation_kind": null,
       "evidence_test_nodeids": [
-        "tests/test_confirmation_service.py::test_landed_quote_survives_approval_query_and_cancel_after_rules_change"
+        "eval/agent/v1/probes/test_evidence_probe.py::test_trade_cancel"
       ],
       "candidate_asset_families": [
         "product-dev",
         "business-public"
       ],
-      "verification_status": "pending"
+      "verification_status": "verified"
     },
     {
       "capability_id": "trade.idempotency",
@@ -772,17 +778,20 @@
       "observations": [
         {
           "source_type": "event",
-          "selector": "tool.result:create_order_tool",
+          "selector": "confirmation.resolved",
           "fields": [
-            "order"
+            "confirmation.status",
+            "confirmation.result.order_id"
           ]
         },
         {
           "source_type": "state_snapshot",
-          "selector": "order_repository",
+          "selector": "trade_repository",
           "fields": [
-            "before",
-            "after"
+            "order_count_before",
+            "order_count_after",
+            "inventory_before",
+            "inventory_after"
           ]
         }
       ],
@@ -793,17 +802,17 @@
         "none_on_repeat"
       ],
       "oracle_type": "deterministic",
-      "status": "instrumentation_required",
-      "needs_new_instrumentation": true,
-      "remediation_kind": "eval_harness",
+      "status": "supported",
+      "needs_new_instrumentation": false,
+      "remediation_kind": null,
       "evidence_test_nodeids": [
-        "tests/test_trade_store.py::test_prepare_replay_returns_existing_even_with_new_expiry"
+        "eval/agent/v1/probes/test_evidence_probe.py::test_trade_idempotency"
       ],
       "candidate_asset_families": [
         "product-dev",
         "business-public"
       ],
-      "verification_status": "pending"
+      "verification_status": "verified"
     },
     {
       "capability_id": "harness.grounding_gate",

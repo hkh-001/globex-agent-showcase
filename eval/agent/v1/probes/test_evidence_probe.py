@@ -80,3 +80,15 @@ def test_trade_query(probe_records):
 
 def test_search_category_insight(probe_records):
     _assert_capability(probe_records, "search.category_insight")
+
+
+def test_trade_approve(probe_records):
+    _assert_capability(probe_records, "trade.approve")
+
+
+def test_trade_cancel(probe_records):
+    _assert_capability(probe_records, "trade.cancel")
+
+
+def test_trade_idempotency(probe_records):
+    _assert_capability(probe_records, "trade.idempotency")

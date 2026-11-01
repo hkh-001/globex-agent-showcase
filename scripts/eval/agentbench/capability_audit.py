@@ -192,7 +192,8 @@ def audit(matrix_path: pathlib.Path, unsupported_path: pathlib.Path,
                 tokens.add(str(observation.get("selector", "")).split(":")[-1])
                 for field in observation.get("fields", []):
                     tokens.add(re.split(r"[.\[]", str(field))[0])
-            if nodeids and not any(_test_mentions(nodeid, tokens) for nodeid in nodeids):
+            if (probe_path is None and nodeids
+                    and not any(_test_mentions(nodeid, tokens) for nodeid in nodeids)):
                 errors.append(f"{cid}: evidence test does not mention any observation token")
 
     if probe_path is not None:
