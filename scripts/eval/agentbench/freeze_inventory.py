@@ -29,12 +29,33 @@ def _git(*args: str) -> str:
                           check=True).stdout.strip()
 
 
+def _git_blob(commit: str, path_text: str) -> bytes:
+    return subprocess.run(["git", "show", f"{commit}:{path_text}"], cwd=ROOT,
+                          capture_output=True, check=True).stdout
+
+
+def is_clean() -> bool:
+    unstaged = subprocess.run(["git", "diff", "--quiet", "HEAD", "--"], cwd=ROOT)
+    staged = subprocess.run(["git", "diff", "--cached", "--quiet"], cwd=ROOT)
+    return unstaged.returncode == 0 and staged.returncode == 0
+
+
 def _unsafe(text: str) -> list[str]:
     return [pattern.pattern for pattern in UNSAFE if pattern.search(text)]
 
 
 def freeze(inventory_dir: pathlib.Path, out_dir: pathlib.Path) -> dict:
+    if not is_clean():
+        raise SystemExit("refusing to freeze from a dirty tracked/staged worktree")
     inventory = json.loads((inventory_dir / "source-inventory.json").read_text(encoding="utf-8"))
+    inventory_commit = inventory.get("source_commit", "")
+    inventory_tree = _git("rev-parse", f"{inventory_commit}^{{tree}}")
+    scanner_blob = _git_blob(inventory_commit, "scripts/eval/agentbench/inventory.py")
+    scanner_hash = _sha(scanner_blob)
+    if scanner_hash != inventory.get("scanner_sha256"):
+        raise SystemExit("inventory scanner hash does not match inventory.py at source commit")
+    head_commit = _git("rev-parse", "HEAD")
+    head_tree = _git("rev-parse", "HEAD^{tree}")
     rows = [json.loads(line) for line in
             (inventory_dir / "record-index.jsonl").read_text(encoding="utf-8").splitlines() if line.strip()]
     frozen_inventory = {key: inventory[key] for key in TOP_FIELDS if key in inventory}
@@ -51,8 +72,10 @@ def freeze(inventory_dir: pathlib.Path, out_dir: pathlib.Path) -> dict:
     (out_dir / "record-index.jsonl").write_text(record_text, encoding="utf-8")
     manifest = {
         "schema_version": "agentbench-frozen-inventory-v1",
-        "source_commit": inventory.get("source_commit"),
-        "source_tree": _git("rev-parse", "HEAD^{tree}"),
+        "inventory_source_commit": inventory_commit,
+        "inventory_source_tree": inventory_tree,
+        "freeze_implementation_commit": head_commit,
+        "freeze_implementation_tree": head_tree,
         "tracked_worktree_clean": True,
         "scanner_sha256": inventory.get("scanner_sha256"),
         "generator_sha256": _sha((ROOT / "scripts/eval/agentbench/template_catalog.py").read_bytes()),

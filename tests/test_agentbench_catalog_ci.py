@@ -4,7 +4,12 @@ from __future__ import annotations
 import json
 import pathlib
 
-from scripts.eval.agentbench import check_catalog, template_catalog
+import hashlib
+import subprocess
+
+import pytest
+
+from scripts.eval.agentbench import check_catalog, freeze_inventory, template_catalog
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 FROZEN = ROOT / "eval/agent/v1/inventory"
@@ -56,3 +61,36 @@ def test_frozen_inputs_have_no_absolute_paths_or_emails():
     text += (FROZEN / "record-index.jsonl").read_text(encoding="utf-8")
     assert "/Users/" not in text and "/home/" not in text
     assert "@" not in text
+
+
+def test_manifest_commits_and_trees_resolve():
+    manifest = json.loads((FROZEN / "manifest.json").read_text(encoding="utf-8"))
+    for prefix in ("inventory_source", "freeze_implementation"):
+        commit = manifest[f"{prefix}_commit"]
+        tree = subprocess.run(["git", "rev-parse", f"{commit}^{{tree}}"], cwd=ROOT,
+                              text=True, capture_output=True, check=True).stdout.strip()
+        assert tree == manifest[f"{prefix}_tree"]
+    assert manifest["inventory_source_commit"] != manifest["freeze_implementation_commit"]
+
+
+def test_dirty_freeze_is_refused(monkeypatch, tmp_path):
+    monkeypatch.setattr(freeze_inventory, "is_clean", lambda: False)
+    with pytest.raises(SystemExit):
+        freeze_inventory.freeze(FROZEN, tmp_path / "out")
+
+
+def test_coordinated_tamper_still_fails(tmp_path):
+    frozen = tmp_path / "frozen"
+    frozen.mkdir()
+    for name in ("source-inventory.json", "record-index.jsonl", "manifest.json"):
+        (frozen / name).write_bytes((FROZEN / name).read_bytes())
+    data = json.loads((frozen / "source-inventory.json").read_text(encoding="utf-8"))
+    data["scanner_sha256"] = "0" * 64
+    (frozen / "source-inventory.json").write_text(json.dumps(data), encoding="utf-8")
+    manifest = json.loads((frozen / "manifest.json").read_text(encoding="utf-8"))
+    manifest["scanner_sha256"] = "0" * 64
+    manifest["inventory_file_sha256"] = hashlib.sha256(
+        (frozen / "source-inventory.json").read_bytes()).hexdigest()
+    (frozen / "manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
+    errors = check_catalog.check(frozen, CATALOG)
+    assert any("scanner_sha256 does not match inventory.py" in error for error in errors)
