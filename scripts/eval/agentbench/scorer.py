@@ -14,6 +14,41 @@ DEFAULT_CAPABILITIES = {
 }
 
 
+def summarize_execution(events: Iterable[dict[str, Any]]) -> dict[str, Any]:
+    """Count observable turns/calls without treating missing usage as zero."""
+    model_calls = 0
+    turns = 0
+    usage_complete = True
+    tools = 0
+    dispatch_ids: set[str] = set()
+    for event in events:
+        payload = event.get("payload")
+        if not isinstance(payload, dict):
+            continue
+        if event.get("type") == "usage.summary":
+            turns += 1
+            value = payload.get("model_calls")
+            if type(value) is not int or value < 0:
+                usage_complete = False
+            else:
+                model_calls += value
+            usage_complete = usage_complete and payload.get("usage_complete") is True
+        elif event.get("type") == "tool.invoke":
+            tools += 1
+        elif event.get("type") == "agent.dispatch":
+            correlation = event.get("correlation") or {}
+            identity = correlation.get("dispatch_id") or payload.get("dispatch_id")
+            if isinstance(identity, str) and identity:
+                dispatch_ids.add(identity)
+    return {
+        "turns": turns,
+        "physical_model_calls": model_calls if usage_complete else None,
+        "usage_complete": usage_complete,
+        "tool_calls": tools,
+        "dispatches": len(dispatch_ids),
+    }
+
+
 def _edge(source: str, target: str) -> tuple[str, str]:
     return source, target
 

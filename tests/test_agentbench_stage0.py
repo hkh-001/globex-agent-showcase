@@ -21,7 +21,7 @@ from app.infrastructure.persistence.in_memory_repositories import InMemoryProduc
 from app.infrastructure.persistence.sql.repositories import bootstrap_schema, create_engine
 from app.infrastructure.persistence.sql.trade_store import SqlTradeStore
 from app.infrastructure.tracing import current_correlation
-from scripts.eval.agentbench.scorer import score_execution_graph
+from scripts.eval.agentbench.scorer import score_execution_graph, summarize_execution
 
 
 SEARCH_CONTRACT = {
@@ -97,6 +97,21 @@ def test_graph_rejects_forbidden_edge():
     result = score_execution_graph(trace, SEARCH_CONTRACT)
     assert not result["passed"]
     assert any(value.startswith("forbidden_edge") for value in result["failures"])
+
+
+def test_execution_accounting_counts_turns_tools_dispatches_and_unknown_usage():
+    trace = [
+        event("agent.dispatch", {"agent": "search_agent", "dispatch_id": "d1"}, dispatch_id="d1"),
+        event("tool.invoke", {"tool": "product_search_tool"}, agent="search_agent", dispatch_id="d1"),
+        {"type": "usage.summary", "payload": {"model_calls": 2, "usage_complete": True}, "correlation": {"agent": "main_agent"}},
+        {"type": "usage.summary", "payload": {"model_calls": 1, "usage_complete": True}, "correlation": {"agent": "main_agent"}},
+    ]
+    assert summarize_execution(trace) == {
+        "turns": 2, "physical_model_calls": 3, "usage_complete": True,
+        "tool_calls": 1, "dispatches": 1,
+    }
+    trace[-1]["payload"]["usage_complete"] = False
+    assert summarize_execution(trace)["physical_model_calls"] is None
 
 
 class InterleavedWorker:
