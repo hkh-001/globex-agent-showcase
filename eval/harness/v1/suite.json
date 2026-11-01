@@ -184,7 +184,9 @@
     "tests/test_answer_grounding_contract.py",
     "tests/test_agentbench_stage0.py",
     "tests/test_agentbench_inventory.py",
-    "tests/test_agentbench_capability.py"
+    "tests/test_agentbench_capability.py",
+    "tests/test_agentbench_probe.py",
+    "eval/agent/v1/probes/test_evidence_probe.py"
   ],
   "contract_allowed_skips": [
     {

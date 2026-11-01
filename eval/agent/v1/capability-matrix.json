@@ -50,7 +50,8 @@
       "candidate_asset_families": [
         "agent-cases-v1",
         "harness-cases"
-      ]
+      ],
+      "verification_status": "verified"
     },
     {
       "capability_id": "dispatch.trade",
@@ -96,7 +97,8 @@
       "candidate_asset_families": [
         "agent-cases-v1",
         "harness-cases"
-      ]
+      ],
+      "verification_status": "verified"
     },
     {
       "capability_id": "search.catalog",
@@ -140,7 +142,8 @@
         "retrieval-v3",
         "retrieval-category",
         "retrieval-optimization"
-      ]
+      ],
+      "verification_status": "verified"
     },
     {
       "capability_id": "search.constraints",
@@ -176,7 +179,8 @@
       "candidate_asset_families": [
         "retrieval-v2",
         "optimization-contract"
-      ]
+      ],
+      "verification_status": "verified"
     },
     {
       "capability_id": "search.exact_id",
@@ -212,7 +216,8 @@
       ],
       "candidate_asset_families": [
         "retrieval-v2"
-      ]
+      ],
+      "verification_status": "verified"
     },
     {
       "capability_id": "search.landed_price",
@@ -251,7 +256,8 @@
       "candidate_asset_families": [
         "retrieval-v2",
         "optimization-contract"
-      ]
+      ],
+      "verification_status": "verified"
     },
     {
       "capability_id": "search.category_insight",
@@ -298,7 +304,8 @@
       ],
       "candidate_asset_families": [
         "knowledge-v1"
-      ]
+      ],
+      "verification_status": "pending"
     },
     {
       "capability_id": "search.web",
@@ -331,7 +338,8 @@
         "external_data"
       ],
       "evidence_test_nodeids": [],
-      "candidate_asset_families": []
+      "candidate_asset_families": [],
+      "verification_status": "pending"
     },
     {
       "capability_id": "evidence.fact_lookup",
@@ -366,7 +374,8 @@
       "evidence_test_nodeids": [],
       "candidate_asset_families": [
         "context-cases"
-      ]
+      ],
+      "verification_status": "pending"
     },
     {
       "capability_id": "memory.remember",
@@ -408,7 +417,8 @@
       "candidate_asset_families": [
         "memory-cases",
         "skill-cases"
-      ]
+      ],
+      "verification_status": "pending"
     },
     {
       "capability_id": "memory.update",
@@ -449,7 +459,8 @@
       ],
       "candidate_asset_families": [
         "memory-cases"
-      ]
+      ],
+      "verification_status": "pending"
     },
     {
       "capability_id": "memory.forget",
@@ -490,7 +501,8 @@
       ],
       "candidate_asset_families": [
         "memory-cases"
-      ]
+      ],
+      "verification_status": "pending"
     },
     {
       "capability_id": "state.constraint_carry",
@@ -528,7 +540,8 @@
       "candidate_asset_families": [
         "context-cases",
         "harness-cases"
-      ]
+      ],
+      "verification_status": "verified"
     },
     {
       "capability_id": "state.session_isolation",
@@ -572,7 +585,8 @@
       ],
       "candidate_asset_families": [
         "harness-cases"
-      ]
+      ],
+      "verification_status": "pending"
     },
     {
       "capability_id": "trade.prepare",
@@ -608,7 +622,8 @@
       "candidate_asset_families": [
         "product-dev",
         "business-public"
-      ]
+      ],
+      "verification_status": "pending"
     },
     {
       "capability_id": "trade.approve",
@@ -652,7 +667,8 @@
       "candidate_asset_families": [
         "product-dev",
         "business-public"
-      ]
+      ],
+      "verification_status": "pending"
     },
     {
       "capability_id": "trade.query",
@@ -687,7 +703,8 @@
       "candidate_asset_families": [
         "product-dev",
         "business-public"
-      ]
+      ],
+      "verification_status": "pending"
     },
     {
       "capability_id": "trade.cancel",
@@ -733,7 +750,8 @@
       "candidate_asset_families": [
         "product-dev",
         "business-public"
-      ]
+      ],
+      "verification_status": "pending"
     },
     {
       "capability_id": "trade.idempotency",
@@ -775,7 +793,8 @@
       "candidate_asset_families": [
         "product-dev",
         "business-public"
-      ]
+      ],
+      "verification_status": "pending"
     },
     {
       "capability_id": "harness.grounding_gate",
@@ -817,7 +836,8 @@
       ],
       "candidate_asset_families": [
         "harness-cases"
-      ]
+      ],
+      "verification_status": "verified"
     },
     {
       "capability_id": "harness.output_redaction",
@@ -846,7 +866,8 @@
       "needs_new_instrumentation": true,
       "remediation_kind": "instrumentation",
       "evidence_test_nodeids": [],
-      "candidate_asset_families": []
+      "candidate_asset_families": [],
+      "verification_status": "pending"
     },
     {
       "capability_id": "ui.form_surface",
@@ -876,7 +897,8 @@
       "needs_new_instrumentation": true,
       "remediation_kind": "eval_harness",
       "evidence_test_nodeids": [],
-      "candidate_asset_families": []
+      "candidate_asset_families": [],
+      "verification_status": "pending"
     },
     {
       "capability_id": "comparison.recommendation",
@@ -907,7 +929,8 @@
       "evidence_test_nodeids": [],
       "candidate_asset_families": [
         "agent-cases-v1"
-      ]
+      ],
+      "verification_status": "pending"
     }
   ]
 }

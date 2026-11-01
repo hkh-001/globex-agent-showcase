@@ -16,6 +16,7 @@ import re
 ROOT = pathlib.Path(__file__).resolve().parents[3]
 SOURCE_TYPES = {"event", "tool_result", "verified_result", "state_snapshot", "private_artifact"}
 STATUSES = {"supported", "instrumentation_required", "not_supported"}
+VERIFICATION = {"verified", "failed", "pending"}
 ORACLES = {"deterministic", "human", "none"}
 REMEDIATION = {"instrumentation", "eval_harness", "dataset", "configuration",
                "product_feature", "external_data"}
@@ -79,7 +80,8 @@ def _observation_errors(cid: str, observations) -> list[str]:
 
 def audit(matrix_path: pathlib.Path, unsupported_path: pathlib.Path,
           catalog_path: pathlib.Path | None = None,
-          inventory_dir: pathlib.Path | None = None) -> list[str]:
+          inventory_dir: pathlib.Path | None = None,
+          probe_path: pathlib.Path | None = None) -> list[str]:
     errors: list[str] = []
     matrix = json.loads(matrix_path.read_text(encoding="utf-8"))
     capabilities = matrix.get("capabilities")
@@ -95,11 +97,13 @@ def audit(matrix_path: pathlib.Path, unsupported_path: pathlib.Path,
         status_by_id[cid] = item.get("status")
         for key in ("capability_id", "code_entry", "observations", "allowed_paths",
                     "side_effects", "oracle_type", "status", "needs_new_instrumentation",
-                    "evidence_test_nodeids", "candidate_asset_families"):
+                    "verification_status", "evidence_test_nodeids", "candidate_asset_families"):
             if key not in item:
                 errors.append(f"{cid}: missing {key}")
         if item.get("status") not in STATUSES:
             errors.append(f"{cid}: invalid status")
+        if item.get("verification_status") not in VERIFICATION:
+            errors.append(f"{cid}: invalid verification_status")
         if item.get("oracle_type") not in ORACLES:
             errors.append(f"{cid}: invalid oracle_type")
         if not isinstance(item.get("needs_new_instrumentation"), bool):
@@ -143,6 +147,21 @@ def audit(matrix_path: pathlib.Path, unsupported_path: pathlib.Path,
                     tokens.add(re.split(r"[.\[]", str(field))[0])
             if nodeids and not any(_test_mentions(nodeid, tokens) for nodeid in nodeids):
                 errors.append(f"{cid}: evidence test does not mention any observation token")
+
+    if probe_path is not None:
+        probe = json.loads(probe_path.read_text(encoding="utf-8"))
+        records = probe.get("records") or []
+        if probe.get("paid_requests") != 0 or probe.get("external_model_requests") != 0:
+            errors.append("probe evidence must record zero paid/external requests")
+        for item in capabilities:
+            cid = item.get("capability_id")
+            matching = [row for row in records if row.get("capability_id") == cid]
+            for row in matching:
+                if not _test_exists(row.get("test_nodeid", "")):
+                    errors.append(f"{cid}: probe test not found {row.get('test_nodeid')}")
+            if item.get("verification_status") == "verified":
+                if not matching or any(row.get("result") != "pass" for row in matching):
+                    errors.append(f"{cid}: verified capability has no passing probe record")
 
     unsupported = json.loads(unsupported_path.read_text(encoding="utf-8")).get("unsupported", [])
     for item in unsupported:
@@ -190,8 +209,10 @@ def main() -> None:
     parser.add_argument("--catalog", type=pathlib.Path,
                         default=ROOT / "eval/agent/v1/template-catalog.json")
     parser.add_argument("--inventory", type=pathlib.Path, default=None)
+    parser.add_argument("--probe", type=pathlib.Path,
+                        default=ROOT / "eval/agent/v1/evidence-probe.json")
     args = parser.parse_args()
-    errors = audit(args.matrix, args.unsupported, args.catalog, args.inventory)
+    errors = audit(args.matrix, args.unsupported, args.catalog, args.inventory, args.probe)
     matrix = json.loads(args.matrix.read_text(encoding="utf-8"))
     counts = {}
     for item in matrix["capabilities"]:
