@@ -113,7 +113,9 @@ def load_baselines(path: Path | None) -> dict[str, dict[str, float]]:
     }
 
 
-async def build_usecase(strategy: str) -> tuple[CatalogSearchUseCase, InMemoryProductRepository, str]:
+async def build_usecase(
+    strategy: str, *, field_lexical: bool = False, recall_candidates: int | None = None,
+) -> tuple[CatalogSearchUseCase, InMemoryProductRepository, str]:
     """按目标档位装配 UseCase。
 
     降级档位不是靠开关切换的，而是**靠少注入依赖自然形成**——这正好复用了线上
@@ -123,7 +125,10 @@ async def build_usecase(strategy: str) -> tuple[CatalogSearchUseCase, InMemoryPr
     repo = InMemoryProductRepository()
     if strategy in {"keyword_2gram", "bm25"}:
         return CatalogSearchUseCase(
-            repo, hybrid_enabled=strategy == "bm25", capture_retrieval_stages=True,
+            repo, hybrid_enabled=strategy == "bm25",
+            field_lexical_enabled=field_lexical,
+            recall_candidates=recall_candidates or 32,
+            capture_retrieval_stages=True,
         ), repo, strategy
 
     settings = load_settings()
@@ -144,7 +149,8 @@ async def build_usecase(strategy: str) -> tuple[CatalogSearchUseCase, InMemoryPr
             hybrid_enabled=strategy == "hybrid_rerank",
             hybrid_lexical_weight=settings.hybrid_lexical_weight,
             hybrid_vector_weight=settings.hybrid_vector_weight,
-            recall_candidates=settings.recall_candidates,
+            recall_candidates=recall_candidates or settings.recall_candidates,
+            field_lexical_enabled=field_lexical,
             capture_retrieval_stages=True,
         ),
         repo,
@@ -428,6 +434,8 @@ async def main(argv: list[str] | None = None) -> None:
     parser.add_argument("--profile", choices=("online-main", "offline-fallback", "hybrid-experimental"), default=None)
     parser.add_argument("--baseline-file", type=Path, default=None, help="批准基线 JSON；任一指标下降超过 2 个百分点即阻断")
     parser.add_argument("--report-dir", default="eval")
+    parser.add_argument("--field-lexical", action="store_true", help="只读开关：字段加权 BM25（评测用，不改默认行为）")
+    parser.add_argument("--recall-candidates", type=int, default=None, help="只读开关：候选窗口大小（8-256）")
     args = parser.parse_args(argv)
     if args.top_k <= 0:
         parser.error("--top-k 必须为正整数")
@@ -486,7 +494,9 @@ async def main(argv: list[str] | None = None) -> None:
         print(f"\n[{strategy}] 装配中…")
         observations[strategy] = []
         try:
-            usecase, repo, _ = await build_usecase(strategy)
+            usecase, repo, _ = await build_usecase(
+                strategy, field_lexical=args.field_lexical, recall_candidates=args.recall_candidates,
+            )
             agg = await run_dataset(usecase, repo, cases, args.top_k, observations=observations[strategy])
         except Exception as err:  # 保留失败证据，不把初始化异常或部分执行算作通过
             errors[strategy] = f"{type(err).__name__}: {err}"

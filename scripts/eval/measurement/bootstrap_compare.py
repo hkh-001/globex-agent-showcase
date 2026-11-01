@@ -1,13 +1,7 @@
-"""只读分析：对两份 retrieval manifest 的逐 query 指标做配对 bootstrap。
+"""只读分析：两份 retrieval manifest 的配对比较。
 
-用法：
-  python -m scripts.eval.measurement.bootstrap_compare \
-    --baseline-manifest <keyword>.manifest.json \
-    --candidate-manifest <embedding>.manifest.json \
-    --baseline-strategy keyword_2gram --candidate-strategy embedding_only \
-    --out .globex-runtime/metrics-v1/retrieval/bootstrap.json
-
-比值口径用 Σb/Σa（逐 query 比值在指标为 0 时分母无定义）。
+输出：nDCG/Recall 的比值与 bootstrap CI、固定分母 P@5、平均返回条数、过滤准确率、
+逐 query 胜负表与效应量。绝不改写输入 manifest。
 """
 from __future__ import annotations
 
@@ -15,6 +9,7 @@ import argparse
 import json
 import pathlib
 import random
+import statistics
 
 SEED = 20260918
 ITERATIONS = 5000
@@ -23,37 +18,75 @@ ITERATIONS = 5000
 def _per_query(manifest: dict, strategy: str) -> dict[str, dict]:
     metrics = ((manifest.get("execution") or {}).get("metrics") or {})
     if strategy not in metrics:
-        raise SystemExit(f"manifest 中找不到策略 {strategy} 的指标：{sorted(metrics)}")
+        raise SystemExit(f"manifest 中找不到策略 {strategy}：{sorted(metrics)}")
     rows = metrics[strategy].get("per_query") or []
     if not rows:
         raise SystemExit(f"策略 {strategy} 的 per_query 为空，拒绝用 0 条数据出结论")
     return {row["query"]: row for row in rows}
 
 
-def _ratio(values_a: list[float], values_b: list[float]) -> float:
-    total_a = sum(values_a)
-    if total_a <= 0:
-        return float("nan")
-    return sum(values_b) / total_a
+def _actual_ok(manifest: dict, strategy: str) -> bool:
+    values = (((manifest.get("execution") or {}).get("actual_strategies")) or {}).get(strategy) or []
+    if strategy == "keyword_2gram":
+        return values == ["keyword_2gram"]
+    if strategy.startswith("hybrid"):
+        # 无精排时合法结果是 hybrid_only；降到 keyword 才算失败。
+        return bool(values) and "keyword_2gram" not in values
+    return strategy in values
+
+
+def _ratio(a: list[float], b: list[float]) -> float:
+    total = sum(a)
+    return float("nan") if total <= 0 else sum(b) / total
 
 
 def _bootstrap(pairs: list[tuple[float, float]]) -> dict:
-    rng = random.Random(SEED)
     if len(pairs) < 2:
-        return {"ratio": _ratio([a for a, _ in pairs], [b for _, b in pairs]),
-                "ci95": None, "iterations": 0, "pairs": len(pairs)}
+        return {"ratio": _ratio([a for a, _ in pairs], [b for _, b in pairs]), "ci95": None, "pairs": len(pairs)}
+    rng = random.Random(SEED)
     observed = _ratio([a for a, _ in pairs], [b for _, b in pairs])
     samples = []
-    n = len(pairs)
     for _ in range(ITERATIONS):
-        pick = [pairs[rng.randrange(n)] for _ in range(n)]
+        pick = [pairs[rng.randrange(len(pairs))] for _ in range(len(pairs))]
         value = _ratio([a for a, _ in pick], [b for _, b in pick])
         if value == value:
             samples.append(value)
     samples.sort()
-    low = samples[int(0.025 * len(samples))]
-    high = samples[int(0.975 * len(samples)) - 1]
-    return {"ratio": observed, "ci95": [low, high], "iterations": ITERATIONS, "pairs": n}
+    return {"ratio": observed, "ci95": [samples[int(0.025 * len(samples))], samples[int(0.975 * len(samples)) - 1]],
+            "iterations": ITERATIONS, "pairs": len(pairs)}
+
+
+def _side(rows: dict[str, dict], queries: list[str], metric: str) -> list[float]:
+    return [float(rows[q].get(metric) or 0) for q in queries]
+
+
+def _fixed_p5(row: dict) -> float:
+    hits = len(set(row.get("retrieved") or []) & set(row.get("relevant") or []))
+    return hits / 5.0
+
+
+def _summary(base: dict, cand: dict, queries: list[str]) -> dict:
+    deltas = [float(cand[q]["ndcg"]) - float(base[q]["ndcg"]) for q in queries]
+    improved = sum(1 for d in deltas if d > 1e-9)
+    regressed = sum(1 for d in deltas if d < -1e-9)
+    return {
+        "n": len(queries),
+        "ndcg": {"baseline": statistics.mean(_side(base, queries, "ndcg")),
+                 "candidate": statistics.mean(_side(cand, queries, "ndcg")),
+                 **_bootstrap([(float(base[q]["ndcg"]), float(cand[q]["ndcg"])) for q in queries])},
+        "recall": {"baseline": statistics.mean(_side(base, queries, "recall")),
+                   "candidate": statistics.mean(_side(cand, queries, "recall")),
+                   **_bootstrap([(float(base[q]["recall"]), float(cand[q]["recall"])) for q in queries])},
+        "fixed_p5": {"baseline": statistics.mean([_fixed_p5(base[q]) for q in queries]),
+                     "candidate": statistics.mean([_fixed_p5(cand[q]) for q in queries])},
+        "avg_returned": {"baseline": statistics.mean([len(base[q].get("retrieved") or []) for q in queries]),
+                         "candidate": statistics.mean([len(cand[q].get("retrieved") or []) for q in queries])},
+        "filter": {"baseline": statistics.mean([1.0 if base[q].get("filter_ok") else 0.0
+                                                for q in queries if base[q].get("filter_ok") is not None]) if any(
+                       base[q].get("filter_ok") is not None for q in queries) else None},
+        "win_loss": {"improved": improved, "regressed": regressed, "equal": len(queries) - improved - regressed,
+                     "median_delta": statistics.median(deltas) if deltas else 0.0},
+    }
 
 
 def main() -> None:
@@ -67,11 +100,11 @@ def main() -> None:
 
     base_manifest = json.loads(args.baseline_manifest.read_text(encoding="utf-8"))
     cand_manifest = json.loads(args.candidate_manifest.read_text(encoding="utf-8"))
-
-    actual = (base_manifest.get("execution") or {}).get("actual_strategies")
-    expected = {args.baseline_strategy: [args.baseline_strategy]}
-    if actual != expected:
-        raise SystemExit(f"基线档发生静默降级：actual_strategies={actual}，预期 {expected}")
+    for manifest, strategy, label in (
+        (base_manifest, args.baseline_strategy, "baseline"), (cand_manifest, args.candidate_strategy, "candidate"),
+    ):
+        if not _actual_ok(manifest, strategy):
+            raise SystemExit(f"{label} 档发生静默降级：actual_strategies={manifest['execution'].get('actual_strategies')}")
 
     base = _per_query(base_manifest, args.baseline_strategy)
     cand = _per_query(cand_manifest, args.candidate_strategy)
@@ -79,45 +112,23 @@ def main() -> None:
     if not shared:
         raise SystemExit("两份 manifest 没有共同 query，无法配对")
 
-    result: dict = {
-        "seed": SEED,
-        "iterations": ITERATIONS,
-        "k": ((base_manifest.get("parameters") or {}).get("top_k")
-              or (cand_manifest.get("parameters") or {}).get("top_k")),
-        "n_pairs": len(shared),
-        "missing": {"baseline_only": len(set(base) - set(cand)), "candidate_only": len(set(cand) - set(base))},
-        "overall": {},
+    result = {
+        "seed": SEED, "iterations": ITERATIONS, "n_pairs": len(shared),
+        "missing": {"baseline_only": sorted(set(base) - set(cand)), "candidate_only": sorted(set(cand) - set(base))},
+        "overall": _summary(base, cand, shared),
         "by_kind": {},
-        "per_query": [],
+        "per_query": [{"query": q, "kind": base[q].get("kind"),
+                       "baseline_ndcg": base[q].get("ndcg"), "candidate_ndcg": cand[q].get("ndcg"),
+                       "baseline_returned": len(base[q].get("retrieved") or []),
+                       "candidate_returned": len(cand[q].get("retrieved") or [])} for q in shared],
     }
-
-    for metric in ("ndcg", "recall"):
-        pairs = [(float(base[q][metric]), float(cand[q][metric])) for q in shared]
-        result["overall"][metric] = {
-            "baseline_mean": sum(a for a, _ in pairs) / len(pairs),
-            "candidate_mean": sum(b for _, b in pairs) / len(pairs),
-            **_bootstrap(pairs),
-        }
-
-    kinds = sorted({base[q].get("kind", "lexical") for q in shared})
-    for kind in kinds:
+    for kind in sorted({base[q].get("kind", "lexical") for q in shared}):
         queries = [q for q in shared if base[q].get("kind", "lexical") == kind]
-        pairs = [(float(base[q]["ndcg"]), float(cand[q]["ndcg"])) for q in queries]
-        result["by_kind"][kind] = {"n": len(queries), **_bootstrap(pairs)}
-
-    for q in shared:
-        result["per_query"].append({
-            "query": q,
-            "kind": base[q].get("kind"),
-            "baseline_ndcg": base[q].get("ndcg"),
-            "candidate_ndcg": cand[q].get("ndcg"),
-            "baseline_recall": base[q].get("recall"),
-            "candidate_recall": cand[q].get("recall"),
-        })
+        result["by_kind"][kind] = _summary(base, cand, queries)
 
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(json.dumps(result, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    print(json.dumps({k: result[k] for k in ("n_pairs", "overall", "by_kind")}, ensure_ascii=False, indent=2))
+    print(json.dumps(result["overall"], ensure_ascii=False, indent=2))
 
 
 if __name__ == "__main__":
