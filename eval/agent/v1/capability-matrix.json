@@ -416,7 +416,7 @@
         "memory-cases",
         "skill-cases"
       ],
-      "verification_status": "pending"
+      "verification_status": "verified"
     },
     {
       "capability_id": "memory.update",
@@ -458,7 +458,7 @@
       "candidate_asset_families": [
         "memory-cases"
       ],
-      "verification_status": "pending"
+      "verification_status": "verified"
     },
     {
       "capability_id": "memory.forget",
@@ -500,7 +500,7 @@
       "candidate_asset_families": [
         "memory-cases"
       ],
-      "verification_status": "pending"
+      "verification_status": "verified"
     },
     {
       "capability_id": "state.constraint_carry",
@@ -559,10 +559,10 @@
         },
         {
           "source_type": "state_snapshot",
-          "selector": "order_repository",
+          "selector": "preference_repository",
           "fields": [
             "buyer_id",
-            "shopping_session_id"
+            "statement"
           ]
         }
       ],
@@ -584,7 +584,7 @@
       "candidate_asset_families": [
         "harness-cases"
       ],
-      "verification_status": "pending"
+      "verification_status": "verified"
     },
     {
       "capability_id": "trade.prepare",
@@ -621,7 +621,7 @@
         "product-dev",
         "business-public"
       ],
-      "verification_status": "pending"
+      "verification_status": "verified"
     },
     {
       "capability_id": "trade.approve",
@@ -656,9 +656,9 @@
         "inventory_decrement"
       ],
       "oracle_type": "deterministic",
-      "status": "supported",
-      "needs_new_instrumentation": false,
-      "remediation_kind": null,
+      "status": "instrumentation_required",
+      "needs_new_instrumentation": true,
+      "remediation_kind": "eval_harness",
       "evidence_test_nodeids": [
         "tests/test_trade_store.py::test_create_commits_order_inventory_and_decision_together"
       ],
@@ -702,7 +702,7 @@
         "product-dev",
         "business-public"
       ],
-      "verification_status": "pending"
+      "verification_status": "verified"
     },
     {
       "capability_id": "trade.cancel",
@@ -739,9 +739,9 @@
         "inventory_restore"
       ],
       "oracle_type": "deterministic",
-      "status": "supported",
-      "needs_new_instrumentation": false,
-      "remediation_kind": null,
+      "status": "instrumentation_required",
+      "needs_new_instrumentation": true,
+      "remediation_kind": "eval_harness",
       "evidence_test_nodeids": [
         "tests/test_confirmation_service.py::test_landed_quote_survives_approval_query_and_cancel_after_rules_change"
       ],
@@ -782,9 +782,9 @@
         "none_on_repeat"
       ],
       "oracle_type": "deterministic",
-      "status": "supported",
-      "needs_new_instrumentation": false,
-      "remediation_kind": null,
+      "status": "instrumentation_required",
+      "needs_new_instrumentation": true,
+      "remediation_kind": "eval_harness",
       "evidence_test_nodeids": [
         "tests/test_trade_store.py::test_prepare_replay_returns_existing_even_with_new_expiry"
       ],

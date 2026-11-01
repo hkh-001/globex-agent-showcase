@@ -52,3 +52,27 @@ def test_dispatch_trade(probe_records):
 
 def test_harness_grounding_gate(probe_records):
     _assert_capability(probe_records, "harness.grounding_gate")
+
+
+def test_memory_remember(probe_records):
+    _assert_capability(probe_records, "memory.remember")
+
+
+def test_memory_update(probe_records):
+    _assert_capability(probe_records, "memory.update")
+
+
+def test_memory_forget(probe_records):
+    _assert_capability(probe_records, "memory.forget")
+
+
+def test_state_session_isolation(probe_records):
+    _assert_capability(probe_records, "state.session_isolation")
+
+
+def test_trade_prepare(probe_records):
+    _assert_capability(probe_records, "trade.prepare")
+
+
+def test_trade_query(probe_records):
+    _assert_capability(probe_records, "trade.query")

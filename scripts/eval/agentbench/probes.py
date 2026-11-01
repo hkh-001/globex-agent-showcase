@@ -20,6 +20,17 @@ from app.infrastructure.budget import init_budget, remember_verified_result
 from app.infrastructure.context import ShoppingContext, ShoppingContextSnapshot
 from app.infrastructure.eventbus import TradeEventBus, observe_run_events
 from app.infrastructure.persistence.in_memory_repositories import InMemoryProductRepository
+from app.infrastructure.persistence.json_file_stores import JsonFilePreferenceStore
+from app.application.tools.remember_preference_tool import build_remember_preference_tool
+from app.application.tools.update_preference_tool import build_update_preference_tool
+from app.application.tools.forget_preference_tool import build_forget_preference_tool
+from app.infrastructure.budget import verified_result
+from app.application.usecases.order_usecases import PlaceOrderUseCase, QueryOrderUseCase
+from app.application.usecases.confirmation_service import ConfirmationService
+from app.application.tools.order_tools import build_create_order_tool, build_query_order_tool
+from app.infrastructure.persistence.sql.repositories import bootstrap_schema, create_engine
+from app.infrastructure.persistence.sql.trade_store import SqlTradeStore
+from app.infrastructure.persistence.context_evidence import ContextEvidenceStore
 
 PROBE_FILE = "eval/agent/v1/probes/test_evidence_probe.py"
 
@@ -241,11 +252,174 @@ def _result(capability_id, source, selector, required, observed, ok, records) ->
     }
 
 
-async def _run_all() -> dict:
+async def probe_memory(tmp_path) -> list[dict]:
+    import pathlib
+    store = JsonFilePreferenceStore(pathlib.Path(tmp_path))
+    bus = TradeEventBus()
+    remember = build_remember_preference_tool(store, bus)
+    update = build_update_preference_tool(store, bus)
+    forget = build_forget_preference_tool(store, bus)
+    context_token = ShoppingContext.set(ShoppingContextSnapshot("s", "buyer-memory", "zh-CN", "CNY"))
+    results = []
+    try:
+        init_budget(0)
+        events = []
+        with observe_run_events(events.append):
+            await remember("like", "喜欢轻便背包")
+        records = _records(events)
+        saved = next((row["payload"].get("saved") for row in records
+                      if row["type"] == "tool.result" and row["payload"].get("tool") == "remember_preference_tool"), None)
+        written = verified_result("memory_write") or {}
+        ok = saved == "喜欢轻便背包" and written.get("action") == "保存"
+        results.append(_result("memory.remember", "event", "tool.result:remember_preference_tool",
+                               ["saved"], ["saved"] if saved else [], ok, records))
+        results.append(_result("memory.remember", "verified_result", "memory_write",
+                               ["action", "statement"], sorted(written), ok, records))
+
+        preferences = await store.list_by_buyer("buyer-memory")
+        target = preferences[0]
+        events = []
+        with observe_run_events(events.append):
+            await update(target.statement, target.kind, "喜欢超轻背包",
+                         memory_id=target.memory_id, expected_version=target.version)
+        records = _records(events)
+        updated = next((row["payload"].get("updated") for row in records
+                        if row["type"] == "tool.result" and row["payload"].get("tool") == "update_preference_tool"), None)
+        current = await store.list_by_buyer("buyer-memory")
+        written = verified_result("memory_write") or {}
+        results.append(_result("memory.update", "event", "tool.result:update_preference_tool",
+                               ["updated"], ["updated"] if updated is not None else [],
+                               updated is True and any(p.statement == "喜欢超轻背包" for p in current), records))
+        results.append(_result("memory.update", "verified_result", "memory_write",
+                               ["action", "statement"], sorted(written),
+                               written.get("action") == "更新", records))
+
+        preferences = await store.list_by_buyer("buyer-memory")
+        target = preferences[0]
+        events = []
+        with observe_run_events(events.append):
+            await forget(target.statement, memory_id=target.memory_id, expected_version=target.version)
+        records = _records(events)
+        deleted = next((row["payload"].get("deleted") for row in records
+                        if row["type"] == "tool.result" and row["payload"].get("tool") == "forget_preference_tool"), None)
+        remaining = await store.list_by_buyer("buyer-memory")
+        written = verified_result("memory_write") or {}
+        results.append(_result("memory.forget", "event", "tool.result:forget_preference_tool",
+                               ["deleted"], ["deleted"] if deleted else [],
+                               deleted == "喜欢超轻背包" and remaining == [], records))
+        results.append(_result("memory.forget", "verified_result", "memory_write",
+                               ["action", "statement"], sorted(written),
+                               written.get("action") == "删除", records))
+    finally:
+        ShoppingContext.reset(context_token)
+    return results
+
+
+async def probe_session(tmp_path) -> list[dict]:
+    import pathlib
+    store = JsonFilePreferenceStore(pathlib.Path(tmp_path) / "sessions")
+    bus = TradeEventBus()
+    remember = build_remember_preference_tool(store, bus)
+    first_token = ShoppingContext.set(ShoppingContextSnapshot("session-a", "buyer-a", "zh-CN", "CNY"))
+    try:
+        events_a = []
+        with observe_run_events(events_a.append):
+            await remember("like", "喜欢军绿色")
+    finally:
+        ShoppingContext.reset(first_token)
+    second_token = ShoppingContext.set(ShoppingContextSnapshot("session-b", "buyer-b", "zh-CN", "CNY"))
+    try:
+        second_preferences = await store.list_by_buyer("buyer-b")
+    finally:
+        ShoppingContext.reset(second_token)
+    records = _records(events_a)
+    session_hashes = {row["correlation"].get("session_id") for row in records if row["correlation"].get("session_id")}
+    first_preferences = await store.list_by_buyer("buyer-a")
+    ok = (len(first_preferences) == 1 and second_preferences == [] and len(session_hashes) == 1)
+    snapshot_rows = [{"buyer_id": "buyer-a", "statement": "喜欢军绿色"}] if first_preferences else []
+    return [
+        _result("state.session_isolation", "event", "TradeEvent",
+                ["shopping_session_id", "correlation.session_id"],
+                ["correlation.session_id"] if session_hashes else [], ok, records),
+        _result("state.session_isolation", "state_snapshot", "preference_repository",
+                ["buyer_id", "statement"], sorted(snapshot_rows[0]) if snapshot_rows else [],
+                ok and bool(snapshot_rows), records),
+    ]
+
+
+async def probe_trade(tmp_path) -> list[dict]:
+    import pathlib
+    base = pathlib.Path(tmp_path)
+    base.mkdir(parents=True, exist_ok=True)
+    engine = create_engine(f"sqlite+aiosqlite:///{base / 'trade.db'}")
+    store = SqlTradeStore(engine)
+    products = InMemoryProductRepository()
+    bus = TradeEventBus()
+    evidence = ContextEvidenceStore(base / "evidence.db")
+    service = ConfirmationService(products, store, bus)
+    await bootstrap_schema(engine)
+    await store.initialize_inventory(await products.list_all())
+    context_token = ShoppingContext.set(ShoppingContextSnapshot("s", "buyer-trade", "zh-CN", "CNY"))
+    try:
+        search = build_product_search_tool(CatalogSearchUseCase(products), bus, evidence)
+        search_events = []
+        with observe_run_events(search_events.append):
+            await search(normalized_query="", product_id="P1001", ship_to="CN", top_k=5)
+
+        create = build_create_order_tool(PlaceOrderUseCase(service), bus, evidence)
+        events = []
+        with observe_run_events(events.append):
+            chunk = await create(items=[{"product_id": "P1001", "sku_id": "P1001-S1", "quantity": 1}],
+                                 shipping_address={"recipient_name": "张三", "country": "CN",
+                                                   "state": "浙江", "city": "杭州",
+                                                   "address_line": "西湖区某路 1 号",
+                                                   "postal_code": "310000", "phone": "13800000000"})
+        records = _records(events)
+        payload = next((row["payload"] for row in records
+                        if row["type"] == "tool.result" and row["payload"].get("tool") == "create_order_tool"), {})
+        confirmation = payload.get("confirmation") or {}
+        prepared_ok = (payload.get("confirmation_required") is True
+                       and bool(confirmation.get("confirmation_id"))
+                       and bool(confirmation.get("snapshot_hash"))
+                       and confirmation.get("status") in (None, "pending"))
+        results = [_result("trade.prepare", "event", "tool.result:create_order_tool",
+                           ["confirmation_required", "confirmation"], sorted(payload),
+                           prepared_ok, records)]
+
+        confirmation_payload = confirmation.get("payload") or {}
+        await service.resolve(confirmation.get("confirmation_id"), "buyer-trade", "s",
+                              confirmation.get("snapshot_hash"), True)
+        orders = await store.list_orders(buyer_id="buyer-trade")
+        order = (orders.get("orders") or [{}])[0]
+        query = build_query_order_tool(QueryOrderUseCase(store), bus)
+        events = []
+        with observe_run_events(events.append):
+            await query(order.get("order_id") or "")
+        records = _records(events)
+        qpayload = next((row["payload"] for row in records
+                         if row["type"] == "tool.result" and row["payload"].get("tool") == "query_order_tool"), {})
+        order_state = qpayload.get("order") or {}
+        query_ok = (order_state.get("order_id") == order.get("order_id")
+                    and order_state.get("status") == order.get("status"))
+        results.append(_result("trade.query", "event", "tool.result:query_order_tool",
+                               ["order"], sorted(qpayload), query_ok, records))
+    finally:
+        ShoppingContext.reset(context_token)
+        await engine.dispose()
+    return results
+
+
+async def _run_all(tmp_path=None) -> dict:
+    import pathlib
+    import tempfile
+    root = pathlib.Path(tmp_path or tempfile.mkdtemp())
     records = []
     records.extend(await probe_search())
     records.extend(await probe_dispatch())
-    records.extend(await probe_grounding())
+    records.extend(await probe_grounding(root / "grounding"))
+    records.extend(await probe_memory(root / "memory"))
+    records.extend(await probe_session(root / "session"))
+    records.extend(await probe_trade(root / "trade"))
     return {
         "schema_version": "agentbench-evidence-probe-v1",
         "records": records,
@@ -253,9 +427,9 @@ async def _run_all() -> dict:
     }
 
 
-def run_all() -> dict:
+def run_all(tmp_path=None) -> dict:
     """Run probes in a copied context so no ContextVar leaks into the caller."""
-    return contextvars.copy_context().run(lambda: asyncio.run(_run_all()))
+    return contextvars.copy_context().run(lambda: asyncio.run(_run_all(tmp_path)))
 
 
 def main() -> None:
