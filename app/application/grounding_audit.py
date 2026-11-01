@@ -22,6 +22,7 @@ def record(
     violations: list[str],
     original: str,
     replacement: str,
+    kind: str = "grounded_product_fallback",
 ) -> None:
     """Append one replacement record. Raises OSError when the file is unwritable."""
     entry = {
@@ -32,7 +33,7 @@ def record(
         "original_sha256": hashlib.sha256(original.encode("utf-8")).hexdigest(),
         "original_text": original,
         "replacement_sha256": hashlib.sha256(replacement.encode("utf-8")).hexdigest(),
-        "replacement_kind": "grounded_product_fallback",
+        "replacement_kind": kind,
     }
     path.parent.mkdir(parents=True, exist_ok=True)
     descriptor = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_APPEND, 0o600)

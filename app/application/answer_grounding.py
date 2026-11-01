@@ -57,6 +57,11 @@ def has_concrete_product_claim(text: str) -> bool:
     return bool(text and _CONCRETE_PRODUCT_REFERENCE.search(text))
 
 
+def asserts_product_attributes(text: str) -> bool:
+    """Whether the text asserts a product attribute that needs catalog evidence."""
+    return bool(text) and any(pattern.search(text) for pattern in _CLAIMS.values())
+
+
 def is_product_recommendation_intent(raw_query: str) -> bool:
     """Classify the buyer request, never the model's answer, for the evidence gate."""
     if not raw_query or _KNOWLEDGE_ONLY.search(raw_query):

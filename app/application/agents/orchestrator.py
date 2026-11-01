@@ -66,6 +66,7 @@ from app.infrastructure.eventbus import TradeEventBus, observe_run_events
 from app.infrastructure.budget import init_budget, remember_verified_result, get_budget, rule_fallback_text, verified_result
 from app.application.grounding_audit import record as record_grounding_replacement
 from app.application.answer_grounding import (
+    asserts_product_attributes,
     grounded_product_fallback,
     grounded_confirmation_fallback,
     grounded_trade_fallback,
@@ -187,6 +188,32 @@ class MainAgentOrchestrator:
             result["skills"] = [*await asyncio.to_thread(personal.list, buyer_id), *result["skills"]]
         return result
 
+    def _record_grounding_replacement(
+        self, session_id: str, kind: str, violations: list[str], original: str, replacement: str,
+    ) -> None:
+        """Keep the discarded model text locally; a failed write never blocks the answer."""
+        audit_path = getattr(self, "_grounding_audit_path", None)
+        if audit_path is None:
+            return
+        try:
+            record_grounding_replacement(
+                audit_path, session_id=session_id, violations=violations,
+                original=original, replacement=replacement, kind=kind,
+            )
+        except (OSError, ValueError) as error:
+            logger.warning("门禁替换原文未能写入本地审计（会话 %s）：%s", session_id, type(error).__name__)
+
+    @staticmethod
+    def _product_gate_applies(text: str, *, require_product_evidence: bool) -> bool:
+        """Product evidence gate, but verified trade facts win unless the text asserts a product attribute."""
+        trade = verified_result("trade") or {}
+        has_trade_fact = bool(trade.get("orders") or trade.get("pending_confirmations"))
+        if not (require_product_evidence or has_concrete_product_claim(text)):
+            return False
+        if has_trade_fact and not has_concrete_product_claim(text) and not asserts_product_attributes(text):
+            return False
+        return True
+
     def _guard_final_text(
         self, session_id: str, text: str, *, require_product_evidence: bool = False,
     ) -> str:
@@ -209,27 +236,27 @@ class MainAgentOrchestrator:
             replacement = grounded_product_fallback(
                 products, turn_trade=turn_trade, confirmation=confirmation,
             )
-            audit_path = getattr(self, "_grounding_audit_path", None)
-            if audit_path is not None:
-                try:
-                    record_grounding_replacement(
-                        audit_path, session_id=session_id, violations=violations,
-                        original=text, replacement=replacement,
-                    )
-                except OSError as error:
-                    logger.warning("门禁替换原文未能写入本地审计（会话 %s）：%s", session_id, type(error).__name__)
+            self._record_grounding_replacement(
+                session_id, "grounded_product_fallback", violations, text, replacement,
+            )
             self._bus.publish(session_id, "error", {
                 "message": "商品摘要已按目录工具事实生成",
                 "claim_guard": violations,
             })
             text = replacement
-        elif products is None and (require_product_evidence or has_concrete_product_claim(text)):
+        elif products is None and self._product_gate_applies(
+            text, require_product_evidence=require_product_evidence,
+        ):
             logger.warning("回复声明具体商品但本轮没有已校验商品证据（会话 %s）", session_id)
+            replacement = grounded_product_fallback(None)
+            self._record_grounding_replacement(
+                session_id, "missing_product_evidence", ["missing_product_evidence"], text, replacement,
+            )
             self._bus.publish(session_id, "error", {
                 "message": "本轮没有可核验商品证据，已阻止具体商品声明",
                 "claim_guard": ["missing_product_evidence"],
             })
-            text = grounded_product_fallback(None)
+            text = replacement
         if not self._output_guard_enabled:
             return text
         safe, cleaned = audit_output(text)

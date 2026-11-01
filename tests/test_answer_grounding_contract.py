@@ -134,3 +134,31 @@ def test_replaced_model_text_is_kept_in_private_audit(tmp_path):
     assert rows[0]["original_text"] == "这款有背负结构，能登机。"
     assert set(rows[0]["violations"]) == {"back_support", "carry_on"}
     assert rows[0]["replacement_kind"] == "grounded_product_fallback"
+
+
+def test_trade_fact_wins_over_missing_product_evidence_for_plain_trade_reply():
+    init_budget(0)
+    remember_verified_result("trade", {"orders": [{"order_id": "order-test", "status": "CANCELLED"}]})
+    orchestrator = object.__new__(MainAgentOrchestrator)
+    published = []
+    orchestrator._bus = SimpleNamespace(publish=lambda *args, **kwargs: published.append(args))
+    orchestrator._output_guard_enabled = False
+
+    text = orchestrator._guard_final_text("s1", "这笔意向单已取消", require_product_evidence=True)
+
+    assert text == "这笔意向单已取消"
+    assert "本轮没有足够的可核验商品结果" not in text
+    assert not any("claim_guard" in str(args) for args in published)
+
+
+def test_trade_fact_does_not_excuse_ungrounded_product_attributes():
+    init_budget(0)
+    remember_verified_result("trade", {"orders": [{"order_id": "order-test", "status": "CANCELLED"}]})
+    orchestrator = object.__new__(MainAgentOrchestrator)
+    orchestrator._bus = SimpleNamespace(publish=lambda *args, **kwargs: None)
+    orchestrator._output_guard_enabled = False
+
+    text = orchestrator._guard_final_text("s1", "这几款背包背负结构都不错", require_product_evidence=True)
+
+    assert "背负结构" not in text
+    assert "本轮没有足够的可核验商品结果" in text
