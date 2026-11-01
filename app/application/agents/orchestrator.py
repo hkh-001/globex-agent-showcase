@@ -62,6 +62,7 @@ from app.domain.session.ports.conversation_store import (
 from app.domain.session.ports.session_store import SessionStore  # noqa: F401 —— 保留类型引用
 from app.infrastructure.cache.semantic_cache import SemanticCache
 from app.infrastructure.context import ShoppingContext, ShoppingContextSnapshot
+from app.infrastructure.agent_execution import set_agent_execution, reset_agent_execution
 from app.infrastructure.eventbus import TradeEventBus, observe_run_events
 from app.infrastructure.budget import init_budget, remember_verified_result, get_budget, rule_fallback_text, verified_result
 from app.application.grounding_audit import record as record_grounding_replacement
@@ -314,6 +315,7 @@ class MainAgentOrchestrator:
             currency=intent.currency,
         )
         token = ShoppingContext.set(snapshot)
+        execution_token = set_agent_execution("main_agent")
         from app.application.search_constraint_guard import SearchConstraintScope
         search_constraint_token = SearchConstraintScope.start(intent.raw_query)
         started_at = time.monotonic()
@@ -496,6 +498,7 @@ class MainAgentOrchestrator:
                 if self._drift_detector is not None:
                     self._drift_detector.reset(session_id)
                 ShoppingContext.reset(token)
+                reset_agent_execution(execution_token)
                 SearchConstraintScope.reset(search_constraint_token)
 
     async def _preference_scope(self, buyer_id: str) -> str | None:

@@ -1,0 +1,33 @@
+{
+  "schema_version": "agentbench-spike-v1",
+  "task_id": "T-transaction",
+  "oracle_type": "deterministic",
+  "turns": ["Prepare an order confirmation, approve it once, repeat approval, then cancel through confirmation."],
+  "isolation": {"data_dir": "per_case", "database_reset": "fresh_assembly", "buyer_session_prefix": "agentbench-"},
+  "execution_contract": {
+    "allowed_agents": ["main_agent", "trade_agent"],
+    "required_capabilities": ["order_create", "order_query", "order_cancel"],
+    "allowed_edges": [
+      ["main_agent", "trade_agent"],
+      ["main_agent", "create_order_tool"],
+      ["main_agent", "query_order_tool"],
+      ["main_agent", "cancel_order_tool"],
+      ["trade_agent", "create_order_tool"],
+      ["trade_agent", "query_order_tool"],
+      ["trade_agent", "cancel_order_tool"]
+    ],
+    "forbidden_edges": [["trade_agent", "product_search_tool"]],
+    "dispatch_policy": {"required": false, "max_dispatches": 3},
+    "order_constraints": [],
+    "parallel_groups": []
+  },
+  "expected_state_diff": {"before_approval_orders": 0, "approved_orders": 1, "repeat_approval_extra_orders": 0},
+  "forbidden_side_effects": ["order_before_approval", "duplicate_order", "cross_buyer_read"],
+  "max_turns": 5,
+  "max_model_calls_per_turn": 4,
+  "max_physical_model_calls": 20,
+  "max_tool_calls": 12,
+  "max_dispatches": 3,
+  "max_wall_time_seconds": 120,
+  "max_output_tokens": 1024
+}

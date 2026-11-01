@@ -37,6 +37,11 @@ from app.application.memory.preference_selector import (
 from app.domain.buyer.preference import PreferenceStore
 from app.infrastructure.context import ShoppingContext
 from app.infrastructure.eventbus import TradeEventBus, observe_run_events
+from app.infrastructure.agent_execution import (
+    agent_execution_scope,
+    current_agent_execution,
+    new_dispatch_id,
+)
 from app.infrastructure.budget import get_budget, rule_fallback_text
 
 logger = logging.getLogger(__name__)
@@ -91,16 +96,24 @@ def build_task_dispatch_tool(
                 （买家偏好、预算、product_id/sku_id、收货地址等），子代理看不到主对话历史。
         """
         session_id = ShoppingContext.current_session_id()
+        parent_execution = current_agent_execution()
+        dispatch_id = new_dispatch_id()
         budget = get_budget()
         if budget is not None and budget.exhausted:
             return ToolChunk(content=[TextBlock(text=rule_fallback_text())], state=ToolResultState.SUCCESS)
         started_at = datetime.now(timezone.utc).isoformat()
         started_monotonic = time.monotonic()
-        bus.publish(
-            session_id,
-            "agent.dispatch",
-            {"agent": subagent_type, "demands": demands, "started_at": started_at},
-        )
+        with agent_execution_scope(
+            parent_execution.agent,
+            dispatch_id=dispatch_id,
+            parent_dispatch_id=parent_execution.dispatch_id,
+        ):
+            bus.publish(
+                session_id,
+                "agent.dispatch",
+                {"agent": subagent_type, "demands": demands, "started_at": started_at,
+                 "dispatch_id": dispatch_id},
+            )
 
         if subagent_type == "search_agent":
             worker = search_factory.build()
@@ -130,8 +143,13 @@ def build_task_dispatch_tool(
             for line in [*payload.get("confirmation", {}).get("payload", {}).get("items", []),
                          *payload.get("order", {}).get("lines", [])]:
                 verified_ids.update(str(line[key]) for key in ("product_id", "sku_id") if line.get(key))
-        with observe_run_events(capture):
-            reply = await worker.reply(inputs)
+        with agent_execution_scope(
+            subagent_type,
+            dispatch_id=dispatch_id,
+            parent_dispatch_id=parent_execution.dispatch_id,
+        ):
+            with observe_run_events(capture):
+                reply = await worker.reply(inputs)
         output = reply.get_text_content() or ""
         mentioned_ids = set(re.findall(r"\bP\d{4}(?:-S\d+)?\b", output))
         unknown = mentioned_ids - verified_ids
@@ -140,17 +158,23 @@ def build_task_dispatch_tool(
                     "summary": output if not unknown else "子任务回复包含未能由本轮检索证据核实的商品标识，请使用业务工具复核。",
                     "evidence_refs": sorted(evidence_refs), "verified_product_ids": sorted(verified_ids),
                     "unverified_product_ids": sorted(unknown)}
-        bus.publish(
-            session_id,
-            "tool.result",
-            {
-                "tool": "task_dispatch",
-                "agent": subagent_type,
-                "started_at": started_at,
-                "finished_at": datetime.now(timezone.utc).isoformat(),
-                "elapsed_ms": round((time.monotonic() - started_monotonic) * 1000),
-            },
-        )
+        with agent_execution_scope(
+            parent_execution.agent,
+            dispatch_id=dispatch_id,
+            parent_dispatch_id=parent_execution.dispatch_id,
+        ):
+            bus.publish(
+                session_id,
+                "tool.result",
+                {
+                    "tool": "task_dispatch",
+                    "agent": subagent_type,
+                    "dispatch_id": dispatch_id,
+                    "started_at": started_at,
+                    "finished_at": datetime.now(timezone.utc).isoformat(),
+                    "elapsed_ms": round((time.monotonic() - started_monotonic) * 1000),
+                },
+            )
         return ToolChunk(
             content=[TextBlock(type="text", text=json.dumps(decision, ensure_ascii=False))],
             state=ToolResultState.SUCCESS,

@@ -1,0 +1,7 @@
+{
+  "catalog_search": ["product_search_tool"],
+  "category_knowledge": ["category_insight_tool"],
+  "order_create": ["create_order_tool"],
+  "order_query": ["query_order_tool"],
+  "order_cancel": ["cancel_order_tool"]
+}

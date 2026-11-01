@@ -1,0 +1,32 @@
+{
+  "schema_version": "agentbench-spike-v1",
+  "task_id": "C-context",
+  "oracle_type": "deterministic",
+  "turns": [
+    "Find a backpack under CNY 300 shipping to China.",
+    "Lower the budget to CNY 200.",
+    "Remove the budget limit.",
+    "Compare the first two results."
+  ],
+  "execution_contract": {
+    "allowed_agents": ["main_agent", "search_agent"],
+    "required_capabilities": ["catalog_search"],
+    "allowed_edges": [
+      ["main_agent", "product_search_tool"],
+      ["main_agent", "search_agent"],
+      ["search_agent", "product_search_tool"]
+    ],
+    "forbidden_edges": [],
+    "dispatch_policy": {"required": false, "max_dispatches": 4},
+    "order_constraints": [],
+    "parallel_groups": []
+  },
+  "forbidden_facts": ["removed_budget_still_active", "cross_session_state"],
+  "max_turns": 4,
+  "max_model_calls_per_turn": 4,
+  "max_physical_model_calls": 16,
+  "max_tool_calls": 12,
+  "max_dispatches": 4,
+  "max_wall_time_seconds": 120,
+  "max_output_tokens": 1024
+}

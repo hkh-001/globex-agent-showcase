@@ -10,6 +10,7 @@ on:
       - 'eval/harness/**'
       - 'eval/business/**'
       - 'eval/learning/**'
+      - 'eval/agent/**'
       - 'eval/verification/public/**'
       - 'tests/**'
       - 'data/catalog-v1.jsonl'
@@ -28,6 +29,7 @@ on:
       - 'eval/harness/**'
       - 'eval/business/**'
       - 'eval/learning/**'
+      - 'eval/agent/**'
       - 'eval/verification/public/**'
       - 'tests/**'
       - 'data/catalog-v1.jsonl'
@@ -77,6 +79,8 @@ jobs:
         run: uv run python scripts/eval/run_public_business_baseline.py --output "${{ runner.temp }}/globex-public-business/report.json"
       - name: Verify curated public evidence hashes
         run: uv run python scripts/verify_public_evidence.py
+      - name: AgentBench Stage 0 infrastructure spike
+        run: uv run python scripts/eval/run_agentbench_spike.py --output "${{ runner.temp }}/globex-agentbench-stage0"
       - name: Preserve public business baseline
         if: always()
         uses: actions/upload-artifact@v4
@@ -91,6 +95,14 @@ jobs:
         with:
           name: harness-contracts-${{ github.run_id }}-${{ github.run_attempt }}
           path: eval/verification/ci-contracts
+          retention-days: 30
+      - name: Preserve AgentBench Stage 0 evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: globex-agentbench-stage0-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/globex-agentbench-stage0
+          if-no-files-found: warn
           retention-days: 30
 
   model-evaluation:

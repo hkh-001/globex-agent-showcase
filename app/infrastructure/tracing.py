@@ -107,6 +107,11 @@ def _shopping_session() -> str:
 
 def current_correlation(session_id: str = "") -> dict[str, str]:
     result = dict(_correlation.get())
+    # Execution ownership is task-local observability metadata.  Keeping it in
+    # the existing correlation envelope preserves journal/backplane/WS
+    # compatibility and avoids changing business payloads.
+    from app.infrastructure.agent_execution import current_agent_execution
+    result.update(current_agent_execution().correlation())
     session_id = session_id or _shopping_session()
     if session_id:
         result["session_id"] = _session_hash(session_id)

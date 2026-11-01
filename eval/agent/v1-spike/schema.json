@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "globex-agentbench-spike-v1",
+  "type": "object",
+  "required": [
+    "schema_version", "task_id", "oracle_type", "turns",
+    "execution_contract", "max_turns", "max_physical_model_calls",
+    "max_tool_calls", "max_dispatches", "max_wall_time_seconds",
+    "max_output_tokens"
+  ],
+  "properties": {
+    "schema_version": {"const": "agentbench-spike-v1"},
+    "task_id": {"type": "string", "minLength": 1},
+    "oracle_type": {"enum": ["deterministic", "deterministic_with_human_review", "human_only"]},
+    "turns": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+    "execution_contract": {
+      "type": "object",
+      "required": ["allowed_agents", "required_capabilities", "allowed_edges", "forbidden_edges", "dispatch_policy"],
+      "properties": {
+        "allowed_agents": {"type": "array", "minItems": 1, "items": {"type": "string"}},
+        "required_capabilities": {"type": "array", "items": {"type": "string"}},
+        "allowed_edges": {"$ref": "#/$defs/edges"},
+        "forbidden_edges": {"$ref": "#/$defs/edges"},
+        "dispatch_policy": {
+          "type": "object",
+          "required": ["required", "max_dispatches"],
+          "properties": {
+            "required": {"type": "boolean"},
+            "max_dispatches": {"type": "integer", "minimum": 0}
+          },
+          "additionalProperties": false
+        },
+        "order_constraints": {"type": "array"},
+        "parallel_groups": {"type": "array", "items": {"type": "array", "items": {"type": "string"}}}
+      },
+      "additionalProperties": false
+    },
+    "max_turns": {"type": "integer", "minimum": 1},
+    "max_model_calls_per_turn": {"type": "integer", "minimum": 0},
+    "max_physical_model_calls": {"type": "integer", "minimum": 0},
+    "max_tool_calls": {"type": "integer", "minimum": 0},
+    "max_dispatches": {"type": "integer", "minimum": 0},
+    "max_wall_time_seconds": {"type": "integer", "minimum": 1},
+    "max_output_tokens": {"type": "integer", "minimum": 1}
+  },
+  "$defs": {
+    "edges": {
+      "type": "array",
+      "items": {
+        "type": "array", "prefixItems": [{"type": "string"}, {"type": "string"}],
+        "minItems": 2, "maxItems": 2
+      }
+    }
+  },
+  "additionalProperties": true
+}
