@@ -31,8 +31,8 @@
       ],
       "result": "pass",
       "event_count": 2,
-      "run_id": "023c510461114b558c05f96bf0908b8d",
-      "source_commit": "f9c752cbb27c10854b5b2a44c9b62ff3a558d581"
+      "run_id": "ec6a1511e04d43cd9b2e4bc1975fef3b",
+      "source_commit": "e6d413f3ef861425d60980947b3a3d61c5c65fa0"
     },
     {
       "capability_id": "search.constraints",
@@ -58,8 +58,8 @@
       ],
       "result": "pass",
       "event_count": 2,
-      "run_id": "023c510461114b558c05f96bf0908b8d",
-      "source_commit": "f9c752cbb27c10854b5b2a44c9b62ff3a558d581"
+      "run_id": "ec6a1511e04d43cd9b2e4bc1975fef3b",
+      "source_commit": "e6d413f3ef861425d60980947b3a3d61c5c65fa0"
     },
     {
       "capability_id": "search.landed_price",
@@ -85,8 +85,8 @@
       ],
       "result": "pass",
       "event_count": 2,
-      "run_id": "023c510461114b558c05f96bf0908b8d",
-      "source_commit": "f9c752cbb27c10854b5b2a44c9b62ff3a558d581"
+      "run_id": "ec6a1511e04d43cd9b2e4bc1975fef3b",
+      "source_commit": "e6d413f3ef861425d60980947b3a3d61c5c65fa0"
     },
     {
       "capability_id": "search.exact_id",
@@ -113,8 +113,8 @@
       ],
       "result": "pass",
       "event_count": 2,
-      "run_id": "023c510461114b558c05f96bf0908b8d",
-      "source_commit": "f9c752cbb27c10854b5b2a44c9b62ff3a558d581"
+      "run_id": "ec6a1511e04d43cd9b2e4bc1975fef3b",
+      "source_commit": "e6d413f3ef861425d60980947b3a3d61c5c65fa0"
     },
     {
       "capability_id": "state.constraint_carry",
@@ -142,8 +142,8 @@
       ],
       "result": "pass",
       "event_count": 2,
-      "run_id": "023c510461114b558c05f96bf0908b8d",
-      "source_commit": "f9c752cbb27c10854b5b2a44c9b62ff3a558d581"
+      "run_id": "ec6a1511e04d43cd9b2e4bc1975fef3b",
+      "source_commit": "e6d413f3ef861425d60980947b3a3d61c5c65fa0"
     },
     {
       "capability_id": "dispatch.search",
@@ -167,8 +167,8 @@
       ],
       "result": "pass",
       "event_count": 3,
-      "run_id": "023c510461114b558c05f96bf0908b8d",
-      "source_commit": "f9c752cbb27c10854b5b2a44c9b62ff3a558d581"
+      "run_id": "ec6a1511e04d43cd9b2e4bc1975fef3b",
+      "source_commit": "e6d413f3ef861425d60980947b3a3d61c5c65fa0"
     },
     {
       "capability_id": "dispatch.search",
@@ -193,8 +193,8 @@
         ],
         "unverified_product_ids": []
       },
-      "run_id": "023c510461114b558c05f96bf0908b8d",
-      "source_commit": "f9c752cbb27c10854b5b2a44c9b62ff3a558d581"
+      "run_id": "ec6a1511e04d43cd9b2e4bc1975fef3b",
+      "source_commit": "e6d413f3ef861425d60980947b3a3d61c5c65fa0"
     },
     {
       "capability_id": "dispatch.trade",
@@ -218,8 +218,8 @@
       ],
       "result": "pass",
       "event_count": 3,
-      "run_id": "023c510461114b558c05f96bf0908b8d",
-      "source_commit": "f9c752cbb27c10854b5b2a44c9b62ff3a558d581"
+      "run_id": "ec6a1511e04d43cd9b2e4bc1975fef3b",
+      "source_commit": "e6d413f3ef861425d60980947b3a3d61c5c65fa0"
     },
     {
       "capability_id": "dispatch.trade",
@@ -236,8 +236,8 @@
       ],
       "result": "pass",
       "event_count": 3,
-      "run_id": "023c510461114b558c05f96bf0908b8d",
-      "source_commit": "f9c752cbb27c10854b5b2a44c9b62ff3a558d581"
+      "run_id": "ec6a1511e04d43cd9b2e4bc1975fef3b",
+      "source_commit": "e6d413f3ef861425d60980947b3a3d61c5c65fa0"
     },
     {
       "capability_id": "harness.grounding_gate",
@@ -254,8 +254,8 @@
       ],
       "result": "pass",
       "event_count": 1,
-      "run_id": "023c510461114b558c05f96bf0908b8d",
-      "source_commit": "f9c752cbb27c10854b5b2a44c9b62ff3a558d581"
+      "run_id": "ec6a1511e04d43cd9b2e4bc1975fef3b",
+      "source_commit": "e6d413f3ef861425d60980947b3a3d61c5c65fa0"
     },
     {
       "capability_id": "harness.grounding_gate",
@@ -278,27 +278,205 @@
       ],
       "result": "pass",
       "event_count": 1,
-      "run_id": "023c510461114b558c05f96bf0908b8d",
-      "source_commit": "f9c752cbb27c10854b5b2a44c9b62ff3a558d581"
+      "run_id": "ec6a1511e04d43cd9b2e4bc1975fef3b",
+      "source_commit": "e6d413f3ef861425d60980947b3a3d61c5c65fa0"
+    },
+    {
+      "capability_id": "memory.remember",
+      "test_nodeid": "eval/agent/v1/probes/test_evidence_probe.py::test_memory_remember",
+      "observation_source": "event",
+      "selector": "tool.result:remember_preference_tool",
+      "required_fields": [
+        "saved"
+      ],
+      "observed_fields": [
+        "saved"
+      ],
+      "result": "pass",
+      "event_count": 2,
+      "run_id": "ec6a1511e04d43cd9b2e4bc1975fef3b",
+      "source_commit": "e6d413f3ef861425d60980947b3a3d61c5c65fa0"
+    },
+    {
+      "capability_id": "memory.remember",
+      "test_nodeid": "eval/agent/v1/probes/test_evidence_probe.py::test_memory_remember",
+      "observation_source": "verified_result",
+      "selector": "memory_write",
+      "required_fields": [
+        "action",
+        "statement"
+      ],
+      "observed_fields": [
+        "action",
+        "statement"
+      ],
+      "result": "pass",
+      "event_count": 2,
+      "run_id": "ec6a1511e04d43cd9b2e4bc1975fef3b",
+      "source_commit": "e6d413f3ef861425d60980947b3a3d61c5c65fa0"
+    },
+    {
+      "capability_id": "memory.update",
+      "test_nodeid": "eval/agent/v1/probes/test_evidence_probe.py::test_memory_update",
+      "observation_source": "event",
+      "selector": "tool.result:update_preference_tool",
+      "required_fields": [
+        "updated"
+      ],
+      "observed_fields": [
+        "updated"
+      ],
+      "result": "pass",
+      "event_count": 2,
+      "run_id": "ec6a1511e04d43cd9b2e4bc1975fef3b",
+      "source_commit": "e6d413f3ef861425d60980947b3a3d61c5c65fa0"
+    },
+    {
+      "capability_id": "memory.update",
+      "test_nodeid": "eval/agent/v1/probes/test_evidence_probe.py::test_memory_update",
+      "observation_source": "verified_result",
+      "selector": "memory_write",
+      "required_fields": [
+        "action",
+        "statement"
+      ],
+      "observed_fields": [
+        "action"
+      ],
+      "result": "pass",
+      "event_count": 2,
+      "run_id": "ec6a1511e04d43cd9b2e4bc1975fef3b",
+      "source_commit": "e6d413f3ef861425d60980947b3a3d61c5c65fa0"
+    },
+    {
+      "capability_id": "memory.forget",
+      "test_nodeid": "eval/agent/v1/probes/test_evidence_probe.py::test_memory_forget",
+      "observation_source": "event",
+      "selector": "tool.result:forget_preference_tool",
+      "required_fields": [
+        "deleted"
+      ],
+      "observed_fields": [
+        "deleted"
+      ],
+      "result": "pass",
+      "event_count": 2,
+      "run_id": "ec6a1511e04d43cd9b2e4bc1975fef3b",
+      "source_commit": "e6d413f3ef861425d60980947b3a3d61c5c65fa0"
+    },
+    {
+      "capability_id": "memory.forget",
+      "test_nodeid": "eval/agent/v1/probes/test_evidence_probe.py::test_memory_forget",
+      "observation_source": "verified_result",
+      "selector": "memory_write",
+      "required_fields": [
+        "action",
+        "statement"
+      ],
+      "observed_fields": [
+        "action",
+        "statement"
+      ],
+      "result": "pass",
+      "event_count": 2,
+      "run_id": "ec6a1511e04d43cd9b2e4bc1975fef3b",
+      "source_commit": "e6d413f3ef861425d60980947b3a3d61c5c65fa0"
+    },
+    {
+      "capability_id": "state.session_isolation",
+      "test_nodeid": "eval/agent/v1/probes/test_evidence_probe.py::test_state_session_isolation",
+      "observation_source": "event",
+      "selector": "TradeEvent",
+      "required_fields": [
+        "shopping_session_id",
+        "correlation.session_id"
+      ],
+      "observed_fields": [
+        "correlation.session_id"
+      ],
+      "result": "pass",
+      "event_count": 2,
+      "run_id": "ec6a1511e04d43cd9b2e4bc1975fef3b",
+      "source_commit": "e6d413f3ef861425d60980947b3a3d61c5c65fa0"
+    },
+    {
+      "capability_id": "state.session_isolation",
+      "test_nodeid": "eval/agent/v1/probes/test_evidence_probe.py::test_state_session_isolation",
+      "observation_source": "state_snapshot",
+      "selector": "preference_repository",
+      "required_fields": [
+        "buyer_id",
+        "statement"
+      ],
+      "observed_fields": [
+        "buyer_id",
+        "statement"
+      ],
+      "result": "pass",
+      "event_count": 2,
+      "run_id": "ec6a1511e04d43cd9b2e4bc1975fef3b",
+      "source_commit": "e6d413f3ef861425d60980947b3a3d61c5c65fa0"
+    },
+    {
+      "capability_id": "trade.prepare",
+      "test_nodeid": "eval/agent/v1/probes/test_evidence_probe.py::test_trade_prepare",
+      "observation_source": "event",
+      "selector": "tool.result:create_order_tool",
+      "required_fields": [
+        "confirmation_required",
+        "confirmation"
+      ],
+      "observed_fields": [
+        "confirmation",
+        "confirmation_required",
+        "tool"
+      ],
+      "result": "pass",
+      "event_count": 3,
+      "run_id": "ec6a1511e04d43cd9b2e4bc1975fef3b",
+      "source_commit": "e6d413f3ef861425d60980947b3a3d61c5c65fa0"
+    },
+    {
+      "capability_id": "trade.query",
+      "test_nodeid": "eval/agent/v1/probes/test_evidence_probe.py::test_trade_query",
+      "observation_source": "event",
+      "selector": "tool.result:query_order_tool",
+      "required_fields": [
+        "order"
+      ],
+      "observed_fields": [
+        "order",
+        "tool"
+      ],
+      "result": "pass",
+      "event_count": 2,
+      "run_id": "ec6a1511e04d43cd9b2e4bc1975fef3b",
+      "source_commit": "e6d413f3ef861425d60980947b3a3d61c5c65fa0"
     }
   ],
   "capabilities": [
     "dispatch.search",
     "dispatch.trade",
     "harness.grounding_gate",
+    "memory.forget",
+    "memory.remember",
+    "memory.update",
     "search.catalog",
     "search.constraints",
     "search.exact_id",
     "search.landed_price",
-    "state.constraint_carry"
+    "state.constraint_carry",
+    "state.session_isolation",
+    "trade.prepare",
+    "trade.query"
   ],
   "external_connect_attempts": 0,
   "paid_requests": 0,
   "external_model_requests": 0,
-  "run_id": "023c510461114b558c05f96bf0908b8d",
-  "generated_at": "2026-11-01T13:35:48.951535+00:00",
-  "source_commit": "f9c752cbb27c10854b5b2a44c9b62ff3a558d581",
+  "run_id": "ec6a1511e04d43cd9b2e4bc1975fef3b",
+  "generated_at": "2026-11-01T13:53:26.382687+00:00",
+  "source_commit": "e6d413f3ef861425d60980947b3a3d61c5c65fa0",
   "tracked_worktree_clean": true,
-  "scanner_sha256": "138d718b69c7b2f3484e746549c8c363ec78b7d622399dc0c49734450aaa21f9",
-  "records_sha256": "03a6f35ad70a738af26f89a2360eaef202f276dd1f8aa95b39675651f537f698"
+  "scanner_sha256": "54adb4d02ef8a407f4c465af64338f14f77d30315d31451fdb5eccc7e6ba9377",
+  "records_sha256": "c116e5ae030f954db5164459384743e7e732c2750d27b504409d4c912293f0e1"
 }
