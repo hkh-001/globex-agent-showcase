@@ -189,3 +189,14 @@ def test_unrelated_dict_does_not_pass(tmp_path):
                                        "operator": "equals", "actual": 1, "expected": 1}]
     errors = _tampered_evidence(tmp_path, mutate)
     assert any("unrelated assertion field" in error for error in errors)
+
+
+def test_synchronized_actual_and_expected_tamper_fails(tmp_path):
+    def mutate(records):
+        record = next(row for row in records if row["capability_id"] == "search.catalog")
+        assertion = next(item for item in record["value_assertions"] if item["field"] == "hit_count")
+        assertion["actual"] = 999
+        assertion["expected"] = 999
+        assertion["operator"] = "equals"
+    errors = _tampered_evidence(tmp_path, mutate)
+    assert any("!= observed" in error for error in errors)

@@ -33,6 +33,8 @@ MODULE_BY_FAMILY = {
     "product-dev": "transaction",
 }
 REUSABILITY_ORDER = ["direct", "conversion_required", "oracle_only", "unresolved"]
+SOURCE_SPLITS = {"dev": "dev", "release": "release", "holdout": "holdout",
+                 "test": "holdout", "train": "holdout", "val": "holdout"}
 
 
 def _stable_hash(value) -> str:
@@ -71,13 +73,15 @@ def build(inventory_dir: pathlib.Path) -> dict:
     for row in records:
         group = groups.setdefault(row["leakage_group_id"], {
             "record_count": 0, "assets": set(), "families": set(),
-            "template_ids": set(), "split": bucket(row["leakage_group_id"]),
+            "template_ids": set(), "source_splits": set(),
         })
         group["record_count"] += 1
         group["assets"].add(row["asset_path"])
         group["families"].add(row["family"])
         if row["template_id"]:
             group["template_ids"].add(row["template_id"])
+        if row.get("split"):
+            group["source_splits"].add(row["split"])
 
     templates = []
     for group_id, group in groups.items():
@@ -99,6 +103,18 @@ def build(inventory_dir: pathlib.Path) -> dict:
                 conversions.add("prompt-adaptation")
             if not asset.get("automatic_oracle_executable", True):
                 conversions.add("fixture-required")
+        unknown = {value for value in group["source_splits"] if value not in SOURCE_SPLITS}
+        if unknown:
+            raise SystemExit(f"{group_id}: unknown source splits {sorted(unknown)}")
+        explicit = {SOURCE_SPLITS[value] for value in group["source_splits"]}
+        if "holdout" in explicit:
+            split, split_source = "holdout", "explicit-holdout"
+        elif len(explicit) == 1:
+            split, split_source = next(iter(explicit)), "explicit"
+        elif explicit:
+            raise SystemExit(f"{group_id}: conflicting source splits {sorted(explicit)}")
+        else:
+            split, split_source = bucket(group_id), "hash"
         derived = sorted(asset["path"] for asset in assets if asset.get("derived_from"))
         primary_candidates = [asset["path"] for asset in assets if not asset.get("derived_from")]
         templates.append({
@@ -116,7 +132,8 @@ def build(inventory_dir: pathlib.Path) -> dict:
             "derived_sources": derived,
             "source_flags": {family: bool(assets_by_family[family].get("prompt_dependent"))
                              for family in sorted(group["families"]) if family in assets_by_family},
-            "recommended_split": group["split"],
+            "recommended_split": split,
+            "split_source": split_source,
         })
     templates.sort(key=lambda item: item["leakage_group_id"])
     split_counts = {"dev": 0, "release": 0, "holdout": 0}

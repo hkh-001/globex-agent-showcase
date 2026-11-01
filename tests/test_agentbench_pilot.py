@@ -4,7 +4,7 @@ from __future__ import annotations
 import json
 import pathlib
 
-from scripts.eval.agentbench import generate_pilot
+from scripts.eval.agentbench import generate_pilot, validate_pilot
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 CATALOG = ROOT / "eval/agent/v1/template-catalog.json"
@@ -22,7 +22,7 @@ def test_committed_pilot_matches_generator():
 
 def test_pilot_is_small_and_dev_only():
     data = json.loads(PILOT.read_text(encoding="utf-8"))
-    assert data["candidate_count"] == 6 < 60
+    assert 1 <= data["candidate_count"] <= 6 < 60
     assert data["formal_eval_size"] is False
     assert data["holdout_used"] is False
     tasks = data["tasks"]
@@ -50,5 +50,9 @@ def test_capabilities_are_verified_and_isolated():
         assert set(task["required_capabilities"]) <= verified
         assert task["deterministic_checks"]
         assert task["isolation"]["database"] == "fresh_per_task"
+        assert task["turns"] and task["source_record_id"] and task["source_prompt_sha256"]
+        assert task["automatic_scoring"] is False
+        assert task["execution_ready"] is False
+        assert validate_pilot.validate(PILOT) == []
         assert task["side_effect_policy"]["before_after_snapshot"] in {"none", "trade_repository"}
         assert task["max_turns"] >= 1 and task["max_model_calls"] >= 0

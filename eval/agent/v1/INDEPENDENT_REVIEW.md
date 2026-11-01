@@ -173,7 +173,7 @@ print("groups=", a["group_count"], "records=", a["record_count"], "splits=", a["
 PY
 ```
 
-必须 `equal=True`、`sha_match=True`，且 groups=1185、records=2131、splits=592/388/205。
+必须 `equal=True`、`sha_match=True`，且 groups=1185、records=2131、splits=508/151/526（显式源 split 优先；train/val 锁入 Holdout）。
 
 ---
 

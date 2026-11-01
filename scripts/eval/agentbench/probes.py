@@ -591,7 +591,7 @@ async def probe_knowledge(tmp_path) -> list[dict]:
                   and bool(abstain_payload.get("reason"))
                   and abstain_content.get("unanswerable") is True
                   and bool(abstain_content.get("reason")))
-    return [
+    result_rows = [
         _result("search.category_insight", "event", "tool.result:category_insight_tool",
                 ["hit_count", "abstained", "policy_fact_statuses"],
                 sorted(payload), event_ok, records,
@@ -618,6 +618,20 @@ async def probe_knowledge(tmp_path) -> list[dict]:
                 observed_values={"unanswerable": abstain_content.get("unanswerable"),
                                  "reason": abstain_content.get("reason")}),
     ]
+    for row in result_rows:
+        if row.get("case") == "abstain":
+            if row["observation_source"] == "event":
+                row["value_assertions"] = [
+                    {"field": "abstained", "projection": None, "operator": "equals", "actual": True, "expected": True},
+                    {"field": "hit_count", "projection": None, "operator": "equals", "actual": 0, "expected": 0},
+                    {"field": "reason", "projection": None, "operator": "nonempty", "actual": abstain_payload.get("reason"), "expected": True},
+                ]
+            else:
+                row["value_assertions"] = [
+                    {"field": "unanswerable", "projection": None, "operator": "equals", "actual": True, "expected": True},
+                    {"field": "reason", "projection": None, "operator": "nonempty", "actual": abstain_content.get("reason"), "expected": True},
+                ]
+    return result_rows
 
 
 def _trade_address() -> Address:
