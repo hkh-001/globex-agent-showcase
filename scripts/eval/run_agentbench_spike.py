@@ -88,12 +88,13 @@ def scorer_probes() -> dict:
 
 def run_pytest(output: Path) -> dict:
     command = [sys.executable, "-m", "pytest", "-q", *TESTS]
+    recorded_command = ["python", "-m", "pytest", "-q", *TESTS]
     environment = dict(__import__("os").environ)
     for name in ("ALL_PROXY", "all_proxy", "HTTP_PROXY", "HTTPS_PROXY", "http_proxy", "https_proxy"):
         environment.pop(name, None)
     process = subprocess.run(command, cwd=ROOT, text=True, capture_output=True, env=environment)
     (output / "pytest.log").write_text(process.stdout + process.stderr)
-    return {"command": command, "exit_code": process.returncode, "passed": process.returncode == 0}
+    return {"command": recorded_command, "exit_code": process.returncode, "passed": process.returncode == 0}
 
 
 def main() -> int:
