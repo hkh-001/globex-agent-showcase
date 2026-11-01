@@ -5,6 +5,8 @@ import json
 import re
 from typing import Any
 
+from app.domain.catalog.product_attributes import mentioned_product_types
+
 
 _CLAIMS = {
     "back_support": re.compile(r"背负结构"),
@@ -17,10 +19,15 @@ _CLAIMS = {
 _QUALIFIERS = ("经验估计", "通常", "可能", "仅供参考", "需核验", "需要核验", "请核验", "以航司", "取决于")
 _ESTIMATE_CLAIMS = {"carry_on", "trip_duration"}
 _CONCRETE_PRODUCT_REFERENCE = re.compile(
-    r"\bP\d+\b|(?:这|该|上述|以上|第[一二三四五六七八九十\d]+)[款件个]|"
+    r"(?<![A-Za-z0-9])P\d+(?![A-Za-z0-9])|(?:这|该|上述|以上|第[一二三四五六七八九十\d]+)[款件个]|"
     r"(?:推荐|选择|购买).{0,8}(?:商品|产品|背包|箱包|耳机|杯|鞋|衣)"
 )
 _PRODUCT_INTENT = re.compile(r"(?:帮我|给我|想|要|请)?.{0,8}(?:找|挑|选|推荐|比较|购买|买).{0,20}(?:商品|产品|款|背包|箱包|耳机|杯|鞋|衣|相机|电脑|手机)")
+_KNOWLEDGE_ONLY = re.compile(
+    r"(?:不要推荐|不用推荐|不想买|只问|仅咨询|怎么清洗|如何清洗|怎么保养|如何保养|保养方法|"
+    r"方案当前可用|版本是什么|仅输出.{0,20}JSON)"
+)
+_PRODUCT_ID_QUERY = re.compile(r"(?<![A-Za-z0-9])P\d+(?![A-Za-z0-9])", re.IGNORECASE)
 
 
 def product_claim_violations(text: str, product_result: dict[str, Any] | None) -> list[str]:
@@ -52,7 +59,13 @@ def has_concrete_product_claim(text: str) -> bool:
 
 def is_product_recommendation_intent(raw_query: str) -> bool:
     """Classify the buyer request, never the model's answer, for the evidence gate."""
-    return bool(raw_query and _PRODUCT_INTENT.search(raw_query))
+    if not raw_query or _KNOWLEDGE_ONLY.search(raw_query):
+        return False
+    return bool(
+        _PRODUCT_ID_QUERY.search(raw_query)
+        or mentioned_product_types(raw_query)
+        or _PRODUCT_INTENT.search(raw_query)
+    )
 
 
 def grounded_trade_fallback(turn_trade: dict[str, Any] | None) -> str:
@@ -63,6 +76,24 @@ def grounded_trade_fallback(turn_trade: dict[str, Any] | None) -> str:
     if lines:
         return "\n".join(lines)
     return "确认决议已接收；是否执行成功请以页面确认状态和服务端订单记录为准。"
+
+
+def grounded_confirmation_fallback(
+    tool_names: list[str], approvals: list[bool], *,
+    turn_trade: dict[str, Any] | None = None,
+    memory_result: dict[str, Any] | None = None,
+) -> str:
+    if approvals and not any(approvals):
+        return "本次操作已拒绝，未执行任何变更。"
+    if turn_trade:
+        return grounded_trade_fallback(turn_trade)
+    if memory_result:
+        action = memory_result.get("action", "变更")
+        return f"长期偏好{action}已由服务端完成。"
+    if tool_names and all(name in {"remember_preference_tool", "update_preference_tool", "forget_preference_tool"}
+                          for name in tool_names):
+        return "长期偏好确认已处理；服务端未返回可核验的写入结果，请刷新偏好列表确认。"
+    return "确认决议已接收；服务端未返回可核验结果，请刷新当前状态。"
 
 
 def grounded_product_fallback(

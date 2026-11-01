@@ -66,6 +66,7 @@ from app.infrastructure.eventbus import TradeEventBus, observe_run_events
 from app.infrastructure.budget import init_budget, remember_verified_result, get_budget, rule_fallback_text, verified_result
 from app.application.answer_grounding import (
     grounded_product_fallback,
+    grounded_confirmation_fallback,
     grounded_trade_fallback,
     has_concrete_product_claim,
     is_product_recommendation_intent,
@@ -301,11 +302,17 @@ class MainAgentOrchestrator:
             from app.application.agents.tool_confirmation import awaiting_event, confirmation_inputs
             pending=awaiting_event(agent)
             if intent.confirmations:
+                pending_names = [call.name for call in (pending.tool_calls if pending is not None else [])]
+                approvals = [bool(item.get("approved")) for item in intent.confirmations]
                 incoming=confirmation_inputs(agent,intent.confirmations)
                 # 原生恢复事件直接传框架，但模型正文只用于驱动工具；用户可见结果
                 # 必须来自本轮实际订单工具事实，拒绝/失败则返回保守的状态说明。
                 await self._consume_reply(session_id,agent,incoming)
-                final_text=grounded_trade_fallback(verified_result("turn_trade"))
+                final_text=grounded_confirmation_fallback(
+                    pending_names, approvals,
+                    turn_trade=verified_result("turn_trade"),
+                    memory_result=verified_result("memory_write"),
+                )
                 self._bus.publish(session_id,"final.result",{"text":final_text})
                 return SubmitIntentOutput(shopping_session_id=session_id,final_text=final_text)
             if pending is not None:

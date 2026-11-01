@@ -15,6 +15,7 @@ from agentscope.tool import ToolChunk
 
 from app.domain.buyer.preference import BuyerPreference, PreferenceStore
 from app.infrastructure.context import ShoppingContext
+from app.infrastructure.budget import remember_verified_result
 from app.infrastructure.eventbus import TradeEventBus
 
 
@@ -51,6 +52,7 @@ def build_remember_preference_tool(store: PreferenceStore, bus: TradeEventBus):
                 state=ToolResultState.ERROR,
             )
         statement = "；".join(p.statement for p in normalized) if normalized is not None else statement
+        remember_verified_result("memory_write", {"action": "保存", "statement": statement})
         bus.publish(session_id, "tool.result", {"tool": "remember_preference_tool", "saved": statement})
         return ToolChunk(
             content=[TextBlock(type="text", text=f"已记住买家偏好：[{kind}] {statement}")],

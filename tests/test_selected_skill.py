@@ -120,7 +120,8 @@ async def test_authoritative_preload_is_before_first_model_and_not_fake_model_to
         **fixture.selected, "title": document()["title"]}
     assert not any(event["type"].startswith("TOOL_CALL") for event in events)
     assert document()["body"] not in json.dumps(events, ensure_ascii=False)
-    assert all(event["name"] == "skill.preload" for event in events if event["type"] == "CUSTOM")
+    # 无商品工具证据时 grounding 门会额外发出可见错误状态；Skill 正文仍不得泄露。
+    assert all(event["name"] in {"skill.preload", "error"} for event in events if event["type"] == "CUSTOM")
 
 
 @pytest.mark.parametrize("failure", ["hash", "missing", "draft", "revoked", "expired", "tool_missing", "dependency_missing"])

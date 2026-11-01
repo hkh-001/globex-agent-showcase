@@ -16,6 +16,7 @@ from agentscope.tool import ToolChunk
 
 from app.domain.buyer.preference import PreferenceStore
 from app.infrastructure.context import ShoppingContext
+from app.infrastructure.budget import remember_verified_result
 from app.infrastructure.eventbus import TradeEventBus
 
 
@@ -57,6 +58,7 @@ def build_forget_preference_tool(store: PreferenceStore, bus: TradeEventBus):
             )
 
         if deleted:
+            remember_verified_result("memory_write", {"action": "删除", "statement": statement})
             bus.publish(session_id, "tool.result", {"tool": "forget_preference_tool", "deleted": statement})
             return ToolChunk(
                 content=[TextBlock(type="text", text=f"已撤回买家偏好：{statement}")],

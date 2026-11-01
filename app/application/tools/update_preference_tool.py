@@ -4,6 +4,7 @@ from agentscope.message import TextBlock, ToolResultState
 from agentscope.tool import ToolChunk
 from app.domain.buyer.preference import BuyerPreference
 from app.infrastructure.context import ShoppingContext
+from app.infrastructure.budget import remember_verified_result
 
 
 def build_update_preference_tool(store, bus):
@@ -35,6 +36,7 @@ def build_update_preference_tool(store, bus):
                 current=await store.list_by_buyer(snapshot.buyer_id)
                 text="已更新长期偏好，当前保存的规范化记忆："+ "；".join(p.statement for p in current)
             bus.publish(session,"tool.result",{"tool":"update_preference_tool","updated":updated})
+            remember_verified_result("memory_write", {"action": "更新" if updated else "未更新"})
             return ToolChunk(content=[TextBlock(type="text",text=text)],state=ToolResultState.SUCCESS)
         except Exception as error:
             bus.publish(session,"tool.result",{"tool":"update_preference_tool","error":"偏好修改失败"})

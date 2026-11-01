@@ -4,6 +4,7 @@ from types import SimpleNamespace
 from app.application.agents.orchestrator import MainAgentOrchestrator
 from app.application.answer_grounding import (
     has_concrete_product_claim,
+    grounded_confirmation_fallback,
     grounded_trade_fallback,
     is_product_recommendation_intent,
     product_claim_violations,
@@ -62,6 +63,13 @@ def test_orchestrator_fails_closed_for_concrete_product_claim_without_tool_evide
     assert guarded == "本轮没有足够的可核验商品结果，请调整筛选条件后再试。"
 
     assert is_product_recommendation_intent("帮我挑一个适合旅行的背包")
+    for query in (
+        "我需要一个20元内送中国的背包", "20元以内配送中国的背包", "旅行背包，预算300",
+        "有没有适合旅行的背包", "给我看看背包", "P1001怎么样",
+    ):
+        assert is_product_recommendation_intent(query), query
+    for query in ("不要推荐商品，只问背包怎么清洗", "我不想买背包，只想问保养"):
+        assert not is_product_recommendation_intent(query), query
     implicit = orchestrator._guard_final_text(
         "s1", "城市漫步 20L 很适合你，工艺精良。", require_product_evidence=True,
     )
@@ -70,3 +78,10 @@ def test_orchestrator_fails_closed_for_concrete_product_claim_without_tool_evide
         "订单 GBX-1：created。"
     )
     assert "是否执行成功" in grounded_trade_fallback(None)
+    assert grounded_confirmation_fallback(
+        ["remember_preference_tool"], [False],
+    ) == "本次操作已拒绝，未执行任何变更。"
+    assert "长期偏好保存" in grounded_confirmation_fallback(
+        ["remember_preference_tool"], [True], memory_result={"action": "保存"},
+    )
+    assert "订单" not in grounded_confirmation_fallback(["remember_preference_tool"], [True])

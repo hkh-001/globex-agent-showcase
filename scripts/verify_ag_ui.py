@@ -138,6 +138,9 @@ class StreamAudit:
             assistants = [message for message in event["messages"] if message["role"] == "assistant"]
             if assistants:
                 self.final_message_characters = len(str(assistants[-1].get("content", "")))
+                if self.final_message_characters > 0 and self.first_text_ms is None:
+                    # 正文经过服务端审核后一次性发布；首个可见正文时间以最终快照计。
+                    self.first_text_ms = round(elapsed_ms, 2)
         elif kind == "RUN_FINISHED":
             if event["threadId"] != self.thread_id or event["runId"] != self.run_id:
                 raise ContractViolation("run_finished_identity_mismatch")
