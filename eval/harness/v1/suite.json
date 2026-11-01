@@ -186,6 +186,7 @@
     "tests/test_agentbench_inventory.py",
     "tests/test_agentbench_capability.py",
     "tests/test_agentbench_probe.py",
+    "tests/test_agentbench_catalog_ci.py",
     "eval/agent/v1/probes/test_evidence_probe.py"
   ],
   "contract_allowed_skips": [

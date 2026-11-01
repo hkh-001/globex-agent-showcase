@@ -1,0 +1,38 @@
+name: agentbench-catalog
+on:
+  pull_request:
+    paths:
+      - "eval/agent/**"
+      - "scripts/eval/agentbench/inventory.py"
+      - "scripts/eval/agentbench/template_catalog.py"
+      - "scripts/eval/agentbench/freeze_inventory.py"
+      - "scripts/eval/agentbench/check_catalog.py"
+      - "scripts/eval/agentbench/capability_audit.py"
+      - "tests/test_agentbench_*.py"
+      - ".github/workflows/**"
+  push:
+    paths:
+      - "eval/agent/**"
+      - "scripts/eval/agentbench/inventory.py"
+      - "scripts/eval/agentbench/template_catalog.py"
+      - "scripts/eval/agentbench/freeze_inventory.py"
+      - "scripts/eval/agentbench/check_catalog.py"
+      - "scripts/eval/agentbench/capability_audit.py"
+      - "tests/test_agentbench_*.py"
+      - ".github/workflows/**"
+jobs:
+  catalog:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Rebuild catalog from frozen inventory
+        run: python -m scripts.eval.agentbench.check_catalog --out /tmp/catalog.json
+      - name: Check capability audit
+        run: python -m scripts.eval.agentbench.capability_audit
+      - uses: actions/upload-artifact@v4
+        with:
+          name: agentbench-catalog
+          path: /tmp/catalog.json
