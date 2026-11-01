@@ -2,11 +2,11 @@
   "schema_version": "agentbench-frozen-inventory-v1",
   "inventory_source_commit": "af9ee8c699548b7c30a95caafdfeae7d9315e1a0",
   "inventory_source_tree": "6c24714362e8bec16feba9acafd7fadb6243ad10",
-  "freeze_implementation_commit": "9ec57a8cbb6f0f1ddd4a56ee8a527fa716e60a6b",
-  "freeze_implementation_tree": "5ecbb58554b4021bae1bc03cb8b56e7b3998f881",
+  "freeze_implementation_commit": "99f5b796b71c21a551a75f7568667562dca3f10c",
+  "freeze_implementation_tree": "38133c06c358a63be4cbaf9eb9a638abb0a2e8ec",
   "tracked_worktree_clean": true,
   "scanner_sha256": "b1ae9bbfd298415cd2ceb3a91bbb04f4d711d2aaad74d2ceaace34353d887bba",
-  "generator_sha256": "c64475d1dec92551262d7e11e25fd3cc4cd53314a4bf2879627b949edf1ad48c",
+  "generator_sha256": "6fd86a6b092481a26e772f0638b2010ad839d8b7ade9918e13f8987bc6f1b9be",
   "inventory_file_sha256": "2cb5db75a570d58ccbe93bbb4ab75b0ec915cb92ff34e339748bc310c16a2e9b",
   "record_index_file_sha256": "d7314d70d980f2660c09762495d8a61293230ed6e654fe42badddb9b626630d0",
   "counts": {
@@ -18,5 +18,5 @@
   "prompt_normalization": "nfkc+whitespace-v1",
   "record_semantics": "2131 asset records, not 2131 executable agent tasks",
   "command": "python -m scripts.eval.agentbench.freeze_inventory --inventory <evidence-dir> --out eval/agent/v1/inventory",
-  "generated_at": "2026-11-01T16:33:36.100076+00:00"
+  "generated_at": "2026-11-01T16:43:17.873945+00:00"
 }
