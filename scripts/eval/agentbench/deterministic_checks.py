@@ -102,14 +102,10 @@ def score(checks: list[dict[str, Any]], events: list[dict[str, Any]]) -> dict[st
             if not payloads:
                 failures.append(f"check[{index}]:selector_not_observed")
                 continue
-            projected = [_project(payload, check["field"]) for payload in payloads]
-            # A selector may occur more than once in a trace.  The contract is
-            # existential across matching observations, while array quantifiers
-            # (contains_all/all_equal/any_gt) apply within one observation.
-            if any(_evaluate(check["operator"], actual, check["expected"])
-                   for actual in projected):
-                continue
-            actual = projected[0] if len(projected) == 1 else projected
+            # Repeated calls are allowed, but the final matching observation is
+            # authoritative.  An earlier good result must not hide a later bad
+            # result.  Array quantifiers apply inside that final observation.
+            actual = _project(payloads[-1], check["field"])
         if not _evaluate(check["operator"], actual, check["expected"]):
             failures.append(f"check[{index}]:failed")
     if evidence_errors:

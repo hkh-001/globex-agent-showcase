@@ -155,3 +155,13 @@ def test_deterministic_check_schema_and_array_quantifiers_are_fail_closed():
                "operator": "contains_all", "expected": ["A", "B"]}]
     events = [_event("tool.result", "x", {"hits": [{"id": "A"}]})]
     assert not deterministic_checks.score(checks, events)["passed"]
+
+
+def test_last_matching_observation_is_authoritative():
+    checks = [{"kind": "event", "selector": "tool.result:x", "field": "hits[].id",
+               "operator": "contains_any", "expected": ["GOOD"]}]
+    events = [
+        _event("tool.result", "x", {"hits": [{"id": "GOOD"}]}),
+        _event("tool.result", "x", {"hits": [{"id": "BAD"}]}),
+    ]
+    assert not deterministic_checks.score(checks, events)["passed"]
