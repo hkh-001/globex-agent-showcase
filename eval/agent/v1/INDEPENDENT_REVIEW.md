@@ -85,6 +85,16 @@ echo "exit=$?"
 
 预期：`check_catalog` 输出 `{"passed": true, "errors": []}` 且退出 0；`capability_audit` 输出 `passed: true` 且 counts 为 18/4/1；pytest 全绿。
 
+干净 clone 中优先使用离线入口（`tests/conftest.py` 会清代理、注入假 key，不依赖本机 shell）：
+
+```bash
+cd "$TMP/review"
+PYTHON="$PY" ./scripts/eval/run_offline_tests.sh
+echo "exit=$?"
+```
+
+预期：`2361 passed / 45 skipped`，退出 0。若 clone 内自建环境，设置 `PYTHON=/path/to/python` 即可。
+
 ---
 
 ## 4. 哈希与来源复算
@@ -387,6 +397,7 @@ echo "grep_exit=$?"
 - 不引用任何 secrets 或模型密钥；
 - 有 `upload-artifact`；
 - `check_catalog` 与 `capability_audit` 均以 `python -m` 运行；
+- 离线测试入口 `scripts/eval/run_offline_tests.sh` 可复现 2361/45，不依赖代理或真实密钥；
 - 准确表述：**重建脚本不调用模型、无需密钥、不产生付费请求；GitHub Actions 基础步骤仍访问 GitHub 服务**。
 
 ---
