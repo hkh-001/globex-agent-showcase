@@ -103,3 +103,30 @@ def test_required_fields_must_appear_in_observed_fields(tmp_path):
     errors = capability_audit.audit(MATRIX, ROOT / "eval/agent/v1/unsupported-capabilities.json",
                                     ROOT / "eval/agent/v1/template-catalog.json", None, path)
     assert any("observed_fields miss" in error for error in errors)
+
+
+def test_state_snapshot_without_values_fails(tmp_path):
+    evidence = json.loads(EVIDENCE.read_text(encoding="utf-8"))
+    record = next(row for row in evidence["records"]
+                  if row["observation_source"] == "state_snapshot" and row["result"] == "pass")
+    record["observed_values"] = {}
+    evidence["records_sha256"] = __import__("hashlib").sha256(
+        json.dumps(evidence["records"], ensure_ascii=False, sort_keys=True).encode()).hexdigest()
+    path = tmp_path / "evidence.json"
+    path.write_text(json.dumps(evidence), encoding="utf-8")
+    errors = capability_audit.audit(MATRIX, ROOT / "eval/agent/v1/unsupported-capabilities.json",
+                                    ROOT / "eval/agent/v1/template-catalog.json", None, path)
+    assert any("lacks observed_values" in error for error in errors)
+
+
+def test_probe_nodeid_must_be_declared_in_matrix(tmp_path):
+    evidence = json.loads(EVIDENCE.read_text(encoding="utf-8"))
+    record = next(row for row in evidence["records"] if row["capability_id"] == "memory.remember")
+    record["test_nodeid"] = "tests/test_agentbench_capability.py::test_capability_audit_passes_on_repo_files"
+    evidence["records_sha256"] = __import__("hashlib").sha256(
+        json.dumps(evidence["records"], ensure_ascii=False, sort_keys=True).encode()).hexdigest()
+    path = tmp_path / "evidence.json"
+    path.write_text(json.dumps(evidence), encoding="utf-8")
+    errors = capability_audit.audit(MATRIX, ROOT / "eval/agent/v1/unsupported-capabilities.json",
+                                    ROOT / "eval/agent/v1/template-catalog.json", None, path)
+    assert any("not declared in matrix" in error for error in errors)

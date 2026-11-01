@@ -44,7 +44,8 @@
       "needs_new_instrumentation": false,
       "remediation_kind": null,
       "evidence_test_nodeids": [
-        "tests/test_agentbench_stage0.py::test_parallel_dispatches_keep_distinct_contextvar_ownership"
+        "tests/test_agentbench_stage0.py::test_parallel_dispatches_keep_distinct_contextvar_ownership",
+        "eval/agent/v1/probes/test_evidence_probe.py::test_dispatch_search"
       ],
       "candidate_asset_families": [
         "agent-cases-v1",
@@ -90,7 +91,8 @@
       "needs_new_instrumentation": false,
       "remediation_kind": null,
       "evidence_test_nodeids": [
-        "tests/test_agentbench_stage0.py::test_failed_dispatch_emits_terminal_event_and_scores_task_failed"
+        "tests/test_agentbench_stage0.py::test_failed_dispatch_emits_terminal_event_and_scores_task_failed",
+        "eval/agent/v1/probes/test_evidence_probe.py::test_dispatch_trade"
       ],
       "candidate_asset_families": [
         "agent-cases-v1",
@@ -132,7 +134,8 @@
       "needs_new_instrumentation": false,
       "remediation_kind": null,
       "evidence_test_nodeids": [
-        "tests/test_search_constraint_continuity.py::test_rewrite_inherits_type_budget_destination_and_material_constraints"
+        "tests/test_search_constraint_continuity.py::test_rewrite_inherits_type_budget_destination_and_material_constraints",
+        "eval/agent/v1/probes/test_evidence_probe.py::test_search_catalog"
       ],
       "candidate_asset_families": [
         "retrieval-v1",
@@ -172,7 +175,8 @@
       "needs_new_instrumentation": false,
       "remediation_kind": null,
       "evidence_test_nodeids": [
-        "tests/test_search_constraint_continuity.py::test_identical_effective_request_reuses_previous_result_within_turn"
+        "tests/test_search_constraint_continuity.py::test_identical_effective_request_reuses_previous_result_within_turn",
+        "eval/agent/v1/probes/test_evidence_probe.py::test_search_constraints"
       ],
       "candidate_asset_families": [
         "retrieval-v2",
@@ -210,7 +214,8 @@
       "needs_new_instrumentation": false,
       "remediation_kind": null,
       "evidence_test_nodeids": [
-        "tests/test_search_constraint_continuity.py::test_exact_id_detail_does_not_inherit_a_search_sku_spec"
+        "tests/test_search_constraint_continuity.py::test_exact_id_detail_does_not_inherit_a_search_sku_spec",
+        "eval/agent/v1/probes/test_evidence_probe.py::test_search_exact_id"
       ],
       "candidate_asset_families": [
         "retrieval-v2"
@@ -249,7 +254,8 @@
       "needs_new_instrumentation": false,
       "remediation_kind": null,
       "evidence_test_nodeids": [
-        "tests/test_answer_grounding_contract.py::test_product_fallback_reports_landed_price_with_fee_breakdown"
+        "tests/test_answer_grounding_contract.py::test_product_fallback_reports_landed_price_with_fee_breakdown",
+        "eval/agent/v1/probes/test_evidence_probe.py::test_search_landed_price"
       ],
       "candidate_asset_families": [
         "retrieval-v2",
@@ -297,7 +303,8 @@
       "remediation_kind": null,
       "evidence_test_nodeids": [
         "tests/test_harness_guards.py::TestSchemaAssertion::test_accepts_dict_input",
-        "tests/test_knowledge_fixture.py::test_knowledge_fixture_has_versioned_metadata_and_required_document_count"
+        "tests/test_knowledge_fixture.py::test_knowledge_fixture_has_versioned_metadata_and_required_document_count",
+        "eval/agent/v1/probes/test_evidence_probe.py::test_search_category_insight"
       ],
       "candidate_asset_families": [
         "knowledge-v1"
@@ -409,7 +416,8 @@
       "needs_new_instrumentation": false,
       "remediation_kind": null,
       "evidence_test_nodeids": [
-        "tests/test_memory_upgrade.py::test_stable_id_versions_aba_and_delete_audit"
+        "tests/test_memory_upgrade.py::test_stable_id_versions_aba_and_delete_audit",
+        "eval/agent/v1/probes/test_evidence_probe.py::test_memory_remember"
       ],
       "candidate_asset_families": [
         "memory-cases",
@@ -451,7 +459,8 @@
       "needs_new_instrumentation": false,
       "remediation_kind": null,
       "evidence_test_nodeids": [
-        "tests/test_memory_upgrade.py::test_concurrent_edit_only_one_version_wins"
+        "tests/test_memory_upgrade.py::test_concurrent_edit_only_one_version_wins",
+        "eval/agent/v1/probes/test_evidence_probe.py::test_memory_update"
       ],
       "candidate_asset_families": [
         "memory-cases"
@@ -493,7 +502,8 @@
       "needs_new_instrumentation": false,
       "remediation_kind": null,
       "evidence_test_nodeids": [
-        "tests/test_memory_upgrade.py::test_stable_id_versions_aba_and_delete_audit"
+        "tests/test_memory_upgrade.py::test_stable_id_versions_aba_and_delete_audit",
+        "eval/agent/v1/probes/test_evidence_probe.py::test_memory_forget"
       ],
       "candidate_asset_families": [
         "memory-cases"
@@ -531,7 +541,8 @@
       "needs_new_instrumentation": false,
       "remediation_kind": null,
       "evidence_test_nodeids": [
-        "tests/test_search_constraint_continuity.py::test_rewrite_inherits_type_budget_destination_and_material_constraints"
+        "tests/test_search_constraint_continuity.py::test_rewrite_inherits_type_budget_destination_and_material_constraints",
+        "eval/agent/v1/probes/test_evidence_probe.py::test_state_constraint_carry"
       ],
       "candidate_asset_families": [
         "context-cases",
@@ -577,7 +588,8 @@
       "needs_new_instrumentation": false,
       "remediation_kind": null,
       "evidence_test_nodeids": [
-        "tests/test_session_fencing.py::test_new_claim_invalidates_old_writer_before_new_owner_has_saved"
+        "tests/test_session_fencing.py::test_new_claim_invalidates_old_writer_before_new_owner_has_saved",
+        "eval/agent/v1/probes/test_evidence_probe.py::test_state_session_isolation"
       ],
       "candidate_asset_families": [
         "harness-cases"
@@ -626,7 +638,8 @@
       "needs_new_instrumentation": false,
       "remediation_kind": null,
       "evidence_test_nodeids": [
-        "tests/test_confirmation_service.py::test_prepare_exposes_authoritative_snapshot_without_creating_order_or_deducting_stock"
+        "tests/test_confirmation_service.py::test_prepare_exposes_authoritative_snapshot_without_creating_order_or_deducting_stock",
+        "eval/agent/v1/probes/test_evidence_probe.py::test_trade_prepare"
       ],
       "candidate_asset_families": [
         "product-dev",
@@ -709,7 +722,8 @@
       "needs_new_instrumentation": false,
       "remediation_kind": null,
       "evidence_test_nodeids": [
-        "tests/test_trade_store.py::test_create_commits_order_inventory_and_decision_together"
+        "tests/test_trade_store.py::test_create_commits_order_inventory_and_decision_together",
+        "eval/agent/v1/probes/test_evidence_probe.py::test_trade_query"
       ],
       "candidate_asset_families": [
         "product-dev",
@@ -850,7 +864,8 @@
       "needs_new_instrumentation": false,
       "remediation_kind": null,
       "evidence_test_nodeids": [
-        "tests/test_answer_grounding_contract.py::test_orchestrator_replaces_unsupported_claims_with_verified_catalog_facts"
+        "tests/test_answer_grounding_contract.py::test_orchestrator_replaces_unsupported_claims_with_verified_catalog_facts",
+        "eval/agent/v1/probes/test_evidence_probe.py::test_harness_grounding_gate"
       ],
       "candidate_asset_families": [
         "harness-cases"

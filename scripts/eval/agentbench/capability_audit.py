@@ -118,6 +118,14 @@ def _probe_integrity_errors(probe: dict) -> list[str]:
         if required and not required <= observed:
             errors.append(f"record {row.get('capability_id')} observed_fields miss "
                           f"{sorted(required - observed)}")
+        if row.get("observation_source") == "state_snapshot" and row.get("result") == "pass":
+            values = row.get("observed_values") or {}
+            if not values:
+                errors.append(f"record {row.get('capability_id')} state_snapshot lacks observed_values")
+            else:
+                missing = [field for field in row.get("required_fields") or [] if field not in values]
+                if missing:
+                    errors.append(f"record {row.get('capability_id')} observed_values miss {missing}")
         if row.get("run_id") != probe.get("run_id"):
             errors.append(f"record {row.get('capability_id')} has a different run_id")
         if row.get("source_commit") != source:
@@ -205,9 +213,12 @@ def audit(matrix_path: pathlib.Path, unsupported_path: pathlib.Path,
         for item in capabilities:
             cid = item.get("capability_id")
             matching = [row for row in records if row.get("capability_id") == cid]
+            declared = set(item.get("evidence_test_nodeids") or [])
             for row in matching:
                 if not _test_exists(row.get("test_nodeid", "")):
                     errors.append(f"{cid}: probe test not found {row.get('test_nodeid')}")
+                if declared and row.get("test_nodeid") not in declared:
+                    errors.append(f"{cid}: probe test {row.get('test_nodeid')} not declared in matrix")
             if item.get("verification_status") == "verified":
                 if not matching or any(row.get("result") != "pass" for row in matching):
                     errors.append(f"{cid}: verified capability has no passing probe record")

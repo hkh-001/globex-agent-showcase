@@ -254,7 +254,8 @@ async def probe_grounding(tmp_path=None) -> list[dict]:
     return results
 
 
-def _result(capability_id, source, selector, required, observed, ok, records, case=None) -> dict:
+def _result(capability_id, source, selector, required, observed, ok, records, case=None,
+            observed_values=None) -> dict:
     result = {
         "capability_id": capability_id,
         "test_nodeid": f"{PROBE_FILE}::test_{capability_id.replace('.', '_')}",
@@ -267,6 +268,8 @@ def _result(capability_id, source, selector, required, observed, ok, records, ca
     }
     if case:
         result["case"] = case
+    if observed_values is not None:
+        result["observed_values"] = observed_values
     return result
 
 
@@ -368,7 +371,10 @@ async def probe_session(tmp_path) -> list[dict]:
                 ["shopping_session_id", "correlation.session_id"],
                 ["shopping_session_id", "correlation.session_id"] if ok else [], ok, records),
         _result("state.session_isolation", "state_snapshot", "preference_repository",
-                ["buyer_id", "statement"], ["buyer_id", "statement"] if ok else [], ok, records),
+                ["buyer_id", "statement"], ["buyer_id", "statement"] if ok else [], ok, records,
+                observed_values={"buyer_id": [row["buyer_id"] for row in snapshot_rows],
+                                 "statement": {row["buyer_id"]: row["statement"] for row in snapshot_rows}}
+                if ok else {}),
     ]
 
 
@@ -421,7 +427,13 @@ async def probe_trade(tmp_path) -> list[dict]:
             _result("trade.prepare", "state_snapshot", "trade_repository",
                     ["order_count_before", "order_count_after", "inventory_before", "inventory_after"],
                     ["order_count_before", "order_count_after", "inventory_before", "inventory_after"],
-                    prepared_ok, records),
+                    prepared_ok, records,
+                    observed_values={"order_count_before": len(orders_before.get("orders") or []),
+                                     "order_count_after": len(orders_after.get("orders") or []),
+                                     "inventory_before": inventory_before,
+                                     "inventory_after": inventory_after,
+                                     "inventory_delta": (inventory_after.get("P1001-S1", 0)
+                                                         - inventory_before.get("P1001-S1", 0))}),
         ]
 
         confirmation_payload = confirmation.get("payload") or {}
@@ -537,10 +549,11 @@ async def _prepare(service, buyer_id, session_id, quantity=1):
         buyer_id, session_id, [OrderItemInput("P1001", "P1001-S1", quantity)], _trade_address())
 
 
-def _snapshot_record(capability_id, ok, records, case=None):
+def _snapshot_record(capability_id, ok, records, values, case=None):
     fields = ["order_count_before", "order_count_after", "inventory_before", "inventory_after"]
     return _result(capability_id, "state_snapshot", "trade_repository", fields,
-                   fields if ok else [], ok, records, case=case)
+                   fields if ok else [], ok, records, case=case,
+                   observed_values=values if ok else {})
 
 
 async def probe_trade_approve(tmp_path) -> list[dict]:
@@ -569,10 +582,21 @@ async def probe_trade_approve(tmp_path) -> list[dict]:
               and len(orders_after.get("orders") or []) == 1
               and inventory_after.get("P1001-S1") == inventory_before.get("P1001-S1") - 1)
         fields = ["confirmation.status", "confirmation.result.order_id"]
+        values = {
+            "order_count_before": len(orders_before.get("orders") or []),
+            "order_count_after": len(orders_after.get("orders") or []),
+            "inventory_before": inventory_before,
+            "inventory_after": inventory_after,
+            "inventory_delta": inventory_after.get("P1001-S1", 0) - inventory_before.get("P1001-S1", 0),
+            "order_id": order.get("order_id"),
+            "order_status": order.get("status"),
+        }
         records_out.append(_result("trade.approve", "event", "confirmation.resolved", fields,
                                    [field for field in fields if _present(resolved.get("payload") or {}, field)],
-                                   ok, events, case="approved"))
-        records_out.append(_snapshot_record("trade.approve", ok, events, case="approved"))
+                                   ok, events, case="approved",
+                                   observed_values={"status": inner.get("status"),
+                                                    "order_id": (inner.get("result") or {}).get("order_id")}))
+        records_out.append(_snapshot_record("trade.approve", ok, events, values, case="approved"))
     finally:
         await engine.dispose()
 
@@ -594,10 +618,20 @@ async def probe_trade_approve(tmp_path) -> list[dict]:
         ok = (inner.get("status") == "rejected"
               and (orders_after.get("orders") or []) == []
               and inventory_after == inventory_before)
+        values = {
+            "order_count_before": 0,
+            "order_count_after": len(orders_after.get("orders") or []),
+            "inventory_before": inventory_before,
+            "inventory_after": inventory_after,
+            "inventory_delta": inventory_after.get("P1001-S1", 0) - inventory_before.get("P1001-S1", 0),
+            "order_id": None,
+            "order_status": None,
+        }
         records_out.append(_result("trade.approve", "event", "confirmation.resolved",
                                    ["confirmation.status"], ["confirmation.status"] if ok else [],
-                                   ok, events, case="rejected"))
-        records_out.append(_snapshot_record("trade.approve", ok, events, case="rejected"))
+                                   ok, events, case="rejected",
+                                   observed_values={"status": inner.get("status")}))
+        records_out.append(_snapshot_record("trade.approve", ok, events, values, case="rejected"))
     finally:
         await engine.dispose()
     return records_out
@@ -638,10 +672,26 @@ async def probe_trade_cancel(tmp_path) -> list[dict]:
               and inventory_after.get("P1001-S1") == inventory_before.get("P1001-S1") + 1)
         fields = ["confirmation.status", "confirmation.action",
                   "confirmation.result.order_id", "confirmation.result.status"]
+        values = {
+            "order_count_before": len(orders.get("orders") or []),
+            "order_count_after": len(orders_after.get("orders") or []),
+            "target_order_id": cancel["order_id"],
+            "target_status_before": "CONFIRMED",
+            "target_status_after": by_id[cancel["order_id"]]["status"],
+            "unaffected_order_id": keep["order_id"],
+            "unaffected_status_before": "CONFIRMED",
+            "unaffected_status_after": by_id[keep["order_id"]]["status"],
+            "inventory_before": inventory_before,
+            "inventory_after": inventory_after,
+            "inventory_delta": inventory_after.get("P1001-S1", 0) - inventory_before.get("P1001-S1", 0),
+        }
         records_out = [_result("trade.cancel", "event", "confirmation.resolved", fields,
                                [field for field in fields if _present(resolved.get("payload") or {}, field)],
-                               ok, events)]
-        records_out.append(_snapshot_record("trade.cancel", ok, events))
+                               ok, events,
+                               observed_values={"status": inner.get("status"),
+                                                "action": inner.get("action"),
+                                                "order_id": result.get("order_id")})]
+        records_out.append(_snapshot_record("trade.cancel", ok, events, values))
     finally:
         await engine.dispose()
     return records_out
@@ -679,8 +729,22 @@ async def probe_trade_idempotency(tmp_path) -> list[dict]:
             fields = ["confirmation.status", "confirmation.result.order_id"]
             records_out.append(_result("trade.idempotency", "event", "confirmation.resolved", fields,
                                        [field for field in fields if _present(resolved.get("payload") or {}, field)],
-                                       ok, events))
-        records_out.append(_snapshot_record("trade.idempotency", ok, second_events))
+                                       ok, events,
+                                       observed_values={"status": (resolved.get("payload") or {}).get(
+                                                           "confirmation", {}).get("status"),
+                                                        "order_id": first_order if events is first_events else second_order}))
+        values = {
+            "order_count_before": 0,
+            "order_count_after": len(orders.get("orders") or []),
+            "order_count_after_first": 1 if first_order else 0,
+            "first_order_id": first_order,
+            "second_order_id": second_order,
+            "inventory_before": inventory_before,
+            "inventory_mid": inventory_mid,
+            "inventory_after": inventory_after,
+            "inventory_delta_second": inventory_after.get("P1001-S1", 0) - inventory_mid.get("P1001-S1", 0),
+        }
+        records_out.append(_snapshot_record("trade.idempotency", ok, second_events, values))
         return records_out
     finally:
         await engine.dispose()
