@@ -1,0 +1,249 @@
+{
+  "assets": [
+    {
+      "automatic_oracle_executable": true,
+      "derived_from": null,
+      "family": "retrieval-legacy",
+      "path": "eval/product_recall.jsonl",
+      "prompt_dependent": false,
+      "status": "ok",
+      "task_reusability": "conversion_required",
+      "version_order": 0
+    },
+    {
+      "automatic_oracle_executable": true,
+      "derived_from": null,
+      "family": "retrieval-v1",
+      "path": "eval/v1/product_retrieval.jsonl",
+      "prompt_dependent": false,
+      "status": "ok",
+      "task_reusability": "conversion_required",
+      "version_order": 1
+    },
+    {
+      "automatic_oracle_executable": true,
+      "derived_from": null,
+      "family": "retrieval-v2",
+      "path": "eval/v2/product_retrieval.jsonl",
+      "prompt_dependent": false,
+      "status": "ok",
+      "task_reusability": "conversion_required",
+      "version_order": 1
+    },
+    {
+      "automatic_oracle_executable": true,
+      "derived_from": null,
+      "family": "retrieval-v3",
+      "path": "eval/v3/multilingual_retrieval.jsonl",
+      "prompt_dependent": false,
+      "status": "ok",
+      "task_reusability": "conversion_required",
+      "version_order": 1
+    },
+    {
+      "automatic_oracle_executable": true,
+      "derived_from": "retrieval-v2",
+      "family": "retrieval-v3-paraphrase",
+      "path": "eval/v3/semantic_paraphrases.jsonl",
+      "prompt_dependent": false,
+      "status": "ok",
+      "task_reusability": "oracle_only",
+      "version_order": 1
+    },
+    {
+      "automatic_oracle_executable": true,
+      "derived_from": null,
+      "family": "retrieval-category",
+      "path": "eval/category_recall.jsonl",
+      "prompt_dependent": false,
+      "status": "ok",
+      "task_reusability": "conversion_required",
+      "version_order": 1
+    },
+    {
+      "automatic_oracle_executable": true,
+      "derived_from": null,
+      "family": "retrieval-optimization",
+      "path": "eval/optimization_search.jsonl",
+      "prompt_dependent": false,
+      "status": "ok",
+      "task_reusability": "conversion_required",
+      "version_order": 1
+    },
+    {
+      "automatic_oracle_executable": true,
+      "derived_from": null,
+      "family": "optimization-contract",
+      "path": "eval/retrieval/optimization-contract-queries-v1.jsonl",
+      "prompt_dependent": false,
+      "status": "ok",
+      "task_reusability": "oracle_only",
+      "version_order": 1
+    },
+    {
+      "automatic_oracle_executable": true,
+      "derived_from": null,
+      "family": "knowledge-v1",
+      "path": "eval/v1/knowledge_retrieval.jsonl",
+      "prompt_dependent": false,
+      "status": "ok",
+      "task_reusability": "conversion_required",
+      "version_order": 1
+    },
+    {
+      "automatic_oracle_executable": true,
+      "derived_from": null,
+      "family": "business-public",
+      "path": "eval/business/public-cases-v1.json",
+      "prompt_dependent": false,
+      "status": "ok",
+      "task_reusability": "oracle_only",
+      "version_order": 1
+    },
+    {
+      "automatic_oracle_executable": false,
+      "derived_from": null,
+      "family": "model-eval",
+      "path": "eval/cases.yaml",
+      "prompt_dependent": true,
+      "status": "ok",
+      "task_reusability": "oracle_only",
+      "version_order": 1
+    },
+    {
+      "automatic_oracle_executable": false,
+      "derived_from": null,
+      "family": "agent-cases-v1",
+      "path": "eval/v1/agent_cases.yaml",
+      "prompt_dependent": true,
+      "status": "ok",
+      "task_reusability": "conversion_required",
+      "version_order": 1
+    },
+    {
+      "automatic_oracle_executable": false,
+      "derived_from": null,
+      "family": "harness-cases",
+      "path": "eval/harness/v1/cases.json",
+      "prompt_dependent": true,
+      "status": "ok",
+      "task_reusability": "conversion_required",
+      "version_order": 1
+    },
+    {
+      "automatic_oracle_executable": false,
+      "derived_from": null,
+      "family": "harness-cases",
+      "path": "eval/harness/v1/skill-catalog-cases.json",
+      "prompt_dependent": true,
+      "status": "ok",
+      "task_reusability": "conversion_required",
+      "version_order": 2
+    },
+    {
+      "automatic_oracle_executable": false,
+      "derived_from": null,
+      "family": "harness-cases",
+      "path": "eval/harness/v1/cache-layout-cases.json",
+      "prompt_dependent": true,
+      "status": "ok",
+      "task_reusability": "conversion_required",
+      "version_order": 3
+    },
+    {
+      "automatic_oracle_executable": false,
+      "derived_from": null,
+      "family": "context-cases",
+      "path": "eval/context/cases.json",
+      "prompt_dependent": true,
+      "status": "ok",
+      "task_reusability": "conversion_required",
+      "version_order": 1
+    },
+    {
+      "automatic_oracle_executable": false,
+      "derived_from": null,
+      "family": "context-cases",
+      "path": "eval/context/cases-v2.json",
+      "prompt_dependent": true,
+      "status": "ok",
+      "task_reusability": "conversion_required",
+      "version_order": 2
+    },
+    {
+      "automatic_oracle_executable": false,
+      "derived_from": null,
+      "family": "context-cases",
+      "path": "eval/context/cases-v3.json",
+      "prompt_dependent": true,
+      "status": "ok",
+      "task_reusability": "conversion_required",
+      "version_order": 3
+    },
+    {
+      "automatic_oracle_executable": false,
+      "derived_from": null,
+      "family": "skill-cases",
+      "path": "eval/learning/skill-cases-v2.json",
+      "prompt_dependent": true,
+      "status": "ok",
+      "task_reusability": "conversion_required",
+      "version_order": 2
+    },
+    {
+      "automatic_oracle_executable": false,
+      "derived_from": null,
+      "family": "learning-v1",
+      "path": "eval/learning/v1.json",
+      "prompt_dependent": true,
+      "status": "ok",
+      "task_reusability": "oracle_only",
+      "version_order": 1
+    },
+    {
+      "automatic_oracle_executable": false,
+      "derived_from": null,
+      "family": "memory-cases",
+      "path": "eval/memory/cases.json",
+      "prompt_dependent": true,
+      "status": "ok",
+      "task_reusability": "conversion_required",
+      "version_order": 1
+    },
+    {
+      "automatic_oracle_executable": false,
+      "derived_from": null,
+      "family": "product-dev",
+      "path": "eval/product/dev/tasks.json",
+      "prompt_dependent": false,
+      "status": "ok",
+      "task_reusability": "unresolved",
+      "version_order": 1
+    },
+    {
+      "automatic_oracle_executable": false,
+      "derived_from": null,
+      "family": "product-dev",
+      "path": "eval/product/dev-v2/tasks.json",
+      "prompt_dependent": false,
+      "status": "ok",
+      "task_reusability": "unresolved",
+      "version_order": 2
+    }
+  ],
+  "deterministic_payload_sha256": "741a81f666341b30af376d461f8858cc06e264fca8a58374a777cb9325858769",
+  "prompt_normalization": "nfkc+whitespace-v1",
+  "record_index_sha256": "213537505fd8b6af04a200e9297e7b90d704fcc631b9c9f456721916b76029f3",
+  "scan_version": "agentbench-inventory-v2.1",
+  "scanner_sha256": "b1ae9bbfd298415cd2ceb3a91bbb04f4d711d2aaad74d2ceaace34353d887bba",
+  "source_commit": "af9ee8c699548b7c30a95caafdfeae7d9315e1a0",
+  "totals": {
+    "family_effective_cases": 1940,
+    "ignored_with_reason": 38,
+    "missing_registered_assets": 0,
+    "raw_records": 2131,
+    "registered_assets": 23,
+    "unclassified_candidate_assets": 0
+  },
+  "tracked_worktree_clean": true
+}
