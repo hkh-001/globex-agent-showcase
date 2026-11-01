@@ -1,14 +1,17 @@
-"""Schema-aware AgentBench Stage 1 asset inventory (v2).
+"""Schema-aware AgentBench Stage 1 asset inventory (v2.1).
 
 Design notes
 ------------
 * Every asset declares its id field, id normalization, version order, prompt
   field, split field and template namespace.  Versions collapse inside a family
   only; cross-family duplicates are reported, not silently merged.
-* Prompt normalization is NFKC + whitespace collapse + strip.  It never strips
-  version prefixes: those belong to IDs, and ``v1`` may be part of a real query.
+* ``exact_prompt_sha256`` hashes the raw value (stable JSON for lists);
+  ``normalized_prompt_sha256`` applies NFKC + whitespace collapse + strip and
+  never strips version prefixes.  The two are reported separately.
 * Leakage groups: ``shared-template:<namespace>:<template_id>`` when a trusted
   template id exists, otherwise ``prompt:<normalized_prompt_sha256>``.
+* A per-record ``record-index.jsonl`` is written so splitting can be replayed;
+  its hash is part of the manifest.
 * Discovery walks ``eval/`` and classifies files into registered assets,
   unclassified candidates, ignored-with-reason and missing registered assets.
 """
@@ -25,8 +28,10 @@ from datetime import datetime, timezone
 import yaml
 
 ROOT = pathlib.Path(__file__).resolve().parents[3]
-SCAN_VERSION = "agentbench-inventory-v2"
+SCAN_VERSION = "agentbench-inventory-v2.1"
 PROMPT_NORMALIZATION = "nfkc+whitespace-v1"
+CANDIDATE_KEYS = {"query", "question", "input", "checks", "steps",
+                  "messages", "turns", "prompt", "instruction", "scenario"}
 
 # path, kind, id_field, id_normalization, family, version, version_order,
 # prompt_field, split_field, template_field, template_namespace,
@@ -86,18 +91,41 @@ KEYS = ("path", "kind", "id_field", "id_normalization", "family", "version", "ve
         "deterministic", "prompt_dependent", "allowed_usage")
 SPECS = [dict(zip(KEYS, row)) for row in ASSETS]
 REGISTERED = {spec["path"] for spec in SPECS}
+
 # Derived assets: (source family, reference field).  Their leakage group is
 # bound to the referenced record's group instead of their own prompt hash.
 DERIVED_ASSETS = {
     "eval/v3/semantic_paraphrases.jsonl": ("retrieval-v2", "reference_case_id"),
 }
+
+# kind -> (task_reusability, automatic_oracle_available)
+REUSABILITY = {
+    "retrieval_legacy": ("conversion_required", True),
+    "retrieval": ("conversion_required", True),
+    "retrieval_multilingual": ("conversion_required", True),
+    "retrieval_paraphrase": ("oracle_only", True),
+    "retrieval_category": ("conversion_required", True),
+    "retrieval_optimization": ("conversion_required", True),
+    "retrieval_contract": ("oracle_only", True),
+    "knowledge": ("conversion_required", True),
+    "business_contract": ("oracle_only", True),
+    "model_eval": ("oracle_only", False),
+    "agent_case": ("conversion_required", False),
+    "harness_case": ("conversion_required", False),
+    "context_case": ("conversion_required", False),
+    "skill_case": ("conversion_required", False),
+    "learning_case": ("oracle_only", False),
+    "memory_case": ("conversion_required", False),
+    "task_candidate": ("unresolved", True),
+}
+
 IGNORE_RULES = [
     (re.compile(r"eval/agent/v1-spike/.*\.json$"), "stage0_spec"),
     (re.compile(r"eval/harness/.*-suite\.json$|eval/harness/v1/suite\.json$"), "suite_config"),
     (re.compile(r"eval/.*/baseline[^/]*\.json$|eval/v1/baselines/.*\.json$"), "baseline"),
     (re.compile(r"eval/retrieval/optimization-(parameters|development|contract-manifest).*\.json$"), "experiment_config"),
     (re.compile(r"eval/retrieval/optimization-contract-catalog-.*\.jsonl$"), "catalog_fixture"),
-    (re.compile(r"eval/.*/manifest\.json$|eval/verification/.*\.json$"), "manifest_or_evidence"),
+    (re.compile(r"(^|/)manifest\.json$|eval/verification/.*\.json$"), "manifest_or_evidence"),
     (re.compile(r"eval/proposals/.*\.json$"), "proposal"),
     (re.compile(r"eval/ag-ui-verification-.*\.json$"), "evidence"),
     (re.compile(r"eval/product/.*/offline-contract-verification\.json$"), "evidence"),
@@ -118,11 +146,19 @@ def normalize_prompt(value) -> str:
     return re.sub(r"\s+", " ", text).strip()
 
 
-def prompt_hash(value) -> tuple[str, str]:
+def prompt_hashes(value) -> tuple[str, str, str]:
+    """Return (exact, normalized, casefold) hashes for a raw prompt value.
+
+    ``exact`` hashes the raw value; lists/dicts use stable JSON, never a lossy
+    space join.  ``normalized`` applies NFKC + whitespace collapse + strip.
+    """
+    if value is None or value == "":
+        return "", "", ""
+    raw = value if isinstance(value, str) else json.dumps(value, ensure_ascii=False, sort_keys=True)
+    exact = digest(raw.encode())
     normalized = normalize_prompt(value)
-    exact = digest(normalized.encode()) if normalized else ""
-    normalized_hash = digest(normalized.casefold().encode()) if normalized else ""
-    return exact, normalized_hash
+    return exact, digest(normalized.encode()) if normalized else "", (
+        digest(normalized.casefold().encode()) if normalized else "")
 
 
 def load_rows(path: pathlib.Path) -> tuple[list[dict], bytes]:
@@ -142,7 +178,7 @@ def load_rows(path: pathlib.Path) -> tuple[list[dict], bytes]:
     return rows, raw
 
 
-def canonical_id(row: dict, spec) -> str:
+def canonical_id(row: dict, spec: dict) -> str:
     id_field, normalization = spec["id_field"], spec["id_normalization"]
     if id_field is None:
         return digest(json.dumps(row, sort_keys=True, ensure_ascii=False).encode())
@@ -159,7 +195,7 @@ def prompt_groups(rows: list[dict], spec: dict) -> list[dict]:
     groups = []
     for row in rows:
         prompt = row.get(spec["prompt_field"]) if spec["prompt_field"] else None
-        exact, normalized = prompt_hash(prompt)
+        exact, normalized, casefold = prompt_hashes(prompt)
         template = row.get(spec["template_field"]) if spec["template_field"] else None
         record_hash = digest(json.dumps(row, sort_keys=True, ensure_ascii=False).encode())
         duplicate_group = f"exact-prompt:{exact}" if exact else f"record:{record_hash}"
@@ -170,8 +206,22 @@ def prompt_groups(rows: list[dict], spec: dict) -> list[dict]:
         else:
             leakage_group = duplicate_group
         groups.append({"id": canonical_id(row, spec), "exact": exact, "normalized": normalized,
-                       "duplicate_group_id": duplicate_group, "leakage_group_id": leakage_group})
+                       "casefold": casefold, "duplicate_group_id": duplicate_group,
+                       "leakage_group_id": leakage_group})
     return groups
+
+
+def select_latest(versions: list[tuple[str, int]]) -> str | None:
+    """Pick the latest version by explicit order; duplicate orders are invalid."""
+    seen = {}
+    best = None
+    for version, order in versions:
+        if order in seen:
+            raise SystemExit(f"duplicate version_order {order}: {seen[order]} and {version}")
+        seen[order] = version
+        if best is None or order > best[1]:
+            best = (version, order)
+    return best[0] if best else None
 
 
 def fixture_resolution(tasks: list[dict]) -> tuple[str, bool]:
@@ -184,60 +234,68 @@ def fixture_resolution(tasks: list[dict]) -> tuple[str, bool]:
     return ("resolved_by_raw_sha256" if resolved else "unresolved_by_raw_sha256", resolved)
 
 
-def discover() -> dict:
-    found = sorted(path.relative_to(ROOT).as_posix() for path in (ROOT / "eval").rglob("*")
+def discover(root: pathlib.Path = ROOT) -> dict:
+    found = sorted(path.relative_to(root).as_posix() for path in (root / "eval").rglob("*")
                    if path.is_file() and path.suffix in {".json", ".jsonl", ".yaml"})
     unclassified, ignored = [], []
     for rel in found:
         if rel in REGISTERED:
             continue
-        reason = next((code for pattern, code in IGNORE_RULES if pattern.match(rel)), None)
+        reason = next((code for pattern, code in IGNORE_RULES if pattern.search(rel)), None)
         if reason:
             ignored.append({"path": rel, "reason": reason})
             continue
         try:
-            rows, _ = load_rows(ROOT / rel)
-            looks_like_cases = bool(rows) and isinstance(rows[0], dict) and any(
-                key in rows[0] for key in ("query", "question", "input", "checks", "steps"))
+            rows, _ = load_rows(root / rel)
+            looks_like_cases = bool(rows) and isinstance(rows[0], dict) and bool(
+                CANDIDATE_KEYS & set(rows[0]))
         except Exception:
             looks_like_cases = False
         if looks_like_cases:
             unclassified.append({"path": rel, "reason": "no_schema_adapter"})
         else:
             ignored.append({"path": rel, "reason": "unsupported_schema"})
-    missing = sorted(rel for rel in REGISTERED if not (ROOT / rel).exists())
+    missing = sorted(rel for rel in REGISTERED if not (root / rel).exists())
     return {"discovered": found, "unclassified_candidate_assets": unclassified,
             "ignored_with_reason": ignored, "missing_registered_assets": missing}
 
 
 def scan(out: pathlib.Path) -> dict:
-    assets, families, prompt_index = [], {}, {}
-    rows_by_asset, groups_by_asset = {}, {}
-    inputs = []
+    assets, families = [], {}
+    records, inputs = [], []
     for spec in SPECS:
         path = ROOT / spec["path"]
         if not path.exists():
             assets.append({"path": spec["path"], "status": "missing"})
             continue
         rows, raw = load_rows(path)
-        rows_by_asset[spec["path"]] = rows
         inputs.append({"path": spec["path"], "sha256": digest(raw), "records": len(rows)})
-        canonical, duplicates, prompt_rows, splits = {}, [], [], {}
-        for row in rows:
-            cid = canonical_id(row, spec)
-            if cid in canonical:
-                duplicates.append(cid)
-            canonical[cid] = row
-            group = prompt_groups([row], spec)[0]
-            prompt_rows.append(group)
-            if group["exact"]:
-                prompt_index.setdefault(group["exact"], set()).add(spec["family"])
+        canonical, duplicates, splits = {}, [], {}
+        groups = prompt_groups(rows, spec)
+        for row, group in zip(rows, groups):
+            if group["id"] in canonical:
+                duplicates.append(group["id"])
+            canonical[group["id"]] = row
+            split_value = str(row.get(spec["split_field"])) if spec["split_field"] else ""
             if spec["split_field"]:
-                value = str(row.get(spec["split_field"]))
-                splits[value] = splits.get(value, 0) + 1
-        groups_by_asset[spec["path"]] = prompt_rows
+                splits[split_value] = splits.get(split_value, 0) + 1
+            records.append({
+                "asset_path": spec["path"], "record_id": group["id"],
+                "family": spec["family"], "version": spec["version"],
+                "split": split_value,
+                "template_id": str(row.get(spec["template_field"])) if spec["template_field"] else "",
+                "exact_prompt_sha256": group["exact"],
+                "normalized_prompt_sha256": group["normalized"],
+                "casefold_prompt_sha256": group["casefold"],
+                "duplicate_group_id": group["duplicate_group_id"],
+                "leakage_group_id": group["leakage_group_id"],
+                "derived_from": "", "reference_case_id": "",
+            })
         resolution, reusable = (fixture_resolution(rows) if spec["kind"] == "task_candidate"
                                 else ("not_applicable", True))
+        reusability, deterministic_oracle = REUSABILITY[spec["kind"]]
+        if spec["kind"] == "task_candidate" and not reusable:
+            reusability = "unresolved"
         assets.append({
             "path": spec["path"], "kind": spec["kind"], "family": spec["family"],
             "version": spec["version"], "version_order": spec["version_order"],
@@ -247,66 +305,76 @@ def scan(out: pathlib.Path) -> dict:
             "deterministic": spec["deterministic"], "prompt_dependent": spec["prompt_dependent"],
             "allowed_usage": spec["allowed_usage"],
             "has_split_field": bool(spec["split_field"]), "split_distribution": splits,
-            "fixture_resolution": resolution, "directly_reusable": reusable,
-            "prompt_count": sum(1 for item in prompt_rows if item["normalized"]),
-            "leakage_group_count": len({item["leakage_group_id"] for item in prompt_rows}),
+            "fixture_resolution": resolution,
+            "task_reusability": reusability,
+            "automatic_oracle_available": deterministic_oracle,
+            "prompt_count": sum(1 for group in groups if group["normalized"]),
+            "leakage_group_count": len({group["leakage_group_id"] for group in groups}),
             "derived_from": None, "unresolved_references": 0,
             "status": "ok",
         })
-        state = families.setdefault(spec["family"], {"versions": [], "effective_ids": set(),
-                                                     "raw_total": 0, "latest": None, "latest_order": -1})
+        state = families.setdefault(spec["family"], {"versions": [], "effective_ids": set(), "raw_total": 0})
         state["versions"].append({"version": spec["version"], "order": spec["version_order"],
                                   "path": spec["path"], "raw": len(rows)})
         state["raw_total"] += len(rows)
         state["effective_ids"].update(canonical)
-        if spec["version_order"] >= state["latest_order"]:
-            state["latest"], state["latest_order"] = spec["version"], spec["version_order"]
 
-    reference_index = {}
-    for spec in SPECS:
-        if spec["family"] == "retrieval-v2" and spec["path"] in groups_by_asset:
-            reference_index = {group["id"]: group["leakage_group_id"]
-                               for group in groups_by_asset[spec["path"]]}
-            break
+    reference_index = {row["record_id"]: row["leakage_group_id"]
+                       for row in records if row["family"] == "retrieval-v2"}
     for path, (source_family, reference_field) in DERIVED_ASSETS.items():
-        if path not in groups_by_asset:
+        spec = next((item for item in SPECS if item["path"] == path), None)
+        rows = load_rows(ROOT / path)[0] if path and (ROOT / path).exists() else []
+        if spec is None or not rows:
             continue
         unresolved = 0
-        for row, group in zip(rows_by_asset[path], groups_by_asset[path]):
-            target = reference_index.get(str(row.get(reference_field) or ""))
+        for row, entry in zip(rows, (r for r in records if r["asset_path"] == path)):
+            reference = str(row.get(reference_field) or "")
+            entry["reference_case_id"] = reference
+            entry["derived_from"] = source_family
+            target = reference_index.get(reference)
             if target:
-                group["leakage_group_id"] = target
+                entry["leakage_group_id"] = target
             else:
                 unresolved += 1
-        entry = next(item for item in assets if item["path"] == path)
-        entry["derived_from"] = source_family
-        entry["unresolved_references"] = unresolved
-        entry["leakage_group_count"] = len({item["leakage_group_id"] for item in groups_by_asset[path]})
+        asset = next(item for item in assets if item["path"] == path)
+        asset["derived_from"] = source_family
+        asset["unresolved_references"] = unresolved
+        asset["leakage_group_count"] = len({r["leakage_group_id"] for r in records if r["asset_path"] == path})
 
-    family_rows = [{"family": name, "latest_version": state["latest"],
+    exact_index, normalized_index = {}, {}
+    for row in records:
+        if row["exact_prompt_sha256"]:
+            exact_index.setdefault(row["exact_prompt_sha256"], set()).add(row["family"])
+        if row["normalized_prompt_sha256"]:
+            normalized_index.setdefault(row["normalized_prompt_sha256"], set()).add(row["family"])
+    cross_exact = sum(1 for families_set in exact_index.values() if len(families_set) > 1)
+    cross_normalized = sum(1 for families_set in normalized_index.values() if len(families_set) > 1)
+
+    family_rows = [{"family": name, "latest_version": select_latest(
+                        [(item["version"], item["order"]) for item in state["versions"]]),
                     "versions": state["versions"], "raw_total": state["raw_total"],
                     "family_effective_cases": len(state["effective_ids"])}
                    for name, state in sorted(families.items())]
-    cross_family = {h: sorted(v) for h, v in prompt_index.items() if len(v) > 1}
     discovery = discover()
-    by_kind, by_usage = {}, {}
+    by_kind, raw_usage = {}, {}
     for entry in assets:
         if entry.get("status") != "ok":
             continue
         by_kind[entry["kind"]] = by_kind.get(entry["kind"], 0) + entry["unique_id_count"]
         for usage in entry["allowed_usage"]:
-            by_usage[usage] = by_usage.get(usage, 0) + entry["unique_id_count"]
+            raw_usage[usage] = raw_usage.get(usage, 0) + entry["unique_id_count"]
     result = {
         "scan_version": SCAN_VERSION,
         "prompt_normalization": PROMPT_NORMALIZATION,
         "assets": assets,
         "families": family_rows,
         "by_kind": by_kind,
-        "by_allowed_usage": by_usage,
-        "cross_family_exact_prompt_duplicates": len(cross_family),
-        "cross_family_exact_prompt_examples": dict(list(cross_family.items())[:5]),
-        "globally_unique_prompts": len(prompt_index),
+        "raw_records_by_allowed_usage": raw_usage,
+        "cross_family_exact_prompt_duplicates": cross_exact,
+        "cross_family_normalized_prompt_duplicates": cross_normalized,
+        "globally_unique_normalized_prompts": len(normalized_index),
         "discovery": discovery,
+        "record_count": len(records),
         "totals": {
             "raw_records": sum(entry.get("raw_record_count", 0) for entry in assets),
             "family_effective_cases": sum(row["family_effective_cases"] for row in family_rows),
@@ -316,12 +384,14 @@ def scan(out: pathlib.Path) -> dict:
             "ignored_with_reason": len(discovery["ignored_with_reason"]),
         },
     }
-    core = {key: value for key, value in result.items() if key != "scanned_at"}
+    core = dict(result)
     result["scanned_at"] = datetime.now(timezone.utc).isoformat()
     result["deterministic_payload_sha256"] = digest(
         json.dumps(core, sort_keys=True, ensure_ascii=False).encode())
     out.mkdir(parents=True, exist_ok=False)
     (out / "source-inventory.json").write_text(json.dumps(result, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    (out / "record-index.jsonl").write_text(
+        "\n".join(json.dumps(row, ensure_ascii=False, sort_keys=True) for row in records) + "\n", encoding="utf-8")
     files = {path.name: digest(path.read_bytes()) for path in sorted(out.iterdir()) if path.is_file()}
     manifest = {"scan_version": SCAN_VERSION, "inputs": inputs, "outputs": files,
                 "deterministic_payload_sha256": result["deterministic_payload_sha256"]}
@@ -334,7 +404,7 @@ def main() -> None:
     parser.add_argument("--out", type=pathlib.Path, required=True)
     args = parser.parse_args()
     result = scan(args.out.resolve())
-    print(json.dumps({"totals": result["totals"],
+    print(json.dumps({"totals": result["totals"], "record_count": result["record_count"],
                       "deterministic": result["deterministic_payload_sha256"][:16]}, ensure_ascii=False))
     for row in result["families"]:
         print(f"{row['family']:26s} raw={row['raw_total']:4d} effective={row['family_effective_cases']:4d} latest={row['latest_version']}")
