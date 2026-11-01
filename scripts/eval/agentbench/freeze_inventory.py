@@ -65,6 +65,7 @@ def freeze(inventory_dir: pathlib.Path, out_dir: pathlib.Path) -> dict:
             "assets": len(frozen_inventory["assets"]),
         },
         "prompt_normalization": inventory.get("prompt_normalization"),
+        "record_semantics": "2131 asset records, not 2131 executable agent tasks",
         "command": "python -m scripts.eval.agentbench.freeze_inventory --inventory <evidence-dir> --out eval/agent/v1/inventory",
         "generated_at": datetime.now(timezone.utc).isoformat(),
     }
