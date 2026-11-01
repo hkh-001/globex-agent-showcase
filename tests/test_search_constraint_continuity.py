@@ -46,11 +46,13 @@ async def test_known_query_type_is_inferred_but_unknown_type_degrades_without_gu
 
 async def test_unstated_preferences_cannot_silently_change_retrieval_ranking():
     effective, metadata = await SearchConstraintGuard("帮我挑一个适合旅行的背包").reconcile(
-        _args(normalized_query="旅行背包 登机 轻便 大容量", prefer_lightweight=True)
+        _args(normalized_query="旅行背包 登机 轻便 大容量", prefer_lightweight=True,
+              preferred_product_type="耳机")
     )
     assert effective["normalized_query"] == "旅行背包"
     assert effective["prefer_lightweight"] is False
-    assert metadata["removed_unsupported_query_terms"] == ["大容量", "登机", "轻便"]
+    assert effective["preferred_product_type"] is None
+    assert metadata["removed_unsupported_query_terms"] == ["preferred_product_type", "大容量", "登机", "轻便"]
 
     explicit, explicit_meta = await SearchConstraintGuard("找一个轻便、可登机的大容量背包").reconcile(
         _args(normalized_query="轻量 登机 容量大 背包", prefer_lightweight=True)

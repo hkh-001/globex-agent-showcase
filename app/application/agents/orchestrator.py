@@ -64,7 +64,11 @@ from app.infrastructure.cache.semantic_cache import SemanticCache
 from app.infrastructure.context import ShoppingContext, ShoppingContextSnapshot
 from app.infrastructure.eventbus import TradeEventBus, observe_run_events
 from app.infrastructure.budget import init_budget, remember_verified_result, get_budget, rule_fallback_text, verified_result
-from app.application.answer_grounding import grounded_product_fallback, product_claim_violations
+from app.application.answer_grounding import (
+    grounded_product_fallback,
+    has_concrete_product_claim,
+    product_claim_violations,
+)
 from app.infrastructure.security.output_guard import audit_output
 from app.infrastructure.transient import is_transient_error
 from app.infrastructure.capability_registry import CapabilityVersionChanged
@@ -185,15 +189,26 @@ class MainAgentOrchestrator:
         """
         if not text:
             return text
-        violations = product_claim_violations(text, verified_result("products"))
-        if violations:
-            logger.warning("商品回复包含无证据主张，已降级为工具事实摘要（会话 %s，类型 %s）",
-                           session_id, ",".join(violations))
+        products = verified_result("products")
+        trade_write = verified_result("trade") or verified_result("confirmation")
+        # 商品推荐采用结构化白名单：只要本轮拿到商品结果，就由服务端依据 hits
+        # 确定性生成最终摘要。模型文本不负责声明商品属性，彻底避免同义改写和
+        # 跨商品证据嫁接；交易写操作仍由独立确认/订单合同负责输出。
+        if products is not None and not trade_write:
+            violations = product_claim_violations(text, products)
+            logger.info("商品最终回复已由结构化工具事实生成（会话 %s）", session_id)
             self._bus.publish(session_id, "error", {
-                "message": "部分推荐理由缺少可核验商品证据，已改为工具事实摘要",
+                "message": "商品摘要已按目录工具事实生成",
                 "claim_guard": violations,
             })
-            text = grounded_product_fallback(verified_result("products"))
+            text = grounded_product_fallback(products)
+        elif products is None and has_concrete_product_claim(text):
+            logger.warning("回复声明具体商品但本轮没有已校验商品证据（会话 %s）", session_id)
+            self._bus.publish(session_id, "error", {
+                "message": "本轮没有可核验商品证据，已阻止具体商品声明",
+                "claim_guard": ["missing_product_evidence"],
+            })
+            text = grounded_product_fallback(None)
         if not self._output_guard_enabled:
             return text
         safe, cleaned = audit_output(text)

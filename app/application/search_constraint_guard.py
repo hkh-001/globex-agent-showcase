@@ -62,6 +62,10 @@ class SearchConstraintGuard:
             args["prefer_lightweight"] = False
             if "轻便" not in removed_query_terms:
                 removed_query_terms.append("轻便")
+        preferred_type = normalize_product_type(args.get("preferred_product_type"))
+        if preferred_type and preferred_type not in self._turn_types:
+            args["preferred_product_type"] = None
+            removed_query_terms.append("preferred_product_type")
 
         inferred: list[str] = []
         degraded: list[str] = []

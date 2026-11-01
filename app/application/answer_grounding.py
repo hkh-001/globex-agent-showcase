@@ -16,6 +16,10 @@ _CLAIMS = {
 }
 _QUALIFIERS = ("经验估计", "通常", "可能", "仅供参考", "需核验", "需要核验", "请核验", "以航司", "取决于")
 _ESTIMATE_CLAIMS = {"carry_on", "trip_duration"}
+_CONCRETE_PRODUCT_REFERENCE = re.compile(
+    r"\bP\d+\b|(?:这|该|上述|以上|第[一二三四五六七八九十\d]+)[款件个]|"
+    r"(?:推荐|选择|购买).{0,8}(?:商品|产品|背包|箱包|耳机|杯|鞋|衣)"
+)
 
 
 def product_claim_violations(text: str, product_result: dict[str, Any] | None) -> list[str]:
@@ -38,6 +42,11 @@ def product_claim_violations(text: str, product_result: dict[str, Any] | None) -
             violations.append(kind)
             break
     return sorted(set(violations))
+
+
+def has_concrete_product_claim(text: str) -> bool:
+    """Whether a response purports to describe or recommend a concrete catalog item."""
+    return bool(text and _CONCRETE_PRODUCT_REFERENCE.search(text))
 
 
 def grounded_product_fallback(product_result: dict[str, Any] | None) -> str:
