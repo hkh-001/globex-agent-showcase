@@ -15,6 +15,7 @@
       "source_prompt_sha256": "042ad79899c3ff7b3c6c4d1f2c68c81988843b0c131f4d91c3423a2ddb744455",
       "leakage_group_id": "prompt:042ad79899c3ff7b3c6c4d1f2c68c81988843b0c131f4d91c3423a2ddb744455",
       "split": "dev",
+      "source_splits": [],
       "conversion": {
         "method": "prompt-hash-match",
         "asset": "eval/v1/product_retrieval.jsonl",
@@ -116,6 +117,7 @@
       "source_prompt_sha256": "067f86f9887ed34c2e4cd932afe727bf25152e365c39b1e897a56919455b5ec2",
       "leakage_group_id": "prompt:067f86f9887ed34c2e4cd932afe727bf25152e365c39b1e897a56919455b5ec2",
       "split": "dev",
+      "source_splits": [],
       "conversion": {
         "method": "prompt-hash-match",
         "asset": "eval/v1/knowledge_retrieval.jsonl",
@@ -222,6 +224,9 @@
       "source_prompt_sha256": "011c5d6df3a50c3b815b06a248e48e56867e0c2da6bf163ecca354e37be186ad",
       "leakage_group_id": "prompt:011c5d6df3a50c3b815b06a248e48e56867e0c2da6bf163ecca354e37be186ad",
       "split": "dev",
+      "source_splits": [
+        "dev"
+      ],
       "conversion": {
         "method": "prompt-hash-match",
         "asset": "eval/learning/skill-cases-v2.json",
@@ -311,6 +316,9 @@
       "source_prompt_sha256": "1552959e39d51ebdc3ae55c804c49e69eabfc51032178773d3213eb5b8340c3c",
       "leakage_group_id": "prompt:1552959e39d51ebdc3ae55c804c49e69eabfc51032178773d3213eb5b8340c3c",
       "split": "dev",
+      "source_splits": [
+        "dev"
+      ],
       "conversion": {
         "method": "prompt-hash-match",
         "asset": "eval/context/cases.json",
@@ -399,6 +407,9 @@
       "source_prompt_sha256": "9a5a604dc28b9fe8e901eef0494799b6f084224adb7a7b079bdf000638aa9f03",
       "leakage_group_id": "shared-template:agent-cases-v1:agent-compare_price-dev-0",
       "split": "dev",
+      "source_splits": [
+        "dev"
+      ],
       "conversion": {
         "method": "prompt-hash-match",
         "asset": "eval/v1/agent_cases.yaml",

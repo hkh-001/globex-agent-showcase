@@ -36,7 +36,7 @@ def test_every_group_is_a_dev_catalog_group():
                json.loads(CATALOG.read_text(encoding="utf-8"))["templates"]}
     for task in data["tasks"]:
         group = catalog[task["leakage_group_id"]]
-        assert group["recommended_split"] == "dev"
+        assert group["evaluation_split"] == "dev"
         assert group["module"] == task["module"]
 
 

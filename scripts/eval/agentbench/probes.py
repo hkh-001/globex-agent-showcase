@@ -72,6 +72,16 @@ def check_fields(records: list[dict], selector: str, fields: list[str]) -> tuple
     return len(observed) == len(fields), observed
 
 
+def _payload_value(payload, field):
+    current = payload
+    for part in field.split("."):
+        if isinstance(current, dict) and part in current:
+            current = current[part]
+        else:
+            return None
+    return current
+
+
 def _payload_from(records):
     for row in records:
         if isinstance(row, dict) and row.get("type") == "tool.result":
@@ -334,7 +344,22 @@ def _result(capability_id, source, selector, required, observed, ok, records, ca
     if observed_values is not None:
         result["observed_values"] = observed_values
     payload = payload if payload is not None else _payload_from(records)
-    result["value_assertions"] = [value_assertions.build(field, payload, observed_values or {})
+    values = dict(observed_values or {})
+    aliases = {
+        "insights[].source": "source",
+        "insights[].metadata.source_reference": "source_reference",
+        "insights[].metadata.source_type": "source_type",
+    }
+    for name in ("subtotal_major", "freight_major", "tariff_major", "landed_total_major", "currency"):
+        aliases[f"hits[].landed_price.{name}"] = name
+    for field in required:
+        if field not in values:
+            if field in aliases and aliases[field] in values:
+                values[field] = values[aliases[field]]
+            else:
+                values[field] = _payload_value(payload, field)
+    result["observed_values"] = values
+    result["value_assertions"] = [value_assertions.build(capability_id, field, values, case)
                                   for field in required]
     return result
 

@@ -34,7 +34,7 @@ MODULE_BY_FAMILY = {
 }
 REUSABILITY_ORDER = ["direct", "conversion_required", "oracle_only", "unresolved"]
 SOURCE_SPLITS = {"dev": "dev", "release": "release", "holdout": "holdout",
-                 "test": "holdout", "train": "holdout", "val": "holdout"}
+                 "test": "quarantined", "train": "quarantined", "val": "quarantined"}
 
 
 def _stable_hash(value) -> str:
@@ -107,12 +107,16 @@ def build(inventory_dir: pathlib.Path) -> dict:
         if unknown:
             raise SystemExit(f"{group_id}: unknown source splits {sorted(unknown)}")
         explicit = {SOURCE_SPLITS[value] for value in group["source_splits"]}
+        if explicit == {"dev", "release"}:
+            raise SystemExit(f"{group_id}: conflicting source splits {sorted(explicit)}")
         if "holdout" in explicit:
             split, split_source = "holdout", "explicit-holdout"
+        elif "quarantined" in explicit:
+            split, split_source = "quarantined", "explicit-quarantined"
         elif len(explicit) == 1:
             split, split_source = next(iter(explicit)), "explicit"
         elif explicit:
-            raise SystemExit(f"{group_id}: conflicting source splits {sorted(explicit)}")
+            split, split_source = "quarantined", "mixed-quarantined"
         else:
             split, split_source = bucket(group_id), "hash"
         derived = sorted(asset["path"] for asset in assets if asset.get("derived_from"))
@@ -132,16 +136,18 @@ def build(inventory_dir: pathlib.Path) -> dict:
             "derived_sources": derived,
             "source_flags": {family: bool(assets_by_family[family].get("prompt_dependent"))
                              for family in sorted(group["families"]) if family in assets_by_family},
-            "recommended_split": split,
+            "source_splits": sorted(group["source_splits"]),
+            "evaluation_split": split,
             "split_source": split_source,
         })
     templates.sort(key=lambda item: item["leakage_group_id"])
-    split_counts = {"dev": 0, "release": 0, "holdout": 0}
+    split_counts = {"dev": 0, "release": 0, "holdout": 0, "quarantined": 0}
     module_splits = {}
     for template in templates:
-        split_counts[template["recommended_split"]] += 1
-        module_splits.setdefault(template["module"], {"dev": 0, "release": 0, "holdout": 0})
-        module_splits[template["module"]][template["recommended_split"]] += 1
+        split_counts[template["evaluation_split"]] += 1
+        module_splits.setdefault(template["module"],
+                                 {"dev": 0, "release": 0, "holdout": 0, "quarantined": 0})
+        module_splits[template["module"]][template["evaluation_split"]] += 1
 
     generator = pathlib.Path(__file__).resolve()
     catalog = {
@@ -151,10 +157,11 @@ def build(inventory_dir: pathlib.Path) -> dict:
         "inventory_deterministic_payload_sha256": inventory.get("deterministic_payload_sha256"),
         "generator_sha256": hashlib.sha256(generator.read_bytes()).hexdigest(),
         "split_policy": "sha256(leakage_group_id) mod 100: <50 dev, <82 release, else holdout; groups stay atomic",
-        "holdout_scope": "Holdout supports aggregate conclusions only; module-level rates are not reportable",
+        "holdout_scope": "direct-holdout only; train/val/test are quarantined and excluded from Dev/Release",
+        "quarantine_scope": "quarantined groups are never usable as Dev/Release/Holdout evaluation data",
         "group_count": len(templates),
         "record_count": sum(item["record_count"] for item in templates),
-        "recommended_split_counts": split_counts,
+        "evaluation_split_counts": split_counts,
         "module_split_distribution": module_splits,
         "templates": templates,
     }
@@ -171,7 +178,7 @@ def main() -> None:
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(json.dumps(catalog, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print(json.dumps({"groups": catalog["group_count"], "records": catalog["record_count"],
-                      "splits": catalog["recommended_split_counts"],
+                      "splits": catalog["evaluation_split_counts"],
                       "catalog_sha256": catalog["catalog_sha256"][:16]}, ensure_ascii=False))
 
 

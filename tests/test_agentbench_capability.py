@@ -49,12 +49,12 @@ def test_template_catalog_is_group_atomic_and_classified():
     templates = catalog["templates"]
     assert catalog["group_count"] == len(templates)
     assert catalog["record_count"] == sum(item["record_count"] for item in templates)
-    assert all(item["recommended_split"] in {"dev", "release", "holdout"} for item in templates)
+    assert all(item["evaluation_split"] in {"dev", "release", "holdout", "quarantined"} for item in templates)
     assert all(item["module"] != "unclassified" for item in templates)
-    counts = {"dev": 0, "release": 0, "holdout": 0}
+    counts = {"dev": 0, "release": 0, "holdout": 0, "quarantined": 0}
     for item in templates:
-        counts[item["recommended_split"]] += 1
-    assert counts == catalog["recommended_split_counts"]
+        counts[item["evaluation_split"]] += 1
+    assert counts == catalog["evaluation_split_counts"]
 
 
 def test_invalid_observation_source_fails(tmp_path):

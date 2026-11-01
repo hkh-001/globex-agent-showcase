@@ -22,7 +22,7 @@ def validate(path: pathlib.Path) -> list[str]:
     for task in data.get("tasks") or []:
         tid = task.get("task_id", "<missing>")
         group = catalog.get(task.get("leakage_group_id"))
-        if group is None or group.get("recommended_split") != "dev":
+        if group is None or group.get("evaluation_split") != "dev":
             errors.append(f"{tid}: leakage group is not Dev")
         if not task.get("turns"):
             errors.append(f"{tid}: no user turns")

@@ -64,7 +64,7 @@ def build() -> dict:
         entry = by_cap[capability]
         families = set(entry.get("candidate_asset_families") or [])
         group = next((item for item in sorted(catalog["templates"], key=lambda row: row["leakage_group_id"])
-                      if item["module"] == module and item["recommended_split"] == "dev"
+                      if item["module"] == module and item["evaluation_split"] == "dev"
                       and set(item["families"]) & families), None)
         if group is None:
             continue
@@ -85,7 +85,7 @@ def build() -> dict:
             "source_record_id": record["record_id"],
             "source_prompt_sha256": record["normalized_prompt_sha256"],
             "leakage_group_id": group["leakage_group_id"],
-            "split": "dev",
+            "split": "dev", "source_splits": group["source_splits"],
             "conversion": {"method": "prompt-hash-match", "asset": record["asset_path"],
                            "group": group["leakage_group_id"], "generator": "generate_pilot-v2"},
             "turns": turns,

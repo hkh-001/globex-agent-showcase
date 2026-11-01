@@ -169,11 +169,11 @@ a = json.load(open("/tmp/review-catalog.json"))
 b = json.load(open("eval/agent/v1/template-catalog.json"))
 print("equal=", a == b)
 print("sha_match=", a["catalog_sha256"] == b["catalog_sha256"])
-print("groups=", a["group_count"], "records=", a["record_count"], "splits=", a["recommended_split_counts"])
+print("groups=", a["group_count"], "records=", a["record_count"], "splits=", a["evaluation_split_counts"])
 PY
 ```
 
-必须 `equal=True`、`sha_match=True`，且 groups=1185、records=2131、splits=508/151/526（显式源 split 优先；train/val 锁入 Holdout）。
+必须 `equal=True`、`sha_match=True`，且 groups=1185、records=2131、splits=508/151/518/8（dev/release/holdout/quarantined）。
 
 ---
 

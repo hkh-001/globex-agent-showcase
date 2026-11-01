@@ -123,7 +123,9 @@ def _probe_integrity_errors(probe: dict) -> list[str]:
             errors.extend(f"record {row.get('capability_id')}: {message}" for message in
                           value_assertions.validate(row.get("required_fields") or [],
                                                     row.get("value_assertions"),
-                                                    row.get("observed_values") or {}))
+                                                    row.get("observed_values") or {},
+                                                    row.get("capability_id"),
+                                                    row.get("case")))
         if row.get("result") == "pass" and not (row.get("observed_values") or {}):
             errors.append(f"record {row.get('capability_id')} has no observed_values")
         if row.get("observation_source") == "state_snapshot" and row.get("result") == "pass":
@@ -258,7 +260,7 @@ def audit(matrix_path: pathlib.Path, unsupported_path: pathlib.Path,
         if catalog.get("record_count") != sum(item.get("record_count", 0) for item in templates):
             errors.append("catalog record_count does not match template sums")
         for item in templates:
-            if item.get("recommended_split") not in {"dev", "release", "holdout"}:
+            if item.get("evaluation_split") not in {"dev", "release", "holdout", "quarantined"}:
                 errors.append(f"{item.get('leakage_group_id')}: invalid split")
             if item.get("module") in (None, "unclassified", "conflict"):
                 errors.append(f"{item.get('leakage_group_id')}: invalid module")

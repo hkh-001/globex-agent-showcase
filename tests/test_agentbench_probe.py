@@ -202,3 +202,24 @@ def test_synchronized_actual_and_expected_tamper_fails(tmp_path):
         assertion["operator"] = "equals"
     errors = _tampered_evidence(tmp_path, mutate)
     assert any("!= observed" in error for error in errors)
+
+
+def test_missing_observed_source_fails(tmp_path):
+    def mutate(records):
+        record = next(row for row in records if row["capability_id"] == "search.catalog")
+        del record["observed_values"]["hit_count"]
+    errors = _tampered_evidence(tmp_path, mutate)
+    assert any("no observed source value" in error for error in errors)
+
+
+def test_wrong_capability_status_fails(tmp_path):
+    def mutate(records):
+        record = next(row for row in records
+                      if row["capability_id"] == "trade.prepare" and row["observation_source"] == "event")
+        record["observed_values"]["confirmation.status"] = "CANCELLED"
+        for assertion in record["value_assertions"]:
+            if assertion["field"] == "confirmation.status":
+                assertion["actual"] = "CANCELLED"
+                assertion["expected"] = "CANCELLED"
+    errors = _tampered_evidence(tmp_path, mutate)
+    assert any("capability contract" in error for error in errors)
