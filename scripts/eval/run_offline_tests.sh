@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Reproducible offline test entry: no proxies, dummy key, no network calls.
+# Reproducible offline test entry: no proxies, dummy key, no external paid/model calls.
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 cd "$ROOT"

@@ -47,7 +47,11 @@ $PY --version
 代理清理前缀（本机代理会污染本地 HTTP/httpx；后续命令统一使用）：
 
 ```bash
-CLEAN="env -u ALL_PROXY -u all_proxy -u HTTP_PROXY -u http_proxy -u HTTPS_PROXY -u https_proxy -u NO_PROXY -u no_proxy"
+# zsh 不会对未加引号的变量做分词，因此用函数而不是 CLEAN="env ..."。
+clean() {
+  env -u ALL_PROXY -u all_proxy -u HTTP_PROXY -u http_proxy \
+      -u HTTPS_PROXY -u https_proxy -u NO_PROXY -u no_proxy "$@"
+}
 ```
 
 记录：HEAD、当前分支、工作区是否为空、Python 版本。工作区非空即记一条环境异常，不直接判失败，但所有正例必须在干净副本中重跑。
@@ -69,11 +73,11 @@ git status --porcelain
 在 clone 中运行：
 
 ```bash
-$CLEAN $PY -m scripts.eval.agentbench.check_catalog --out /tmp/review-catalog.json
+clean $PY -m scripts.eval.agentbench.check_catalog --out /tmp/review-catalog.json
 echo "exit=$?"
-$CLEAN $PY -m scripts.eval.agentbench.capability_audit
+clean $PY -m scripts.eval.agentbench.capability_audit
 echo "exit=$?"
-$CLEAN $PY -m pytest -q -p no:cacheprovider \
+clean $PY -m pytest -q -p no:cacheprovider \
   tests/test_agentbench_catalog_ci.py \
   tests/test_agentbench_capability.py \
   tests/test_agentbench_probe.py \
@@ -157,7 +161,7 @@ PY
 
 ```bash
 cd "$TMP/review"
-$CLEAN $PY -m scripts.eval.agentbench.check_catalog --out /tmp/review-catalog.json
+clean $PY -m scripts.eval.agentbench.check_catalog --out /tmp/review-catalog.json
 echo "exit=$?"
 python3 - <<'PY'
 import json
@@ -186,7 +190,7 @@ rm -rf tamper && cp -R review tamper && cd tamper
 
 ```bash
 echo '{"record_id":"tampered"}' >> eval/agent/v1/inventory/record-index.jsonl
-$CLEAN $PY -m scripts.eval.agentbench.check_catalog; echo "exit=$?"
+clean $PY -m scripts.eval.agentbench.check_catalog; echo "exit=$?"
 git checkout -- eval/agent/v1/inventory/record-index.jsonl
 ```
 
@@ -201,7 +205,7 @@ p="eval/agent/v1/inventory/source-inventory.json"
 d=json.load(open(p)); d["totals"]["raw_records"]=1
 json.dump(d, open(p,"w"))
 PY
-$CLEAN $PY -m scripts.eval.agentbench.check_catalog; echo "exit=$?"
+clean $PY -m scripts.eval.agentbench.check_catalog; echo "exit=$?"
 git checkout -- eval/agent/v1/inventory/source-inventory.json
 ```
 
@@ -216,7 +220,7 @@ p="eval/agent/v1/inventory/manifest.json"
 d=json.load(open(p)); d["counts"]["records"]=1
 json.dump(d, open(p,"w"))
 PY
-$CLEAN $PY -m scripts.eval.agentbench.check_catalog; echo "exit=$?"
+clean $PY -m scripts.eval.agentbench.check_catalog; echo "exit=$?"
 git checkout -- eval/agent/v1/inventory/manifest.json
 ```
 
@@ -234,7 +238,7 @@ m=json.load(open(man)); m["scanner_sha256"]="0"*64
 m["inventory_file_sha256"]=hashlib.sha256(open(inv,"rb").read()).hexdigest()
 json.dump(m, open(man,"w"))
 PY
-$CLEAN $PY -m scripts.eval.agentbench.check_catalog; echo "exit=$?"
+clean $PY -m scripts.eval.agentbench.check_catalog; echo "exit=$?"
 git checkout -- eval/agent/v1/inventory
 ```
 
@@ -244,7 +248,7 @@ git checkout -- eval/agent/v1/inventory
 
 ```bash
 printf '\n# tampered\n' >> scripts/eval/agentbench/template_catalog.py
-$CLEAN $PY -m scripts.eval.agentbench.check_catalog; echo "exit=$?"
+clean $PY -m scripts.eval.agentbench.check_catalog; echo "exit=$?"
 git checkout -- scripts/eval/agentbench/template_catalog.py
 ```
 
@@ -258,7 +262,7 @@ import json
 p="eval/agent/v1/template-catalog.json"
 d=json.load(open(p)); d["record_count"]=1; json.dump(d, open(p,"w"))
 PY
-$CLEAN $PY -m scripts.eval.agentbench.check_catalog; echo "exit=$?"
+clean $PY -m scripts.eval.agentbench.check_catalog; echo "exit=$?"
 git checkout -- eval/agent/v1/template-catalog.json
 ```
 
@@ -273,14 +277,14 @@ git checkout -- eval/agent/v1/template-catalog.json
 ```bash
 cd "$TMP/review"
 echo "" >> README.md
-$CLEAN $PY -m scripts.eval.agentbench.freeze_inventory \
+clean $PY -m scripts.eval.agentbench.freeze_inventory \
   --inventory eval/agent/v1/inventory --out /tmp/should-not-exist
 echo "exit=$?"
 git checkout -- README.md
 
 echo "" >> README.md
 git add README.md
-$CLEAN $PY -m scripts.eval.agentbench.freeze_inventory \
+clean $PY -m scripts.eval.agentbench.freeze_inventory \
   --inventory eval/agent/v1/inventory --out /tmp/should-not-exist
 echo "exit=$?"
 git reset --hard HEAD
@@ -344,7 +348,7 @@ PY
 
 ```bash
 cd "$TMP/review"
-$CLEAN $PY -m scripts.eval.agentbench.capability_audit
+clean $PY -m scripts.eval.agentbench.capability_audit
 echo "exit=$?"
 ```
 
