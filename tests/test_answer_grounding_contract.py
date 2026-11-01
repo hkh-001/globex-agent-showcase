@@ -100,7 +100,9 @@ def test_product_fallback_reports_landed_price_with_fee_breakdown():
 
     assert "商品价 39 CNY" in text
     assert "到手价 64 CNY" in text
-    assert "运费 25" in text and "关税 0" in text
+    assert "商品 39" in text and "运费 25" in text and "关税 0" in text
+    # 明细必须与总额自洽：39 + 25 + 0 == 64
+    assert 39 + 25 + 0 == 64
 
 
 def test_product_fallback_does_not_invent_landed_price_without_evidence():
@@ -162,3 +164,15 @@ def test_trade_fact_does_not_excuse_ungrounded_product_attributes():
 
     assert "背负结构" not in text
     assert "本轮没有足够的可核验商品结果" in text
+
+
+def test_product_fallback_ignores_landed_price_without_a_total():
+    payload = {"hits": [{
+        "product_id": "P1", "title": "旅行背包 30L", "price_major": 129, "currency": "CNY",
+        "landed_price": {"unavailable_reason": "暂不支持的目的国：BR"},
+    }]}
+
+    text = grounded_product_fallback(payload)
+
+    assert "商品价 129 CNY" in text
+    assert "到手价" not in text

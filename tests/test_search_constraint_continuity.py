@@ -247,16 +247,57 @@ async def test_identical_effective_request_reuses_previous_result_within_turn():
             return {"hits": [{"product_id": "P1"}], "recall_strategy": "keyword_2gram",
                     "total_candidates": 1, "rerank_applied": False}
 
+    events = []
     tool = build_product_search_tool(UseCase(), TradeEventBus())
     context_token = ShoppingContext.set(ShoppingContextSnapshot("s", "b", "zh-CN", "CNY"))
     guard_token = SearchConstraintScope.start("找背包")
     try:
-        await tool(normalized_query="背包", product_type="背包", ship_to="CN", top_k=5)
-        await tool(normalized_query="背包", product_type="背包", ship_to="CN", top_k=5)
-        # 约束相同但查询文字不同：必须重新检索，不能被去重拦截
-        await tool(normalized_query="登山背包", product_type="背包", ship_to="CN", top_k=5)
+        with observe_run_events(events.append):
+            await tool(normalized_query="背包", product_type="背包", ship_to="CN", top_k=5)
+            await tool(normalized_query="背包", product_type="背包", ship_to="CN", top_k=5)
+            # 只有 top_k 不同：是不同请求，必须重新检索
+            await tool(normalized_query="背包", product_type="背包", ship_to="CN", top_k=4)
     finally:
         SearchConstraintScope.reset(guard_token)
         ShoppingContext.reset(context_token)
+    assert calls == ["背包", "背包"]
 
-    assert calls == ["背包", "登山背包"]
+    with_results = [e for e in events if e.type == "tool.result" and e.payload.get("hits")]
+    assert len(with_results) == 3
+    # 复用必须原样返回同一批候选，不能丢 hits 或换商品
+    assert with_results[0].payload["hits"] == with_results[1].payload["hits"]
+    assert with_results[1].payload["reused_duplicate"] is True
+    assert with_results[2].payload["reused_duplicate"] is False
+
+
+async def test_new_turn_does_not_reuse_previous_result():
+    calls: list[str] = []
+
+    class UseCase:
+        async def execute(self, spec):
+            calls.append(spec.normalized_query)
+            return {"hits": [{"product_id": "P1"}], "recall_strategy": "keyword_2gram",
+                    "total_candidates": 1, "rerank_applied": False}
+
+    tool = build_product_search_tool(UseCase(), TradeEventBus())
+    context_token = ShoppingContext.set(ShoppingContextSnapshot("s", "b", "zh-CN", "CNY"))
+    try:
+        for _ in range(2):
+            guard_token = SearchConstraintScope.start("找背包")
+            try:
+                await tool(normalized_query="背包", product_type="背包", ship_to="CN", top_k=5)
+            finally:
+                SearchConstraintScope.reset(guard_token)
+    finally:
+        ShoppingContext.reset(context_token)
+    assert calls == ["背包", "背包"]
+
+
+def test_request_fingerprint_covers_every_search_spec_field():
+    from dataclasses import fields
+
+    from app.application.tools.product_search_tool import request_fingerprint
+    from app.domain.catalog.product_search_spec import ProductSearchSpec
+
+    covered = set(json.loads(request_fingerprint(_args())))
+    assert covered == {spec_field.name for spec_field in fields(ProductSearchSpec)}

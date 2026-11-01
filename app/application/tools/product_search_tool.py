@@ -9,6 +9,7 @@ MainAgent 单干与 SearchAgent 派发两条路径共用同一工具实例。
 AgentScope 用 pydantic 从函数签名动态生成 JSON schema，字符串化注解会解析失败。
 """
 import copy
+from dataclasses import fields
 import json
 from typing import Optional
 
@@ -47,6 +48,16 @@ _CATEGORY_ALIASES = {
     "办公学习": ("办公", "学习", "文具", "台灯"),
     "母婴宠物": ("母婴", "宠物", "婴儿"),
 }
+
+
+def request_fingerprint(args: dict) -> str:
+    """Identity of an effective search request, derived from the search spec fields.
+
+    Deriving the field list from ProductSearchSpec means a new hard constraint
+    cannot be silently dropped from duplicate detection.
+    """
+    names = [spec_field.name for spec_field in fields(ProductSearchSpec)]
+    return json.dumps({name: args.get(name) for name in names}, sort_keys=True, ensure_ascii=False, default=str)
 
 
 def _normalize_category(category: Optional[str], normalized_query: str) -> Optional[str]:
@@ -184,7 +195,7 @@ def build_product_search_tool(usecase: CatalogSearchUseCase, bus: TradeEventBus,
                 content=[TextBlock(type="text", text=f"[error] {error}")],
                 state=ToolResultState.ERROR,
             )
-        fingerprint = json.dumps(args, sort_keys=True, ensure_ascii=False, default=str)
+        fingerprint = request_fingerprint(args)
         cached = guard.cached_result(fingerprint) if guard is not None else None
         try:
             spec = ProductSearchSpec(
@@ -206,7 +217,6 @@ def build_product_search_tool(usecase: CatalogSearchUseCase, bus: TradeEventBus,
             )
             if cached is not None:
                 result = copy.deepcopy(cached)
-                result["reused_duplicate"] = True
             else:
                 result = await usecase.execute(spec)
                 if guard is not None:
@@ -220,9 +230,10 @@ def build_product_search_tool(usecase: CatalogSearchUseCase, bus: TradeEventBus,
         result["query_conditions"] = args
         result["constraint_continuity"] = constraint_continuity
         from datetime import datetime, timezone
-        result["observed_at"] = datetime.now(timezone.utc).isoformat()
+        if cached is None:
+            result["observed_at"] = datetime.now(timezone.utc).isoformat()
         remember_verified_result("products", result)
-        if evidence_store is not None and snapshot_ctx is not None:
+        if cached is None and evidence_store is not None and snapshot_ctx is not None:
             result["result_ref"] = await evidence_store.save(snapshot_ctx.buyer_id, session_id, "products", result)
         bus.publish(
             session_id,
@@ -235,6 +246,7 @@ def build_product_search_tool(usecase: CatalogSearchUseCase, bus: TradeEventBus,
                 "rerank_applied": result["rerank_applied"],
                 "query_conditions": result["query_conditions"],
                 "constraint_continuity": constraint_continuity,
+                "reused_duplicate": cached is not None,
                 # 商品卡随事件下发，前端无需再调接口即可渲染（含 landed_price 到手价）
                 "hits": result["hits"],
                 **({"result_ref": result["result_ref"]} if "result_ref" in result else {}),
