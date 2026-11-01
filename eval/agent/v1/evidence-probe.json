@@ -17,22 +17,19 @@
         "result_ref"
       ],
       "observed_fields": [
-        "constraint_continuity",
-        "filtered_out",
-        "hit_count",
-        "hits",
-        "query_conditions",
-        "recall_strategy",
-        "rerank_applied",
-        "result_ref",
-        "reused_duplicate",
         "tool",
-        "total_candidates"
+        "hit_count",
+        "recall_strategy",
+        "total_candidates",
+        "query_conditions",
+        "hits",
+        "filtered_out",
+        "result_ref"
       ],
       "result": "pass",
       "event_count": 2,
-      "run_id": "ec6a1511e04d43cd9b2e4bc1975fef3b",
-      "source_commit": "e6d413f3ef861425d60980947b3a3d61c5c65fa0"
+      "run_id": "7ece51def647415d9d19be02f22b7a13",
+      "source_commit": "863897ac85701dd65f484ee844ab3339c1fd5140"
     },
     {
       "capability_id": "search.constraints",
@@ -44,22 +41,13 @@
         "filtered_out"
       ],
       "observed_fields": [
-        "constraint_continuity",
-        "filtered_out",
-        "hit_count",
-        "hits",
         "query_conditions",
-        "recall_strategy",
-        "rerank_applied",
-        "result_ref",
-        "reused_duplicate",
-        "tool",
-        "total_candidates"
+        "filtered_out"
       ],
       "result": "pass",
       "event_count": 2,
-      "run_id": "ec6a1511e04d43cd9b2e4bc1975fef3b",
-      "source_commit": "e6d413f3ef861425d60980947b3a3d61c5c65fa0"
+      "run_id": "7ece51def647415d9d19be02f22b7a13",
+      "source_commit": "863897ac85701dd65f484ee844ab3339c1fd5140"
     },
     {
       "capability_id": "search.landed_price",
@@ -74,19 +62,16 @@
         "hits[].landed_price.currency"
       ],
       "observed_fields": [
-        "currency",
-        "de_minimis_applied",
-        "freight_major",
-        "landed_total_major",
-        "ship_to",
-        "subtotal_major",
-        "tariff_major",
-        "tariff_rate"
+        "hits[].landed_price.subtotal_major",
+        "hits[].landed_price.freight_major",
+        "hits[].landed_price.tariff_major",
+        "hits[].landed_price.landed_total_major",
+        "hits[].landed_price.currency"
       ],
       "result": "pass",
       "event_count": 2,
-      "run_id": "ec6a1511e04d43cd9b2e4bc1975fef3b",
-      "source_commit": "e6d413f3ef861425d60980947b3a3d61c5c65fa0"
+      "run_id": "7ece51def647415d9d19be02f22b7a13",
+      "source_commit": "863897ac85701dd65f484ee844ab3339c1fd5140"
     },
     {
       "capability_id": "search.exact_id",
@@ -113,8 +98,8 @@
       ],
       "result": "pass",
       "event_count": 2,
-      "run_id": "ec6a1511e04d43cd9b2e4bc1975fef3b",
-      "source_commit": "e6d413f3ef861425d60980947b3a3d61c5c65fa0"
+      "run_id": "7ece51def647415d9d19be02f22b7a13",
+      "source_commit": "863897ac85701dd65f484ee844ab3339c1fd5140"
     },
     {
       "capability_id": "state.constraint_carry",
@@ -128,22 +113,15 @@
         "query_conditions.sku_spec"
       ],
       "observed_fields": [
-        "constraint_continuity",
-        "filtered_out",
-        "hit_count",
-        "hits",
-        "query_conditions",
-        "recall_strategy",
-        "rerank_applied",
-        "result_ref",
-        "reused_duplicate",
-        "tool",
-        "total_candidates"
+        "constraint_continuity.inherited",
+        "query_conditions.price_max_major",
+        "query_conditions.ship_to",
+        "query_conditions.sku_spec"
       ],
       "result": "pass",
       "event_count": 2,
-      "run_id": "ec6a1511e04d43cd9b2e4bc1975fef3b",
-      "source_commit": "e6d413f3ef861425d60980947b3a3d61c5c65fa0"
+      "run_id": "7ece51def647415d9d19be02f22b7a13",
+      "source_commit": "863897ac85701dd65f484ee844ab3339c1fd5140"
     },
     {
       "capability_id": "dispatch.search",
@@ -157,18 +135,15 @@
         "status"
       ],
       "observed_fields": [
+        "tool",
         "agent",
         "dispatch_id",
-        "elapsed_ms",
-        "finished_at",
-        "started_at",
-        "status",
-        "tool"
+        "status"
       ],
       "result": "pass",
       "event_count": 3,
-      "run_id": "ec6a1511e04d43cd9b2e4bc1975fef3b",
-      "source_commit": "e6d413f3ef861425d60980947b3a3d61c5c65fa0"
+      "run_id": "7ece51def647415d9d19be02f22b7a13",
+      "source_commit": "863897ac85701dd65f484ee844ab3339c1fd5140"
     },
     {
       "capability_id": "dispatch.search",
@@ -193,8 +168,8 @@
         ],
         "unverified_product_ids": []
       },
-      "run_id": "ec6a1511e04d43cd9b2e4bc1975fef3b",
-      "source_commit": "e6d413f3ef861425d60980947b3a3d61c5c65fa0"
+      "run_id": "7ece51def647415d9d19be02f22b7a13",
+      "source_commit": "863897ac85701dd65f484ee844ab3339c1fd5140"
     },
     {
       "capability_id": "dispatch.trade",
@@ -208,18 +183,15 @@
         "status"
       ],
       "observed_fields": [
+        "tool",
         "agent",
         "dispatch_id",
-        "elapsed_ms",
-        "finished_at",
-        "started_at",
-        "status",
-        "tool"
+        "status"
       ],
       "result": "pass",
       "event_count": 3,
-      "run_id": "ec6a1511e04d43cd9b2e4bc1975fef3b",
-      "source_commit": "e6d413f3ef861425d60980947b3a3d61c5c65fa0"
+      "run_id": "7ece51def647415d9d19be02f22b7a13",
+      "source_commit": "863897ac85701dd65f484ee844ab3339c1fd5140"
     },
     {
       "capability_id": "dispatch.trade",
@@ -236,8 +208,8 @@
       ],
       "result": "pass",
       "event_count": 3,
-      "run_id": "ec6a1511e04d43cd9b2e4bc1975fef3b",
-      "source_commit": "e6d413f3ef861425d60980947b3a3d61c5c65fa0"
+      "run_id": "7ece51def647415d9d19be02f22b7a13",
+      "source_commit": "863897ac85701dd65f484ee844ab3339c1fd5140"
     },
     {
       "capability_id": "harness.grounding_gate",
@@ -249,13 +221,13 @@
         "claim_guard"
       ],
       "observed_fields": [
-        "claim_guard",
-        "message"
+        "message",
+        "claim_guard"
       ],
       "result": "pass",
       "event_count": 1,
-      "run_id": "ec6a1511e04d43cd9b2e4bc1975fef3b",
-      "source_commit": "e6d413f3ef861425d60980947b3a3d61c5c65fa0"
+      "run_id": "7ece51def647415d9d19be02f22b7a13",
+      "source_commit": "863897ac85701dd65f484ee844ab3339c1fd5140"
     },
     {
       "capability_id": "harness.grounding_gate",
@@ -278,8 +250,8 @@
       ],
       "result": "pass",
       "event_count": 1,
-      "run_id": "ec6a1511e04d43cd9b2e4bc1975fef3b",
-      "source_commit": "e6d413f3ef861425d60980947b3a3d61c5c65fa0"
+      "run_id": "7ece51def647415d9d19be02f22b7a13",
+      "source_commit": "863897ac85701dd65f484ee844ab3339c1fd5140"
     },
     {
       "capability_id": "memory.remember",
@@ -294,8 +266,8 @@
       ],
       "result": "pass",
       "event_count": 2,
-      "run_id": "ec6a1511e04d43cd9b2e4bc1975fef3b",
-      "source_commit": "e6d413f3ef861425d60980947b3a3d61c5c65fa0"
+      "run_id": "7ece51def647415d9d19be02f22b7a13",
+      "source_commit": "863897ac85701dd65f484ee844ab3339c1fd5140"
     },
     {
       "capability_id": "memory.remember",
@@ -312,8 +284,8 @@
       ],
       "result": "pass",
       "event_count": 2,
-      "run_id": "ec6a1511e04d43cd9b2e4bc1975fef3b",
-      "source_commit": "e6d413f3ef861425d60980947b3a3d61c5c65fa0"
+      "run_id": "7ece51def647415d9d19be02f22b7a13",
+      "source_commit": "863897ac85701dd65f484ee844ab3339c1fd5140"
     },
     {
       "capability_id": "memory.update",
@@ -328,8 +300,8 @@
       ],
       "result": "pass",
       "event_count": 2,
-      "run_id": "ec6a1511e04d43cd9b2e4bc1975fef3b",
-      "source_commit": "e6d413f3ef861425d60980947b3a3d61c5c65fa0"
+      "run_id": "7ece51def647415d9d19be02f22b7a13",
+      "source_commit": "863897ac85701dd65f484ee844ab3339c1fd5140"
     },
     {
       "capability_id": "memory.update",
@@ -337,16 +309,15 @@
       "observation_source": "verified_result",
       "selector": "memory_write",
       "required_fields": [
-        "action",
-        "statement"
+        "action"
       ],
       "observed_fields": [
         "action"
       ],
       "result": "pass",
       "event_count": 2,
-      "run_id": "ec6a1511e04d43cd9b2e4bc1975fef3b",
-      "source_commit": "e6d413f3ef861425d60980947b3a3d61c5c65fa0"
+      "run_id": "7ece51def647415d9d19be02f22b7a13",
+      "source_commit": "863897ac85701dd65f484ee844ab3339c1fd5140"
     },
     {
       "capability_id": "memory.forget",
@@ -361,8 +332,8 @@
       ],
       "result": "pass",
       "event_count": 2,
-      "run_id": "ec6a1511e04d43cd9b2e4bc1975fef3b",
-      "source_commit": "e6d413f3ef861425d60980947b3a3d61c5c65fa0"
+      "run_id": "7ece51def647415d9d19be02f22b7a13",
+      "source_commit": "863897ac85701dd65f484ee844ab3339c1fd5140"
     },
     {
       "capability_id": "memory.forget",
@@ -379,8 +350,8 @@
       ],
       "result": "pass",
       "event_count": 2,
-      "run_id": "ec6a1511e04d43cd9b2e4bc1975fef3b",
-      "source_commit": "e6d413f3ef861425d60980947b3a3d61c5c65fa0"
+      "run_id": "7ece51def647415d9d19be02f22b7a13",
+      "source_commit": "863897ac85701dd65f484ee844ab3339c1fd5140"
     },
     {
       "capability_id": "state.session_isolation",
@@ -392,12 +363,13 @@
         "correlation.session_id"
       ],
       "observed_fields": [
+        "shopping_session_id",
         "correlation.session_id"
       ],
       "result": "pass",
-      "event_count": 2,
-      "run_id": "ec6a1511e04d43cd9b2e4bc1975fef3b",
-      "source_commit": "e6d413f3ef861425d60980947b3a3d61c5c65fa0"
+      "event_count": 4,
+      "run_id": "7ece51def647415d9d19be02f22b7a13",
+      "source_commit": "863897ac85701dd65f484ee844ab3339c1fd5140"
     },
     {
       "capability_id": "state.session_isolation",
@@ -413,9 +385,9 @@
         "statement"
       ],
       "result": "pass",
-      "event_count": 2,
-      "run_id": "ec6a1511e04d43cd9b2e4bc1975fef3b",
-      "source_commit": "e6d413f3ef861425d60980947b3a3d61c5c65fa0"
+      "event_count": 4,
+      "run_id": "7ece51def647415d9d19be02f22b7a13",
+      "source_commit": "863897ac85701dd65f484ee844ab3339c1fd5140"
     },
     {
       "capability_id": "trade.prepare",
@@ -424,17 +396,44 @@
       "selector": "tool.result:create_order_tool",
       "required_fields": [
         "confirmation_required",
-        "confirmation"
+        "confirmation.confirmation_id",
+        "confirmation.snapshot_hash",
+        "confirmation.status",
+        "confirmation.payload"
       ],
       "observed_fields": [
-        "confirmation",
         "confirmation_required",
-        "tool"
+        "confirmation.confirmation_id",
+        "confirmation.snapshot_hash",
+        "confirmation.status",
+        "confirmation.payload"
       ],
       "result": "pass",
       "event_count": 3,
-      "run_id": "ec6a1511e04d43cd9b2e4bc1975fef3b",
-      "source_commit": "e6d413f3ef861425d60980947b3a3d61c5c65fa0"
+      "run_id": "7ece51def647415d9d19be02f22b7a13",
+      "source_commit": "863897ac85701dd65f484ee844ab3339c1fd5140"
+    },
+    {
+      "capability_id": "trade.prepare",
+      "test_nodeid": "eval/agent/v1/probes/test_evidence_probe.py::test_trade_prepare",
+      "observation_source": "state_snapshot",
+      "selector": "trade_repository",
+      "required_fields": [
+        "order_count_before",
+        "order_count_after",
+        "inventory_before",
+        "inventory_after"
+      ],
+      "observed_fields": [
+        "order_count_before",
+        "order_count_after",
+        "inventory_before",
+        "inventory_after"
+      ],
+      "result": "pass",
+      "event_count": 3,
+      "run_id": "7ece51def647415d9d19be02f22b7a13",
+      "source_commit": "863897ac85701dd65f484ee844ab3339c1fd5140"
     },
     {
       "capability_id": "trade.query",
@@ -450,8 +449,49 @@
       ],
       "result": "pass",
       "event_count": 2,
-      "run_id": "ec6a1511e04d43cd9b2e4bc1975fef3b",
-      "source_commit": "e6d413f3ef861425d60980947b3a3d61c5c65fa0"
+      "run_id": "7ece51def647415d9d19be02f22b7a13",
+      "source_commit": "863897ac85701dd65f484ee844ab3339c1fd5140"
+    },
+    {
+      "capability_id": "search.category_insight",
+      "test_nodeid": "eval/agent/v1/probes/test_evidence_probe.py::test_search_category_insight",
+      "observation_source": "event",
+      "selector": "tool.result:category_insight_tool",
+      "required_fields": [
+        "hit_count",
+        "abstained",
+        "policy_fact_statuses"
+      ],
+      "observed_fields": [
+        "abstained",
+        "hit_count",
+        "policy_fact_statuses",
+        "tool"
+      ],
+      "result": "pass",
+      "event_count": 2,
+      "run_id": "7ece51def647415d9d19be02f22b7a13",
+      "source_commit": "863897ac85701dd65f484ee844ab3339c1fd5140"
+    },
+    {
+      "capability_id": "search.category_insight",
+      "test_nodeid": "eval/agent/v1/probes/test_evidence_probe.py::test_search_category_insight",
+      "observation_source": "tool_result",
+      "selector": "category_insight_tool",
+      "required_fields": [
+        "insights[].source",
+        "insights[].metadata.source_reference",
+        "insights[].metadata.source_type"
+      ],
+      "observed_fields": [
+        "insights[].source",
+        "insights[].metadata.source_reference",
+        "insights[].metadata.source_type"
+      ],
+      "result": "pass",
+      "event_count": 2,
+      "run_id": "7ece51def647415d9d19be02f22b7a13",
+      "source_commit": "863897ac85701dd65f484ee844ab3339c1fd5140"
     }
   ],
   "capabilities": [
@@ -462,6 +502,7 @@
     "memory.remember",
     "memory.update",
     "search.catalog",
+    "search.category_insight",
     "search.constraints",
     "search.exact_id",
     "search.landed_price",
@@ -473,10 +514,10 @@
   "external_connect_attempts": 0,
   "paid_requests": 0,
   "external_model_requests": 0,
-  "run_id": "ec6a1511e04d43cd9b2e4bc1975fef3b",
-  "generated_at": "2026-11-01T13:53:26.382687+00:00",
-  "source_commit": "e6d413f3ef861425d60980947b3a3d61c5c65fa0",
+  "run_id": "7ece51def647415d9d19be02f22b7a13",
+  "generated_at": "2026-11-01T14:12:14.152302+00:00",
+  "source_commit": "863897ac85701dd65f484ee844ab3339c1fd5140",
   "tracked_worktree_clean": true,
-  "scanner_sha256": "54adb4d02ef8a407f4c465af64338f14f77d30315d31451fdb5eccc7e6ba9377",
-  "records_sha256": "c116e5ae030f954db5164459384743e7e732c2750d27b504409d4c912293f0e1"
+  "scanner_sha256": "8cd5aff8c627948c336a4d70f2d4b88b66d373959bc458b25e39c709196065e6",
+  "records_sha256": "3c6c8ec672c1c7867922ab4401cef03a3e16b773814435a38667643a0b8ba84c"
 }
