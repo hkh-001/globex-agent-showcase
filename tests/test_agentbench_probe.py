@@ -89,3 +89,17 @@ def test_tampered_scanner_hash_fails_integrity_check(tmp_path):
     errors = capability_audit.audit(MATRIX, ROOT / "eval/agent/v1/unsupported-capabilities.json",
                                     ROOT / "eval/agent/v1/template-catalog.json", None, path)
     assert any("scanner_sha256" in error for error in errors)
+
+
+def test_required_fields_must_appear_in_observed_fields(tmp_path):
+    evidence = json.loads(EVIDENCE.read_text(encoding="utf-8"))
+    record = next(row for row in evidence["records"] if row["capability_id"] == "memory.remember")
+    record["required_fields"] = ["action", "statement"]
+    record["observed_fields"] = ["action"]
+    evidence["records_sha256"] = __import__("hashlib").sha256(
+        json.dumps(evidence["records"], ensure_ascii=False, sort_keys=True).encode()).hexdigest()
+    path = tmp_path / "evidence.json"
+    path.write_text(json.dumps(evidence), encoding="utf-8")
+    errors = capability_audit.audit(MATRIX, ROOT / "eval/agent/v1/unsupported-capabilities.json",
+                                    ROOT / "eval/agent/v1/template-catalog.json", None, path)
+    assert any("observed_fields miss" in error for error in errors)

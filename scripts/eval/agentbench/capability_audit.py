@@ -113,6 +113,11 @@ def _probe_integrity_errors(probe: dict) -> list[str]:
     elif hashlib.sha256(blob.encode()).hexdigest() != probe.get("scanner_sha256"):
         errors.append("probe scanner_sha256 does not match the source commit blob")
     for row in records:
+        required = set(row.get("required_fields") or [])
+        observed = set(row.get("observed_fields") or [])
+        if required and not required <= observed:
+            errors.append(f"record {row.get('capability_id')} observed_fields miss "
+                          f"{sorted(required - observed)}")
         if row.get("run_id") != probe.get("run_id"):
             errors.append(f"record {row.get('capability_id')} has a different run_id")
         if row.get("source_commit") != source:

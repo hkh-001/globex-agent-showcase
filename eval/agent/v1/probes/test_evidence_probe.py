@@ -76,3 +76,7 @@ def test_trade_prepare(probe_records):
 
 def test_trade_query(probe_records):
     _assert_capability(probe_records, "trade.query")
+
+
+def test_search_category_insight(probe_records):
+    _assert_capability(probe_records, "search.category_insight")

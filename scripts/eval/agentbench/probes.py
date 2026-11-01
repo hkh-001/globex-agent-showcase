@@ -31,6 +31,8 @@ from app.application.tools.order_tools import build_create_order_tool, build_que
 from app.infrastructure.persistence.sql.repositories import bootstrap_schema, create_engine
 from app.infrastructure.persistence.sql.trade_store import SqlTradeStore
 from app.infrastructure.persistence.context_evidence import ContextEvidenceStore
+from app.application.tools.category_insight_tool import build_category_insight_tool
+from app.infrastructure.rag.category_knowledge import bootstrap_category_knowledge
 
 PROBE_FILE = "eval/agent/v1/probes/test_evidence_probe.py"
 
@@ -41,21 +43,31 @@ class _EvidenceStore:
 
 
 def _records(events) -> list[dict]:
-    return [{"type": event.type, "payload": event.payload, "correlation": getattr(event, "correlation", {})}
+    return [{"type": event.type, "payload": event.payload,
+             "correlation": getattr(event, "correlation", {}),
+             "shopping_session_id": getattr(event, "shopping_session_id", "")}
             for event in events]
 
 
+def _present(payload, field: str) -> bool:
+    current = payload
+    for part in field.split("."):
+        if not isinstance(current, dict) or part not in current:
+            return False
+        current = current[part]
+    return True
+
+
 def check_fields(records: list[dict], selector: str, fields: list[str]) -> tuple[bool, list[str]]:
-    """Return whether the selector event exists and every listed field is present."""
+    """Return whether the selector event exists and every listed (possibly nested) field is present."""
     kind, _, name = selector.partition(":")
     matching = [row for row in records if row["type"] == kind and (
         not name or str((row["payload"] or {}).get("tool") or "") == name)]
     if not matching:
         return False, []
     payload = matching[-1]["payload"] or {}
-    observed = sorted(payload)
-    missing = [field for field in fields if field not in payload]
-    return not missing, observed
+    observed = [field for field in fields if _present(payload, field)]
+    return len(observed) == len(fields), observed
 
 
 async def probe_search() -> list[dict]:
@@ -89,9 +101,10 @@ async def probe_search() -> list[dict]:
     hit = (payload.get("hits") or [{}])[0]
     landed = hit.get("landed_price") or {}
     landed_fields = ["subtotal_major", "freight_major", "tariff_major", "landed_total_major", "currency"]
+    landed_required = [f"hits[].landed_price.{name}" for name in landed_fields]
+    landed_ok = all(name in landed for name in landed_fields)
     results.append(_result("search.landed_price", "event", "tool.result:product_search_tool",
-                           [f"hits[].landed_price.{name}" for name in landed_fields],
-                           sorted(landed), all(name in landed for name in landed_fields), catalog))
+                           landed_required, landed_required if landed_ok else [], landed_ok, catalog))
 
     exact = await run(normalized_query="", product_id="P1003", ship_to="CN", top_k=5)
     exact_payload = next((row["payload"] for row in exact if row["type"] == "tool.result"), {})
@@ -112,11 +125,12 @@ async def probe_search() -> list[dict]:
     carried_payload = next((row["payload"] for row in carried if row["type"] == "tool.result"), {})
     inherited = (carried_payload.get("constraint_continuity") or {}).get("inherited") or []
     ShoppingContext.reset(context_token)
+    carry_fields = ["constraint_continuity.inherited", "query_conditions.price_max_major",
+                    "query_conditions.ship_to", "query_conditions.sku_spec"]
+    carry_observed = [field for field in carry_fields if _present(carried_payload, field)]
     results.append(_result("state.constraint_carry", "event", "tool.result:product_search_tool",
-                           ["constraint_continuity.inherited", "query_conditions.price_max_major",
-                            "query_conditions.ship_to", "query_conditions.sku_spec"],
-                           sorted(carried_payload),
-                           bool(inherited), carried))
+                           carry_fields, carry_observed,
+                           bool(inherited) and len(carry_observed) == len(carry_fields), carried))
     return results
 
 
@@ -270,7 +284,8 @@ async def probe_memory(tmp_path) -> list[dict]:
         saved = next((row["payload"].get("saved") for row in records
                       if row["type"] == "tool.result" and row["payload"].get("tool") == "remember_preference_tool"), None)
         written = verified_result("memory_write") or {}
-        ok = saved == "喜欢轻便背包" and written.get("action") == "保存"
+        ok = (saved == "喜欢轻便背包" and written.get("action") == "保存"
+              and written.get("statement") == "喜欢轻便背包")
         results.append(_result("memory.remember", "event", "tool.result:remember_preference_tool",
                                ["saved"], ["saved"] if saved else [], ok, records))
         results.append(_result("memory.remember", "verified_result", "memory_write",
@@ -291,7 +306,7 @@ async def probe_memory(tmp_path) -> list[dict]:
                                ["updated"], ["updated"] if updated is not None else [],
                                updated is True and any(p.statement == "喜欢超轻背包" for p in current), records))
         results.append(_result("memory.update", "verified_result", "memory_write",
-                               ["action", "statement"], sorted(written),
+                               ["action"], sorted(written),
                                written.get("action") == "更新", records))
 
         preferences = await store.list_by_buyer("buyer-memory")
@@ -309,7 +324,8 @@ async def probe_memory(tmp_path) -> list[dict]:
                                deleted == "喜欢超轻背包" and remaining == [], records))
         results.append(_result("memory.forget", "verified_result", "memory_write",
                                ["action", "statement"], sorted(written),
-                               written.get("action") == "删除", records))
+                               written.get("action") == "删除"
+                               and written.get("statement") == "喜欢超轻背包", records))
     finally:
         ShoppingContext.reset(context_token)
     return results
@@ -320,30 +336,35 @@ async def probe_session(tmp_path) -> list[dict]:
     store = JsonFilePreferenceStore(pathlib.Path(tmp_path) / "sessions")
     bus = TradeEventBus()
     remember = build_remember_preference_tool(store, bus)
-    first_token = ShoppingContext.set(ShoppingContextSnapshot("session-a", "buyer-a", "zh-CN", "CNY"))
-    try:
-        events_a = []
-        with observe_run_events(events_a.append):
-            await remember("like", "喜欢军绿色")
-    finally:
-        ShoppingContext.reset(first_token)
-    second_token = ShoppingContext.set(ShoppingContextSnapshot("session-b", "buyer-b", "zh-CN", "CNY"))
-    try:
-        second_preferences = await store.list_by_buyer("buyer-b")
-    finally:
-        ShoppingContext.reset(second_token)
-    records = _records(events_a)
-    session_hashes = {row["correlation"].get("session_id") for row in records if row["correlation"].get("session_id")}
-    first_preferences = await store.list_by_buyer("buyer-a")
-    ok = (len(first_preferences) == 1 and second_preferences == [] and len(session_hashes) == 1)
-    snapshot_rows = [{"buyer_id": "buyer-a", "statement": "喜欢军绿色"}] if first_preferences else []
+    events = []
+
+    async def write_as(session_id, buyer_id, statement):
+        token = ShoppingContext.set(ShoppingContextSnapshot(session_id, buyer_id, "zh-CN", "CNY"))
+        try:
+            with observe_run_events(events.append):
+                await remember("like", statement)
+        finally:
+            ShoppingContext.reset(token)
+
+    await write_as("session-a", "buyer-a", "喜欢军绿色")
+    await write_as("session-b", "buyer-b", "喜欢黑色")
+    first = [item.statement for item in await store.list_by_buyer("buyer-a")]
+    second = [item.statement for item in await store.list_by_buyer("buyer-b")]
+    records = _records(events)
+    raw_ids = {row["shopping_session_id"] for row in records if row["shopping_session_id"]}
+    hashes = {row["correlation"].get("session_id") for row in records
+              if row["correlation"].get("session_id")}
+    isolated = (first == ["喜欢军绿色"] and second == ["喜欢黑色"]
+                and "喜欢黑色" not in first and "喜欢军绿色" not in second)
+    ok = isolated and raw_ids == {"session-a", "session-b"} and len(hashes) == 2
+    snapshot_rows = [{"buyer_id": "buyer-a", "statement": first[0] if first else ""},
+                     {"buyer_id": "buyer-b", "statement": second[0] if second else ""}]
     return [
         _result("state.session_isolation", "event", "TradeEvent",
                 ["shopping_session_id", "correlation.session_id"],
-                ["correlation.session_id"] if session_hashes else [], ok, records),
+                ["shopping_session_id", "correlation.session_id"] if ok else [], ok, records),
         _result("state.session_isolation", "state_snapshot", "preference_repository",
-                ["buyer_id", "statement"], sorted(snapshot_rows[0]) if snapshot_rows else [],
-                ok and bool(snapshot_rows), records),
+                ["buyer_id", "statement"], ["buyer_id", "statement"] if ok else [], ok, records),
     ]
 
 
@@ -366,6 +387,8 @@ async def probe_trade(tmp_path) -> list[dict]:
         with observe_run_events(search_events.append):
             await search(normalized_query="", product_id="P1001", ship_to="CN", top_k=5)
 
+        orders_before = await store.list_orders(buyer_id="buyer-trade")
+        inventory_before = await store.get_inventory(["P1001-S1"])
         create = build_create_order_tool(PlaceOrderUseCase(service), bus, evidence)
         events = []
         with observe_run_events(events.append):
@@ -378,13 +401,24 @@ async def probe_trade(tmp_path) -> list[dict]:
         payload = next((row["payload"] for row in records
                         if row["type"] == "tool.result" and row["payload"].get("tool") == "create_order_tool"), {})
         confirmation = payload.get("confirmation") or {}
+        orders_after = await store.list_orders(buyer_id="buyer-trade")
+        inventory_after = await store.get_inventory(["P1001-S1"])
+        fields = ["confirmation_required", "confirmation.confirmation_id",
+                  "confirmation.snapshot_hash", "confirmation.status", "confirmation.payload"]
         prepared_ok = (payload.get("confirmation_required") is True
-                       and bool(confirmation.get("confirmation_id"))
-                       and bool(confirmation.get("snapshot_hash"))
-                       and confirmation.get("status") in (None, "pending"))
-        results = [_result("trade.prepare", "event", "tool.result:create_order_tool",
-                           ["confirmation_required", "confirmation"], sorted(payload),
-                           prepared_ok, records)]
+                       and all(_present(payload, field) for field in fields)
+                       and confirmation.get("status") == "pending"
+                       and (orders_before.get("orders") or []) == []
+                       and (orders_after.get("orders") or []) == []
+                       and inventory_before == inventory_after)
+        results = [
+            _result("trade.prepare", "event", "tool.result:create_order_tool", fields,
+                    [field for field in fields if _present(payload, field)], prepared_ok, records),
+            _result("trade.prepare", "state_snapshot", "trade_repository",
+                    ["order_count_before", "order_count_after", "inventory_before", "inventory_after"],
+                    ["order_count_before", "order_count_after", "inventory_before", "inventory_after"],
+                    prepared_ok, records),
+        ]
 
         confirmation_payload = confirmation.get("payload") or {}
         await service.resolve(confirmation.get("confirmation_id"), "buyer-trade", "s",
@@ -409,6 +443,59 @@ async def probe_trade(tmp_path) -> list[dict]:
     return results
 
 
+async def probe_knowledge(tmp_path) -> list[dict]:
+    import pathlib
+    from agentscope.rag import KnowledgeBase, QdrantStore
+    from tests.test_phase3 import TermAxisEmbedding
+
+    base = pathlib.Path(tmp_path)
+    docs = base / "knowledge"
+    docs.mkdir(parents=True, exist_ok=True)
+    (docs / "outdoor.md").write_text("# 户外\n露营灯看防水等级与续航，登山杖优先钛合金。", encoding="utf-8")
+    (docs / "guide.md").write_text("# 通则\n美国免税额度约 800 美元，运费按首件全价加续件折价计。", encoding="utf-8")
+    kb = KnowledgeBase(name="probe_category_kb", description="探针知识库",
+                       embedding_model=TermAxisEmbedding(),
+                       vector_store=QdrantStore(path=str(base / "kb")),
+                       collection="probe_category_kb")
+    await bootstrap_category_knowledge(kb, knowledge_dir=docs)
+    bus = TradeEventBus()
+    tool = build_category_insight_tool(kb, bus)
+    events = []
+    with observe_run_events(events.append):
+        chunk = await tool(question="美国免税额度是多少", top_k=2)
+    records = _records(events)
+    payload = next((row["payload"] for row in records
+                    if row["type"] == "tool.result" and row["payload"].get("tool") == "category_insight_tool"), {})
+    content = {}
+    try:
+        content = json.loads(chunk.content[0].text)
+    except Exception:
+        content = {}
+    insights = content.get("insights") or []
+    first = insights[0] if insights else {}
+    metadata = first.get("metadata") or {}
+    event_ok = (payload.get("hit_count", 0) > 0 and payload.get("abstained") is False
+                and bool(insights) and bool(payload.get("policy_fact_statuses")))
+    tool_ok = (bool(first.get("source")) and bool(metadata.get("source_reference"))
+               and bool(metadata.get("source_type")))
+    abstain_events = []
+    with observe_run_events(abstain_events.append):
+        await tool(question="火星种土豆", top_k=2)
+    abstain_payload = next((row["payload"] for row in _records(abstain_events)
+                            if row["type"] == "tool.result"), {})
+    abstain_ok = abstain_payload.get("abstained") is True or abstain_payload.get("hit_count", 0) == 0
+    return [
+        _result("search.category_insight", "event", "tool.result:category_insight_tool",
+                ["hit_count", "abstained", "policy_fact_statuses"],
+                sorted(payload), event_ok and abstain_ok, records),
+        _result("search.category_insight", "tool_result", "category_insight_tool",
+                ["insights[].source", "insights[].metadata.source_reference",
+                 "insights[].metadata.source_type"],
+                ["insights[].source", "insights[].metadata.source_reference",
+                 "insights[].metadata.source_type"] if tool_ok else [], tool_ok, records),
+    ]
+
+
 async def _run_all(tmp_path=None) -> dict:
     import pathlib
     import tempfile
@@ -420,6 +507,7 @@ async def _run_all(tmp_path=None) -> dict:
     records.extend(await probe_memory(root / "memory"))
     records.extend(await probe_session(root / "session"))
     records.extend(await probe_trade(root / "trade"))
+    records.extend(await probe_knowledge(root / "knowledge"))
     return {
         "schema_version": "agentbench-evidence-probe-v1",
         "records": records,

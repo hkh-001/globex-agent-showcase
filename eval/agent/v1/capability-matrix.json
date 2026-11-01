@@ -271,7 +271,6 @@
           "fields": [
             "hit_count",
             "abstained",
-            "retrieval_mode",
             "policy_fact_statuses"
           ]
         },
@@ -303,7 +302,7 @@
       "candidate_asset_families": [
         "knowledge-v1"
       ],
-      "verification_status": "pending"
+      "verification_status": "verified"
     },
     {
       "capability_id": "search.web",
@@ -437,8 +436,7 @@
           "source_type": "verified_result",
           "selector": "memory_write",
           "fields": [
-            "action",
-            "statement"
+            "action"
           ]
         }
       ],
@@ -599,7 +597,20 @@
           "selector": "tool.result:create_order_tool",
           "fields": [
             "confirmation_required",
-            "confirmation"
+            "confirmation.confirmation_id",
+            "confirmation.snapshot_hash",
+            "confirmation.status",
+            "confirmation.payload"
+          ]
+        },
+        {
+          "source_type": "state_snapshot",
+          "selector": "trade_repository",
+          "fields": [
+            "order_count_before",
+            "order_count_after",
+            "inventory_before",
+            "inventory_after"
           ]
         }
       ],
