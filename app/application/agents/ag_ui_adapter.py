@@ -143,18 +143,12 @@ class AGUIRunAdapter:
             self.state["status"] = "running"
             self.snapshot()
         elif kind == "TEXT_BLOCK_START":
-            message_id = self._id("text", event.block_id)
-            self._text_open.add(message_id)
-            self.emit(TextMessageStartEvent(message_id=message_id, role="assistant"))
+            # 模型正文由 orchestrator 缓冲；finish() 只发审核后的最终快照。
+            return
         elif kind == "TEXT_BLOCK_DELTA":
-            if event.delta:
-                self.emit(TextMessageContentEvent(
-                    message_id=self._id("text", event.block_id), delta=event.delta,
-                ))
+            return
         elif kind == "TEXT_BLOCK_END":
-            message_id = self._id("text", event.block_id)
-            self._text_open.discard(message_id)
-            self.emit(TextMessageEndEvent(message_id=message_id))
+            return
         elif kind in {"THINKING_BLOCK_START", "THINKING_BLOCK_DELTA", "THINKING_BLOCK_END"}:
             # 供应商 reasoning 可能包含行为规则、提示词片段和内部决策过程。
             # 客户端只接收固定状态边界，正文永不进入 AG-UI state / journal / SSE。

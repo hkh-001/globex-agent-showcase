@@ -145,6 +145,7 @@ async def test_real_search_projects_cards_and_preserves_message_history():
     events = await collect(orchestrator)
     types = [event["type"] for event in events]
     assert types[0] == "RUN_STARTED" and types[-1] == "RUN_FINISHED"
+    assert "TEXT_MESSAGE_CONTENT" not in types  # 未审核模型 token 永不进入 SSE/journal
     assert types.index("TOOL_CALL_END") < types.index("TOOL_CALL_RESULT")
     result = next(event for event in events if event["type"] == "TOOL_CALL_RESULT")
     search = json.loads(result["content"])
@@ -214,7 +215,7 @@ async def test_failure_closes_message_and_ends_with_run_error():
     types = [event["type"] for event in events]
     assert types[-1] == "RUN_ERROR"
     assert "RUN_FINISHED" not in types
-    assert types.count("TEXT_MESSAGE_START") == types.count("TEXT_MESSAGE_END") == 1
+    assert "TEXT_MESSAGE_START" not in types and "TEXT_MESSAGE_CONTENT" not in types
     assert agent.closed.is_set() and sessions.persisted == 1
 
 
@@ -300,7 +301,8 @@ async def test_http_disconnect_cancels_agent_and_persists_interruption(swallow_c
 
     async def send(message):
         responses.append(message)
-        if b"TEXT_MESSAGE_CONTENT" in message.get("body", b""):
+        body_bytes = message.get("body", b"")
+        if b"STATE_SNAPSHOT" in body_bytes and b"running" in body_bytes:
             disconnected.set()
 
     scope = {

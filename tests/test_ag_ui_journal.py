@@ -258,7 +258,7 @@ async def test_real_tcp_disconnect_and_cursor_reconnect(tmp_path):
                 async for line in response.aiter_lines():
                     if line.startswith("id:"):
                         last_id = line[3:].strip()
-                    if line.startswith("data:") and "TEXT_MESSAGE_CONTENT" in line:
+                    if line.startswith("data:") and "STATE_SNAPSHOT" in line and "running" in line:
                         break
             await asyncio.sleep(0.05)
             assert not agent.cancelled.is_set()

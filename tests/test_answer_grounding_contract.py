@@ -2,7 +2,12 @@
 from types import SimpleNamespace
 
 from app.application.agents.orchestrator import MainAgentOrchestrator
-from app.application.answer_grounding import has_concrete_product_claim, product_claim_violations
+from app.application.answer_grounding import (
+    has_concrete_product_claim,
+    grounded_trade_fallback,
+    is_product_recommendation_intent,
+    product_claim_violations,
+)
 from app.infrastructure.budget import init_budget, remember_verified_result
 
 
@@ -55,3 +60,13 @@ def test_orchestrator_fails_closed_for_concrete_product_claim_without_tool_evide
     guarded = orchestrator._guard_final_text("s1", "P2 工艺精良，适合一周旅行。")
     assert "P2" not in guarded
     assert guarded == "本轮没有足够的可核验商品结果，请调整筛选条件后再试。"
+
+    assert is_product_recommendation_intent("帮我挑一个适合旅行的背包")
+    implicit = orchestrator._guard_final_text(
+        "s1", "城市漫步 20L 很适合你，工艺精良。", require_product_evidence=True,
+    )
+    assert implicit == guarded
+    assert grounded_trade_fallback({"orders": [{"order_id": "GBX-1", "status": "created"}]}) == (
+        "订单 GBX-1：created。"
+    )
+    assert "是否执行成功" in grounded_trade_fallback(None)

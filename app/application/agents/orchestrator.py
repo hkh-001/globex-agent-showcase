@@ -66,7 +66,9 @@ from app.infrastructure.eventbus import TradeEventBus, observe_run_events
 from app.infrastructure.budget import init_budget, remember_verified_result, get_budget, rule_fallback_text, verified_result
 from app.application.answer_grounding import (
     grounded_product_fallback,
+    grounded_trade_fallback,
     has_concrete_product_claim,
+    is_product_recommendation_intent,
     product_claim_violations,
 )
 from app.infrastructure.security.output_guard import audit_output
@@ -181,7 +183,9 @@ class MainAgentOrchestrator:
             result["skills"] = [*await asyncio.to_thread(personal.list, buyer_id), *result["skills"]]
         return result
 
-    def _guard_final_text(self, session_id: str, text: str) -> str:
+    def _guard_final_text(
+        self, session_id: str, text: str, *, require_product_evidence: bool = False,
+    ) -> str:
         """L4 输出审核：最终回复推给买家前脱敏内部信息。
 
         命中只脱敏并发一条告警事件，**不阻断回复**：
@@ -205,7 +209,7 @@ class MainAgentOrchestrator:
             text = grounded_product_fallback(
                 products, turn_trade=turn_trade, confirmation=confirmation,
             )
-        elif products is None and has_concrete_product_claim(text):
+        elif products is None and (require_product_evidence or has_concrete_product_claim(text)):
             logger.warning("回复声明具体商品但本轮没有已校验商品证据（会话 %s）", session_id)
             self._bus.publish(session_id, "error", {
                 "message": "本轮没有可核验商品证据，已阻止具体商品声明",
@@ -298,8 +302,10 @@ class MainAgentOrchestrator:
             pending=awaiting_event(agent)
             if intent.confirmations:
                 incoming=confirmation_inputs(agent,intent.confirmations)
-                # 原生恢复事件必须直接传给框架，不能伪造成 user 消息或混入上下文提示。
-                final_text=await self._consume_reply(session_id,agent,incoming)
+                # 原生恢复事件直接传框架，但模型正文只用于驱动工具；用户可见结果
+                # 必须来自本轮实际订单工具事实，拒绝/失败则返回保守的状态说明。
+                await self._consume_reply(session_id,agent,incoming)
+                final_text=grounded_trade_fallback(verified_result("turn_trade"))
                 self._bus.publish(session_id,"final.result",{"text":final_text})
                 return SubmitIntentOutput(shopping_session_id=session_id,final_text=final_text)
             if pending is not None:
@@ -368,7 +374,10 @@ class MainAgentOrchestrator:
 
             with observe_run_events(collect_candidates):
                 final_text = await self._reply_with_retry(session_id, agent, inputs)
-            final_text = self._guard_final_text(session_id, final_text)
+            final_text = self._guard_final_text(
+                session_id, final_text,
+                require_product_evidence=is_product_recommendation_intent(intent.raw_query),
+            )
             await self._check_drift(session_id)
 
             self._publish_compression(session_id, agent, summary_before)
@@ -596,7 +605,12 @@ class MainAgentOrchestrator:
         async with aclosing(agent.reply_stream(inputs or None, yield_final_msg=True)) as events:
             async for event in events:
                 observer = self._native_observer.get()
-                if observer is not None:
+                # 模型自由正文先缓冲；商品/交易事实审核完成后只由 adapter.finish
+                # 发送最终快照。工具和生命周期事件仍实时可见。
+                is_model_text_event = getattr(event, "type", None) in {
+                    "TEXT_BLOCK_START", "TEXT_BLOCK_DELTA", "TEXT_BLOCK_END",
+                }
+                if observer is not None and not is_model_text_event:
                     observer(event)
                 if isinstance(event, Msg):
                     final_text = event.get_text_content() or ""
@@ -607,12 +621,8 @@ class MainAgentOrchestrator:
                     if reason in {"error", "exceed_max_iters"}:
                         reply_error = "Agent 本轮执行失败" if reason == "error" else "Agent 超出本轮执行步数上限"
                 elif isinstance(event, TextBlockDeltaEvent):
-                    if event.delta:
-                        self._bus.publish(
-                            session_id,
-                            "token.delta",
-                            {"name": agent.name, "token": event.delta},
-                        )
+                    # 不向 legacy event bus 发布未审核 token；final.result 是唯一正文边界。
+                    pass
                 elif isinstance(event, ToolCallStartEvent):
                     call_names[event.tool_call_id] = event.tool_call_name
                 elif isinstance(event, ToolResultEndEvent):

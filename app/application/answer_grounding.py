@@ -20,6 +20,7 @@ _CONCRETE_PRODUCT_REFERENCE = re.compile(
     r"\bP\d+\b|(?:这|该|上述|以上|第[一二三四五六七八九十\d]+)[款件个]|"
     r"(?:推荐|选择|购买).{0,8}(?:商品|产品|背包|箱包|耳机|杯|鞋|衣)"
 )
+_PRODUCT_INTENT = re.compile(r"(?:帮我|给我|想|要|请)?.{0,8}(?:找|挑|选|推荐|比较|购买|买).{0,20}(?:商品|产品|款|背包|箱包|耳机|杯|鞋|衣|相机|电脑|手机)")
 
 
 def product_claim_violations(text: str, product_result: dict[str, Any] | None) -> list[str]:
@@ -47,6 +48,21 @@ def product_claim_violations(text: str, product_result: dict[str, Any] | None) -
 def has_concrete_product_claim(text: str) -> bool:
     """Whether a response purports to describe or recommend a concrete catalog item."""
     return bool(text and _CONCRETE_PRODUCT_REFERENCE.search(text))
+
+
+def is_product_recommendation_intent(raw_query: str) -> bool:
+    """Classify the buyer request, never the model's answer, for the evidence gate."""
+    return bool(raw_query and _PRODUCT_INTENT.search(raw_query))
+
+
+def grounded_trade_fallback(turn_trade: dict[str, Any] | None) -> str:
+    lines: list[str] = []
+    for order in (turn_trade or {}).get("orders", []):
+        if order.get("order_id"):
+            lines.append(f"订单 {order['order_id']}：{order.get('status', '状态待核验')}。")
+    if lines:
+        return "\n".join(lines)
+    return "确认决议已接收；是否执行成功请以页面确认状态和服务端订单记录为准。"
 
 
 def grounded_product_fallback(
