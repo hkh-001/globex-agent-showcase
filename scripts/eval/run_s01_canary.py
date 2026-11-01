@@ -523,11 +523,15 @@ def run_paid(output: Path, receipt_path: Path, acknowledgement: str, *,
                     response.raise_for_status()
                     confirmations_response = http.get(
                         backend_url + "/commerce/confirmations",
-                        params={"buyer_id": "eval-buyer-s01", "session_id": request_body["threadId"]},
+                        params={
+                            "buyer_id": request_body["forwardedProps"]["buyerId"],
+                            "session_id": request_body["threadId"],
+                        },
                     )
                     confirmations_response.raise_for_status()
                     orders_response = http.get(
-                        backend_url + "/commerce/orders", params={"buyer_id": "eval-buyer-s01"},
+                        backend_url + "/commerce/orders",
+                        params={"buyer_id": request_body["forwardedProps"]["buyerId"]},
                     )
                     orders_response.raise_for_status()
                     side_effects = {
