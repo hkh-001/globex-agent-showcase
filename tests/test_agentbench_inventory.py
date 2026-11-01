@@ -34,16 +34,19 @@ def test_product_fixture_is_unresolved_and_not_directly_reusable(tmp_path):
     entry = next(row for row in result["assets"] if row["path"] == "eval/product/dev/tasks.json")
     assert entry["fixture_resolution"] == "unresolved_by_raw_sha256"
     assert entry["task_reusability"] == "unresolved"
-    assert entry["automatic_oracle_available"] is True
+    assert entry["automatic_oracle_defined"] is True
+    assert entry["automatic_oracle_executable"] is False
+    assert entry["oracle_unavailable_reason"] == "unresolved_catalog_fixture"
 
 
 def test_reusability_and_oracle_flags_are_kind_specific(tmp_path):
     result = _scan(tmp_path)
     entries = {row["path"]: row for row in result["assets"] if row.get("status") == "ok"}
     assert entries["eval/v2/product_retrieval.jsonl"]["task_reusability"] == "conversion_required"
-    assert entries["eval/v2/product_retrieval.jsonl"]["automatic_oracle_available"] is True
+    assert entries["eval/v2/product_retrieval.jsonl"]["automatic_oracle_defined"] is True
+    assert entries["eval/v2/product_retrieval.jsonl"]["automatic_oracle_executable"] is True
     assert entries["eval/v3/semantic_paraphrases.jsonl"]["task_reusability"] == "oracle_only"
-    assert entries["eval/cases.yaml"]["automatic_oracle_available"] is False
+    assert entries["eval/cases.yaml"]["automatic_oracle_defined"] is False
 
 
 def test_cross_family_overlap_shares_leakage_group():
@@ -132,3 +135,35 @@ def test_manifest_hashes_can_be_recomputed(tmp_path):
     assert "record-index.jsonl" in manifest["outputs"]
     for name, expected in manifest["outputs"].items():
         assert hashlib.sha256((tmp_path / "out" / name).read_bytes()).hexdigest() == expected
+
+
+def test_multi_turn_structure_is_not_lost_by_normalization():
+    first = inventory.prompt_hashes(["a b", "c"])
+    second = inventory.prompt_hashes(["a", "b c"])
+    assert first[1] != second[1]
+    assert first[2] != second[2]
+
+
+def test_deterministic_hash_binds_record_index(tmp_path, monkeypatch):
+    baseline = inventory.scan(tmp_path / "base")
+    original = inventory.prompt_groups
+
+    def tampered(rows, spec):
+        groups = original(rows, spec)
+        if spec["path"] == "eval/context/cases-v3.json":
+            groups[0]["leakage_group_id"] = "tampered-leakage-group"
+        return groups
+
+    monkeypatch.setattr(inventory, "prompt_groups", tampered)
+    changed = inventory.scan(tmp_path / "changed")
+    assert changed["record_index_sha256"] != baseline["record_index_sha256"]
+    assert changed["deterministic_payload_sha256"] != baseline["deterministic_payload_sha256"]
+
+
+def test_manifest_records_scanner_source_and_record_index(tmp_path):
+    inventory.scan(tmp_path / "out")
+    manifest = json.loads((tmp_path / "out" / "manifest.json").read_text(encoding="utf-8"))
+    assert manifest["scanner_sha256"]
+    assert manifest["record_index_sha256"]
+    assert manifest["source_commit"]
+    assert isinstance(manifest["tracked_worktree_clean"], bool)

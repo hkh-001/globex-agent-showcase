@@ -22,6 +22,7 @@ import hashlib
 import json
 import pathlib
 import re
+import subprocess
 import unicodedata
 from datetime import datetime, timezone
 
@@ -137,13 +138,28 @@ def digest(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
 
 
-def normalize_prompt(value) -> str:
+def normalize_prompt(value):
+    """Structure-preserving normalization: turns stay turns, not one string."""
     if value is None:
         return ""
+    if isinstance(value, str):
+        text = unicodedata.normalize("NFKC", value)
+        return re.sub(r"\s+", " ", text).strip()
     if isinstance(value, (list, tuple)):
-        value = " ".join(str(item) for item in value)
-    text = unicodedata.normalize("NFKC", str(value))
-    return re.sub(r"\s+", " ", text).strip()
+        return [normalize_prompt(item) for item in value]
+    if isinstance(value, dict):
+        return {key: normalize_prompt(item) for key, item in sorted(value.items())}
+    return normalize_prompt(str(value))
+
+
+def casefold_prompt(value):
+    if isinstance(value, str):
+        return value.casefold()
+    if isinstance(value, list):
+        return [casefold_prompt(item) for item in value]
+    if isinstance(value, dict):
+        return {key: casefold_prompt(item) for key, item in value.items()}
+    return value
 
 
 def prompt_hashes(value) -> tuple[str, str, str]:
@@ -156,9 +172,12 @@ def prompt_hashes(value) -> tuple[str, str, str]:
         return "", "", ""
     raw = value if isinstance(value, str) else json.dumps(value, ensure_ascii=False, sort_keys=True)
     exact = digest(raw.encode())
-    normalized = normalize_prompt(value)
-    return exact, digest(normalized.encode()) if normalized else "", (
-        digest(normalized.casefold().encode()) if normalized else "")
+    normalized_value = normalize_prompt(value)
+    normalized_json = json.dumps(normalized_value, ensure_ascii=False, sort_keys=True)
+    normalized = digest(normalized_json.encode()) if normalized_value != "" else ""
+    casefold_json = json.dumps(casefold_prompt(normalized_value), ensure_ascii=False, sort_keys=True)
+    casefold = digest(casefold_json.encode()) if normalized_value != "" else ""
+    return exact, normalized, casefold
 
 
 def load_rows(path: pathlib.Path) -> tuple[list[dict], bytes]:
@@ -307,7 +326,11 @@ def scan(out: pathlib.Path) -> dict:
             "has_split_field": bool(spec["split_field"]), "split_distribution": splits,
             "fixture_resolution": resolution,
             "task_reusability": reusability,
-            "automatic_oracle_available": deterministic_oracle,
+            "automatic_oracle_defined": deterministic_oracle,
+            "automatic_oracle_executable": deterministic_oracle and (
+                spec["kind"] != "task_candidate" or reusable),
+            "oracle_unavailable_reason": ("unresolved_catalog_fixture"
+                                          if spec["kind"] == "task_candidate" and not reusable else ""),
             "prompt_count": sum(1 for group in groups if group["normalized"]),
             "leakage_group_count": len({group["leakage_group_id"] for group in groups}),
             "derived_from": None, "unresolved_references": 0,
@@ -370,8 +393,8 @@ def scan(out: pathlib.Path) -> dict:
         "families": family_rows,
         "by_kind": by_kind,
         "raw_records_by_allowed_usage": raw_usage,
-        "cross_family_exact_prompt_duplicates": cross_exact,
-        "cross_family_normalized_prompt_duplicates": cross_normalized,
+        "cross_family_duplicated_prompt_values": cross_exact,
+        "cross_family_duplicated_normalized_prompt_values": cross_normalized,
         "globally_unique_normalized_prompts": len(normalized_index),
         "discovery": discovery,
         "record_count": len(records),
@@ -384,16 +407,32 @@ def scan(out: pathlib.Path) -> dict:
             "ignored_with_reason": len(discovery["ignored_with_reason"]),
         },
     }
+    record_index_text = "\n".join(
+        json.dumps(row, ensure_ascii=False, sort_keys=True) for row in records) + "\n"
+    scanner_sha = digest(pathlib.Path(__file__).read_bytes())
+    try:
+        source_commit = subprocess.run(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True,
+                                       capture_output=True, check=True).stdout.strip()
+        tracked_clean = subprocess.run(["git", "diff", "--quiet", "HEAD", "--"],
+                                       cwd=ROOT).returncode == 0
+    except Exception:
+        source_commit, tracked_clean = "unknown", False
+    result.update(source_commit=source_commit, tracked_worktree_clean=tracked_clean,
+                  scanner_sha256=scanner_sha,
+                  record_index_sha256=digest(record_index_text.encode()))
     core = dict(result)
     result["scanned_at"] = datetime.now(timezone.utc).isoformat()
     result["deterministic_payload_sha256"] = digest(
         json.dumps(core, sort_keys=True, ensure_ascii=False).encode())
     out.mkdir(parents=True, exist_ok=False)
     (out / "source-inventory.json").write_text(json.dumps(result, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    (out / "record-index.jsonl").write_text(
-        "\n".join(json.dumps(row, ensure_ascii=False, sort_keys=True) for row in records) + "\n", encoding="utf-8")
+    (out / "record-index.jsonl").write_text(record_index_text, encoding="utf-8")
     files = {path.name: digest(path.read_bytes()) for path in sorted(out.iterdir()) if path.is_file()}
     manifest = {"scan_version": SCAN_VERSION, "inputs": inputs, "outputs": files,
+                "source_commit": result["source_commit"],
+                "tracked_worktree_clean": result["tracked_worktree_clean"],
+                "scanner_sha256": result["scanner_sha256"],
+                "record_index_sha256": result["record_index_sha256"],
                 "deterministic_payload_sha256": result["deterministic_payload_sha256"]}
     (out / "manifest.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     return result
