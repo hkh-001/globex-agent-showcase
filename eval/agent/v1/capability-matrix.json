@@ -1,0 +1,616 @@
+{
+  "schema_version": "agentbench-capability-matrix-v1",
+  "source_inventory": ".globex-runtime/agentbench-stage1-v22-final-20261101T182613/source-inventory.json",
+  "source_commit": "af9ee8c",
+  "capabilities": [
+    {
+      "capability_id": "dispatch.search",
+      "code_entry": "app/application/tools/task_dispatch_tool.py:51",
+      "observable_events": [
+        "agent.dispatch",
+        "tool.result:task_dispatch"
+      ],
+      "assertable_fields": [
+        "payload.agent",
+        "payload.dispatch_id",
+        "payload.status",
+        "payload.error_type",
+        "payload.verified_product_ids"
+      ],
+      "allowed_paths": [
+        "main_agent->search_agent"
+      ],
+      "side_effects": [
+        "none"
+      ],
+      "oracle_type": "deterministic",
+      "status": "supported",
+      "needs_new_instrumentation": false,
+      "candidate_asset_families": [
+        "agent-cases-v1",
+        "harness-cases"
+      ]
+    },
+    {
+      "capability_id": "dispatch.trade",
+      "code_entry": "app/application/tools/task_dispatch_tool.py:51",
+      "observable_events": [
+        "agent.dispatch",
+        "tool.result:task_dispatch"
+      ],
+      "assertable_fields": [
+        "payload.agent",
+        "payload.dispatch_id",
+        "payload.status",
+        "payload.verified_product_ids"
+      ],
+      "allowed_paths": [
+        "main_agent->trade_agent"
+      ],
+      "side_effects": [
+        "confirmation_or_order_via_trade_agent"
+      ],
+      "oracle_type": "deterministic",
+      "status": "supported",
+      "needs_new_instrumentation": false,
+      "candidate_asset_families": [
+        "agent-cases-v1",
+        "harness-cases"
+      ]
+    },
+    {
+      "capability_id": "search.catalog",
+      "code_entry": "app/application/tools/product_search_tool.py:78",
+      "observable_events": [
+        "tool.invoke:product_search_tool",
+        "tool.result:product_search_tool"
+      ],
+      "assertable_fields": [
+        "payload.hits[].product_id",
+        "payload.hits[].title",
+        "payload.hits[].price_major",
+        "payload.hits[].currency",
+        "payload.recall_strategy",
+        "payload.total_candidates",
+        "payload.query_conditions",
+        "payload.result_ref"
+      ],
+      "allowed_paths": [
+        "main_agent->product_search_tool",
+        "main_agent->search_agent->product_search_tool"
+      ],
+      "side_effects": [
+        "evidence_store_write:products"
+      ],
+      "oracle_type": "deterministic",
+      "status": "supported",
+      "needs_new_instrumentation": false,
+      "candidate_asset_families": [
+        "retrieval-v1",
+        "retrieval-v2",
+        "retrieval-v3",
+        "retrieval-category",
+        "retrieval-optimization"
+      ]
+    },
+    {
+      "capability_id": "search.constraints",
+      "code_entry": "app/application/tools/product_search_tool.py:78",
+      "observable_events": [
+        "tool.result:product_search_tool"
+      ],
+      "assertable_fields": [
+        "payload.query_conditions.price_max_major",
+        "payload.query_conditions.ship_to",
+        "payload.query_conditions.product_type",
+        "payload.query_conditions.sku_spec",
+        "payload.query_conditions.excluded_material_tags",
+        "payload.filtered_out[].reason",
+        "payload.filtered_out[].product_id"
+      ],
+      "allowed_paths": [
+        "main_agent->product_search_tool",
+        "main_agent->search_agent->product_search_tool"
+      ],
+      "side_effects": [
+        "none"
+      ],
+      "oracle_type": "deterministic",
+      "status": "supported",
+      "needs_new_instrumentation": false,
+      "candidate_asset_families": [
+        "retrieval-v2",
+        "retrieval-contract"
+      ]
+    },
+    {
+      "capability_id": "search.exact_id",
+      "code_entry": "app/application/tools/product_search_tool.py:78",
+      "observable_events": [
+        "tool.result:product_search_tool"
+      ],
+      "assertable_fields": [
+        "payload.recall_strategy",
+        "payload.hits[].product_id",
+        "payload.query_conditions.product_id"
+      ],
+      "allowed_paths": [
+        "main_agent->product_search_tool",
+        "main_agent->search_agent->product_search_tool"
+      ],
+      "side_effects": [
+        "none"
+      ],
+      "oracle_type": "deterministic",
+      "status": "supported",
+      "needs_new_instrumentation": false,
+      "candidate_asset_families": [
+        "retrieval-v2"
+      ]
+    },
+    {
+      "capability_id": "search.landed_price",
+      "code_entry": "app/application/tools/product_search_tool.py:78",
+      "observable_events": [
+        "tool.result:product_search_tool"
+      ],
+      "assertable_fields": [
+        "payload.hits[].landed_price.subtotal_major",
+        "payload.hits[].landed_price.freight_major",
+        "payload.hits[].landed_price.tariff_major",
+        "payload.hits[].landed_price.landed_total_major",
+        "payload.hits[].landed_price.currency"
+      ],
+      "allowed_paths": [
+        "main_agent->product_search_tool",
+        "main_agent->search_agent->product_search_tool"
+      ],
+      "side_effects": [
+        "none"
+      ],
+      "oracle_type": "deterministic",
+      "status": "supported",
+      "needs_new_instrumentation": false,
+      "candidate_asset_families": [
+        "retrieval-v2",
+        "retrieval-contract"
+      ]
+    },
+    {
+      "capability_id": "search.category_insight",
+      "code_entry": "app/application/tools/category_insight_tool.py:37",
+      "observable_events": [
+        "tool.invoke:category_insight_tool",
+        "tool.result:category_insight_tool",
+        "TOOL_CALL_RESULT:category_insight_tool"
+      ],
+      "assertable_fields": [
+        "payload.hit_count",
+        "payload.abstained",
+        "payload.retrieval_mode",
+        "payload.policy_fact_statuses",
+        "content.insights[].metadata.document_id",
+        "content.insights[].metadata.source"
+      ],
+      "allowed_paths": [
+        "main_agent->category_insight_tool",
+        "main_agent->search_agent->category_insight_tool"
+      ],
+      "side_effects": [
+        "none"
+      ],
+      "oracle_type": "deterministic",
+      "status": "supported",
+      "needs_new_instrumentation": false,
+      "candidate_asset_families": [
+        "knowledge-v1"
+      ]
+    },
+    {
+      "capability_id": "search.web",
+      "code_entry": "app/application/tools/web_search_tool.py:24",
+      "observable_events": [
+        "tool.invoke:web_search_tool",
+        "tool.result:web_search_tool"
+      ],
+      "assertable_fields": [
+        "payload.error"
+      ],
+      "allowed_paths": [
+        "main_agent->web_search_tool",
+        "main_agent->search_agent->web_search_tool"
+      ],
+      "side_effects": [
+        "external_network_tavily"
+      ],
+      "oracle_type": "none",
+      "status": "not_supported",
+      "needs_new_instrumentation": true,
+      "candidate_asset_families": []
+    },
+    {
+      "capability_id": "evidence.fact_lookup",
+      "code_entry": "app/application/tools/conversation_fact_lookup.py:41",
+      "observable_events": [
+        "TOOL_CALL_RESULT:conversation_fact_lookup"
+      ],
+      "assertable_fields": [
+        "content.product_id",
+        "content.sku_id",
+        "content.price_major",
+        "content.stock"
+      ],
+      "allowed_paths": [
+        "main_agent->conversation_fact_lookup",
+        "main_agent->search_agent->conversation_fact_lookup"
+      ],
+      "side_effects": [
+        "none"
+      ],
+      "oracle_type": "deterministic",
+      "status": "instrumentation_required",
+      "needs_new_instrumentation": true,
+      "candidate_asset_families": [
+        "context-cases"
+      ]
+    },
+    {
+      "capability_id": "memory.remember",
+      "code_entry": "app/application/tools/remember_preference_tool.py:22",
+      "observable_events": [
+        "tool.invoke:remember_preference_tool",
+        "tool.result:remember_preference_tool"
+      ],
+      "assertable_fields": [
+        "payload.saved",
+        "memory_result.action",
+        "memory_result.statement"
+      ],
+      "allowed_paths": [
+        "main_agent->remember_preference_tool"
+      ],
+      "side_effects": [
+        "preference_store_write"
+      ],
+      "oracle_type": "deterministic",
+      "status": "supported",
+      "needs_new_instrumentation": false,
+      "candidate_asset_families": [
+        "memory-cases",
+        "skill-cases"
+      ]
+    },
+    {
+      "capability_id": "memory.update",
+      "code_entry": "app/application/tools/update_preference_tool.py:10",
+      "observable_events": [
+        "tool.invoke:update_preference_tool",
+        "tool.result:update_preference_tool"
+      ],
+      "assertable_fields": [
+        "payload.updated",
+        "memory_result.action"
+      ],
+      "allowed_paths": [
+        "main_agent->update_preference_tool"
+      ],
+      "side_effects": [
+        "preference_store_write"
+      ],
+      "oracle_type": "deterministic",
+      "status": "supported",
+      "needs_new_instrumentation": false,
+      "candidate_asset_families": [
+        "memory-cases"
+      ]
+    },
+    {
+      "capability_id": "memory.forget",
+      "code_entry": "app/application/tools/forget_preference_tool.py:23",
+      "observable_events": [
+        "tool.invoke:forget_preference_tool",
+        "tool.result:forget_preference_tool"
+      ],
+      "assertable_fields": [
+        "payload.deleted",
+        "payload.preference_id"
+      ],
+      "allowed_paths": [
+        "main_agent->forget_preference_tool"
+      ],
+      "side_effects": [
+        "preference_store_delete"
+      ],
+      "oracle_type": "deterministic",
+      "status": "supported",
+      "needs_new_instrumentation": false,
+      "candidate_asset_families": [
+        "memory-cases"
+      ]
+    },
+    {
+      "capability_id": "state.constraint_carry",
+      "code_entry": "app/application/search_constraint_guard.py:1",
+      "observable_events": [
+        "tool.result:product_search_tool"
+      ],
+      "assertable_fields": [
+        "payload.constraint_continuity.inherited",
+        "payload.query_conditions.price_max_major",
+        "payload.query_conditions.ship_to",
+        "payload.query_conditions.sku_spec"
+      ],
+      "allowed_paths": [
+        "main_agent->product_search_tool",
+        "main_agent->search_agent->product_search_tool"
+      ],
+      "side_effects": [
+        "none"
+      ],
+      "oracle_type": "deterministic",
+      "status": "supported",
+      "needs_new_instrumentation": false,
+      "candidate_asset_families": [
+        "context-cases",
+        "harness-cases"
+      ]
+    },
+    {
+      "capability_id": "state.session_isolation",
+      "code_entry": "app/infrastructure/context.py:40",
+      "observable_events": [
+        "tool.result",
+        "usage.summary"
+      ],
+      "assertable_fields": [
+        "correlation.session_id",
+        "correlation.agent",
+        "payload.order.buyer_id",
+        "payload.order.shopping_session_id"
+      ],
+      "allowed_paths": [
+        "main_agent->*",
+        "search_agent->*",
+        "trade_agent->*"
+      ],
+      "side_effects": [
+        "none"
+      ],
+      "oracle_type": "deterministic",
+      "status": "supported",
+      "needs_new_instrumentation": false,
+      "candidate_asset_families": [
+        "harness-cases"
+      ]
+    },
+    {
+      "capability_id": "trade.prepare",
+      "code_entry": "app/application/tools/order_tools.py:89",
+      "observable_events": [
+        "tool.invoke:create_order_tool",
+        "tool.result:create_order_tool"
+      ],
+      "assertable_fields": [
+        "payload.confirmation_required",
+        "payload.confirmation.pending",
+        "payload.confirmation.payload.snapshot_hash",
+        "payload.confirmation.confirmation_id"
+      ],
+      "allowed_paths": [
+        "main_agent->create_order_tool",
+        "main_agent->trade_agent->create_order_tool"
+      ],
+      "side_effects": [
+        "confirmation_store_write"
+      ],
+      "oracle_type": "deterministic",
+      "status": "supported",
+      "needs_new_instrumentation": false,
+      "candidate_asset_families": [
+        "product-dev",
+        "business-public"
+      ]
+    },
+    {
+      "capability_id": "trade.approve",
+      "code_entry": "app/application/usecases/confirmation_service.py:158",
+      "observable_events": [
+        "tool.result:create_order_tool",
+        "usage.summary"
+      ],
+      "assertable_fields": [
+        "turn_trade.orders[].order_id",
+        "turn_trade.orders[].status",
+        "confirmation.pending",
+        "inventory_delta"
+      ],
+      "allowed_paths": [
+        "main_agent->confirmation_input"
+      ],
+      "side_effects": [
+        "order_create",
+        "inventory_decrement"
+      ],
+      "oracle_type": "deterministic",
+      "status": "supported",
+      "needs_new_instrumentation": false,
+      "candidate_asset_families": [
+        "product-dev",
+        "business-public"
+      ]
+    },
+    {
+      "capability_id": "trade.query",
+      "code_entry": "app/application/tools/order_tools.py:153",
+      "observable_events": [
+        "tool.invoke:query_order_tool",
+        "tool.result:query_order_tool"
+      ],
+      "assertable_fields": [
+        "payload.order.order_id",
+        "payload.order.status",
+        "payload.order.lines"
+      ],
+      "allowed_paths": [
+        "main_agent->query_order_tool",
+        "main_agent->trade_agent->query_order_tool"
+      ],
+      "side_effects": [
+        "none"
+      ],
+      "oracle_type": "deterministic",
+      "status": "supported",
+      "needs_new_instrumentation": false,
+      "candidate_asset_families": [
+        "product-dev",
+        "business-public"
+      ]
+    },
+    {
+      "capability_id": "trade.cancel",
+      "code_entry": "app/application/tools/order_tools.py:177",
+      "observable_events": [
+        "tool.invoke:cancel_order_tool",
+        "tool.result:cancel_order_tool"
+      ],
+      "assertable_fields": [
+        "payload.confirmation_required",
+        "payload.order.status",
+        "inventory_delta"
+      ],
+      "allowed_paths": [
+        "main_agent->cancel_order_tool",
+        "main_agent->trade_agent->cancel_order_tool"
+      ],
+      "side_effects": [
+        "confirmation_store_write",
+        "order_cancel",
+        "inventory_restore"
+      ],
+      "oracle_type": "deterministic",
+      "status": "supported",
+      "needs_new_instrumentation": false,
+      "candidate_asset_families": [
+        "product-dev",
+        "business-public"
+      ]
+    },
+    {
+      "capability_id": "trade.idempotency",
+      "code_entry": "app/application/usecases/confirmation_service.py:158",
+      "observable_events": [
+        "tool.result:create_order_tool"
+      ],
+      "assertable_fields": [
+        "turn_trade.orders[].order_id",
+        "inventory_delta"
+      ],
+      "allowed_paths": [
+        "main_agent->confirmation_input"
+      ],
+      "side_effects": [
+        "none_on_repeat"
+      ],
+      "oracle_type": "deterministic",
+      "status": "supported",
+      "needs_new_instrumentation": false,
+      "candidate_asset_families": [
+        "product-dev",
+        "business-public"
+      ]
+    },
+    {
+      "capability_id": "harness.grounding_gate",
+      "code_entry": "app/application/agents/orchestrator.py:236",
+      "observable_events": [
+        "MESSAGES_SNAPSHOT",
+        "error:claim_guard"
+      ],
+      "assertable_fields": [
+        "payload.message",
+        "payload.claim_guard",
+        "grounding_audit.replacement_kind",
+        "grounding_audit.violations"
+      ],
+      "allowed_paths": [
+        "system"
+      ],
+      "side_effects": [
+        "grounding_audit_append"
+      ],
+      "oracle_type": "deterministic",
+      "status": "supported",
+      "needs_new_instrumentation": false,
+      "candidate_asset_families": [
+        "harness-cases"
+      ]
+    },
+    {
+      "capability_id": "harness.output_redaction",
+      "code_entry": "app/infrastructure/security/output_guard.py:50",
+      "observable_events": [
+        "error:output_guard"
+      ],
+      "assertable_fields": [
+        "payload.message",
+        "cleaned_text"
+      ],
+      "allowed_paths": [
+        "system"
+      ],
+      "side_effects": [
+        "none"
+      ],
+      "oracle_type": "deterministic",
+      "status": "instrumentation_required",
+      "needs_new_instrumentation": true,
+      "candidate_asset_families": []
+    },
+    {
+      "capability_id": "ui.form_surface",
+      "code_entry": "app/application/tools/shopping_form_tool.py:9",
+      "observable_events": [
+        "ui.surface"
+      ],
+      "assertable_fields": [
+        "payload.form",
+        "payload.buyer_id"
+      ],
+      "allowed_paths": [
+        "main_agent->shopping_form_tool"
+      ],
+      "side_effects": [
+        "none"
+      ],
+      "oracle_type": "deterministic",
+      "status": "supported",
+      "needs_new_instrumentation": false,
+      "candidate_asset_families": []
+    },
+    {
+      "capability_id": "comparison.recommendation",
+      "code_entry": "app/application/agents/orchestrator.py:236",
+      "observable_events": [
+        "MESSAGES_SNAPSHOT"
+      ],
+      "assertable_fields": [
+        "floating_text"
+      ],
+      "allowed_paths": [
+        "main_agent->*"
+      ],
+      "side_effects": [
+        "none"
+      ],
+      "oracle_type": "human",
+      "status": "instrumentation_required",
+      "needs_new_instrumentation": true,
+      "candidate_asset_families": [
+        "agent-cases-v1"
+      ]
+    }
+  ],
+  "source_inventory_sha256": "ea8341dc7f043c34dcddff7616209affcd35742e2141828af15c9406291a681b",
+  "record_index_sha256": "213537505fd8b6af04a200e9297e7b90d704fcc631b9c9f456721916b76029f3",
+  "deterministic_payload_sha256": "741a81f666341b30af376d461f8858cc06e264fca8a58374a777cb9325858769"
+}

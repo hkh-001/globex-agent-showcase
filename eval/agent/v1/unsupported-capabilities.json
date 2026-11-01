@@ -1,0 +1,83 @@
+{
+  "schema_version": "agentbench-unsupported-capabilities-v1",
+  "source_commit": "af9ee8c",
+  "unsupported": [
+    {
+      "capability_id": "knowledge.independent_agent",
+      "status": "not_supported",
+      "reason": "当前只有 main/search/trade 三个 Agent；知识检索是 category_insight_tool，挂在 Search Agent 内，也可被 Main 直接调用",
+      "evidence": [
+        "app/application/agents/ 仅含 main_agent.py / search_agent.py / trade_agent.py",
+        "app/application/tools/category_insight_tool.py:37"
+      ],
+      "resume_risk": "不能写 Knowledge Agent 路由准确率"
+    },
+    {
+      "capability_id": "training.sft_rl",
+      "status": "not_supported",
+      "reason": "仓库只有学习数据发件箱和导入脚本，没有训练器、Rubric、LLM-as-Judge 或 RL 实现",
+      "evidence": [
+        "app/infrastructure/learning_store.py 明确不包含训练器",
+        "全仓库无 sft/gspo/ppo/trainer 实现"
+      ],
+      "resume_risk": "不能写格式遵循率、工具成功率提升或评测分 62→88"
+    },
+    {
+      "capability_id": "fault.recovery_rate",
+      "status": "not_supported",
+      "reason": "没有统一的端到端故障注入器（embedding 失败/工具超时/503/429/畸形结果），只能证明部分降级合同",
+      "evidence": [
+        "全仓库无 fault_inject/chaos 钩子",
+        "Stage 0 明确不实现故障注入器"
+      ],
+      "resume_risk": "不能写 Agent 故障恢复率；只能写降级路径合同通过率"
+    },
+    {
+      "capability_id": "ablation.single_agent",
+      "status": "not_supported",
+      "reason": "没有单 Agent 装配；Main 虽持有同一批业务工具，但不是公平基线，需 eval-only 装配后才能比较",
+      "evidence": [
+        "全仓库无 single_agent / multi_agent 配置",
+        "app/application/agents/search_agent.py 注释：Main 与子 Agent 共享同一批业务工具"
+      ],
+      "resume_risk": "不能写多 Agent 使成功率提升 X%"
+    },
+    {
+      "capability_id": "search.web",
+      "status": "not_supported",
+      "reason": "web_search_tool 仅在配置 TAVILY_API_KEY 时注册，且返回外部网页，没有确定性 oracle",
+      "evidence": [
+        "app/application/tools/web_search_tool.py:24",
+        "app/application/agents/search_agent.py:77 说明未配置时 Agent 看不到该工具"
+      ],
+      "resume_risk": "不能写全网搜索能力或相关准确率"
+    },
+    {
+      "capability_id": "metric.memory_hit_rate",
+      "status": "not_supported",
+      "reason": "没有记忆命中率所需的标注基准（哪些偏好应被召回、哪些应被忽略）",
+      "evidence": [
+        "eval/memory/cases.json 仅 12 条，且无命中率标注字段"
+      ],
+      "resume_risk": "不能写记忆命中率 72%"
+    },
+    {
+      "capability_id": "metric.user_satisfaction",
+      "status": "not_supported",
+      "reason": "没有真实用户流量或满意度采集",
+      "evidence": [
+        "本地演示项目，无生产埋点"
+      ],
+      "resume_risk": "不能写日均用户数或满意度"
+    },
+    {
+      "capability_id": "metric.badcase_resolution_time",
+      "status": "not_supported",
+      "reason": "没有故障工单流程或计时协议",
+      "evidence": [
+        "仓库无 badcase 流程记录"
+      ],
+      "resume_risk": "不能写排查时间从 30min 缩短到 5min"
+    }
+  ]
+}
