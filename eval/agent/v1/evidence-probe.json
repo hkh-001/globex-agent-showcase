@@ -289,7 +289,7 @@
       "value_assertions": [
         {
           "field": "tool",
-          "operator": "exists",
+          "operator": "nonempty",
           "actual": "product_search_tool",
           "expected": true
         },
@@ -301,15 +301,15 @@
         },
         {
           "field": "recall_strategy",
-          "operator": "exists",
+          "operator": "nonempty",
           "actual": "keyword_2gram",
           "expected": true
         },
         {
           "field": "total_candidates",
-          "operator": "exists",
+          "operator": "gt",
           "actual": 3,
-          "expected": true
+          "expected": 0
         },
         {
           "field": "query_conditions",
@@ -578,13 +578,13 @@
         },
         {
           "field": "result_ref",
-          "operator": "exists",
+          "operator": "nonempty",
           "actual": "probe-ref",
           "expected": true
         }
       ],
-      "run_id": "031610ad70e4495c8404d51c71edb939",
-      "source_commit": "fe53abaf67c27f0f17283ef55f10c6eda1b110bd"
+      "run_id": "f51f7da3193c469d82b75b7c465b5747",
+      "source_commit": "d0ece181d0126156ed2bf440c0e59b43da81677a"
     },
     {
       "capability_id": "search.constraints",
@@ -704,8 +704,8 @@
           "expected": true
         }
       ],
-      "run_id": "031610ad70e4495c8404d51c71edb939",
-      "source_commit": "fe53abaf67c27f0f17283ef55f10c6eda1b110bd"
+      "run_id": "f51f7da3193c469d82b75b7c465b5747",
+      "source_commit": "d0ece181d0126156ed2bf440c0e59b43da81677a"
     },
     {
       "capability_id": "search.landed_price",
@@ -743,37 +743,37 @@
       "value_assertions": [
         {
           "field": "hits[].landed_price.subtotal_major",
-          "operator": "exists",
+          "operator": "gt",
           "actual": 219.0,
-          "expected": true
+          "expected": 0
         },
         {
           "field": "hits[].landed_price.freight_major",
-          "operator": "exists",
+          "operator": "gt",
           "actual": 25.0,
-          "expected": true
+          "expected": 0
         },
         {
           "field": "hits[].landed_price.tariff_major",
-          "operator": "exists",
+          "operator": "gte",
           "actual": 0.0,
-          "expected": true
+          "expected": 0
         },
         {
           "field": "hits[].landed_price.landed_total_major",
-          "operator": "exists",
+          "operator": "gt",
           "actual": 244.0,
-          "expected": true
+          "expected": 0
         },
         {
           "field": "hits[].landed_price.currency",
-          "operator": "exists",
+          "operator": "nonempty",
           "actual": "CNY",
           "expected": true
         }
       ],
-      "run_id": "031610ad70e4495c8404d51c71edb939",
-      "source_commit": "fe53abaf67c27f0f17283ef55f10c6eda1b110bd"
+      "run_id": "f51f7da3193c469d82b75b7c465b5747",
+      "source_commit": "d0ece181d0126156ed2bf440c0e59b43da81677a"
     },
     {
       "capability_id": "search.exact_id",
@@ -1008,8 +1008,8 @@
           "expected": true
         }
       ],
-      "run_id": "031610ad70e4495c8404d51c71edb939",
-      "source_commit": "fe53abaf67c27f0f17283ef55f10c6eda1b110bd"
+      "run_id": "f51f7da3193c469d82b75b7c465b5747",
+      "source_commit": "d0ece181d0126156ed2bf440c0e59b43da81677a"
     },
     {
       "capability_id": "state.constraint_carry",
@@ -1050,7 +1050,7 @@
       "value_assertions": [
         {
           "field": "constraint_continuity.inherited",
-          "operator": "exists",
+          "operator": "nonempty",
           "actual": [
             "price_max_major",
             "product_type",
@@ -1078,8 +1078,8 @@
           "expected": true
         }
       ],
-      "run_id": "031610ad70e4495c8404d51c71edb939",
-      "source_commit": "fe53abaf67c27f0f17283ef55f10c6eda1b110bd"
+      "run_id": "f51f7da3193c469d82b75b7c465b5747",
+      "source_commit": "d0ece181d0126156ed2bf440c0e59b43da81677a"
     },
     {
       "capability_id": "dispatch.search",
@@ -1102,14 +1102,14 @@
       "event_count": 3,
       "observed_values": {
         "agent": "search_agent",
-        "dispatch_id": "dispatch-5ebafa92ee6c4913ac745b954d9ec237",
+        "dispatch_id": "dispatch-6bdf24b0c4294825ab76565afc07d2a7",
         "status": "completed",
         "tool": "task_dispatch"
       },
       "value_assertions": [
         {
           "field": "tool",
-          "operator": "exists",
+          "operator": "nonempty",
           "actual": "task_dispatch",
           "expected": true
         },
@@ -1121,8 +1121,8 @@
         },
         {
           "field": "dispatch_id",
-          "operator": "exists",
-          "actual": "dispatch-5ebafa92ee6c4913ac745b954d9ec237",
+          "operator": "nonempty",
+          "actual": "dispatch-6bdf24b0c4294825ab76565afc07d2a7",
           "expected": true
         },
         {
@@ -1132,8 +1132,8 @@
           "expected": "completed"
         }
       ],
-      "run_id": "031610ad70e4495c8404d51c71edb939",
-      "source_commit": "fe53abaf67c27f0f17283ef55f10c6eda1b110bd"
+      "run_id": "f51f7da3193c469d82b75b7c465b5747",
+      "source_commit": "d0ece181d0126156ed2bf440c0e59b43da81677a"
     },
     {
       "capability_id": "dispatch.search",
@@ -1161,7 +1161,7 @@
       "value_assertions": [
         {
           "field": "verified_product_ids",
-          "operator": "exists",
+          "operator": "nonempty",
           "actual": [
             "P1003",
             "P1003-S1"
@@ -1170,13 +1170,13 @@
         },
         {
           "field": "unverified_product_ids",
-          "operator": "exists",
+          "operator": "equals",
           "actual": [],
-          "expected": true
+          "expected": []
         }
       ],
-      "run_id": "031610ad70e4495c8404d51c71edb939",
-      "source_commit": "fe53abaf67c27f0f17283ef55f10c6eda1b110bd"
+      "run_id": "f51f7da3193c469d82b75b7c465b5747",
+      "source_commit": "d0ece181d0126156ed2bf440c0e59b43da81677a"
     },
     {
       "capability_id": "dispatch.trade",
@@ -1199,14 +1199,14 @@
       "event_count": 3,
       "observed_values": {
         "agent": "trade_agent",
-        "dispatch_id": "dispatch-723c9089a08b4c219c7268b8a9035e8e",
+        "dispatch_id": "dispatch-095280ee9ef74e23a2ee929800d22d26",
         "status": "completed",
         "tool": "task_dispatch"
       },
       "value_assertions": [
         {
           "field": "tool",
-          "operator": "exists",
+          "operator": "nonempty",
           "actual": "task_dispatch",
           "expected": true
         },
@@ -1218,8 +1218,8 @@
         },
         {
           "field": "dispatch_id",
-          "operator": "exists",
-          "actual": "dispatch-723c9089a08b4c219c7268b8a9035e8e",
+          "operator": "nonempty",
+          "actual": "dispatch-095280ee9ef74e23a2ee929800d22d26",
           "expected": true
         },
         {
@@ -1229,8 +1229,8 @@
           "expected": "completed"
         }
       ],
-      "run_id": "031610ad70e4495c8404d51c71edb939",
-      "source_commit": "fe53abaf67c27f0f17283ef55f10c6eda1b110bd"
+      "run_id": "f51f7da3193c469d82b75b7c465b5747",
+      "source_commit": "d0ece181d0126156ed2bf440c0e59b43da81677a"
     },
     {
       "capability_id": "dispatch.trade",
@@ -1258,7 +1258,7 @@
       "value_assertions": [
         {
           "field": "verified_product_ids",
-          "operator": "exists",
+          "operator": "nonempty",
           "actual": [
             "P1003",
             "P1003-S1"
@@ -1267,13 +1267,13 @@
         },
         {
           "field": "unverified_product_ids",
-          "operator": "exists",
+          "operator": "equals",
           "actual": [],
-          "expected": true
+          "expected": []
         }
       ],
-      "run_id": "031610ad70e4495c8404d51c71edb939",
-      "source_commit": "fe53abaf67c27f0f17283ef55f10c6eda1b110bd"
+      "run_id": "f51f7da3193c469d82b75b7c465b5747",
+      "source_commit": "d0ece181d0126156ed2bf440c0e59b43da81677a"
     },
     {
       "capability_id": "harness.grounding_gate",
@@ -1299,21 +1299,21 @@
       "value_assertions": [
         {
           "field": "message",
-          "operator": "exists",
+          "operator": "nonempty",
           "actual": "商品摘要已按目录工具事实生成",
           "expected": true
         },
         {
           "field": "claim_guard",
-          "operator": "exists",
+          "operator": "nonempty",
           "actual": [
             "carry_on"
           ],
           "expected": true
         }
       ],
-      "run_id": "031610ad70e4495c8404d51c71edb939",
-      "source_commit": "fe53abaf67c27f0f17283ef55f10c6eda1b110bd"
+      "run_id": "f51f7da3193c469d82b75b7c465b5747",
+      "source_commit": "d0ece181d0126156ed2bf440c0e59b43da81677a"
     },
     {
       "capability_id": "harness.grounding_gate",
@@ -1345,21 +1345,21 @@
       "value_assertions": [
         {
           "field": "replacement_kind",
-          "operator": "exists",
+          "operator": "nonempty",
           "actual": "grounded_product_fallback",
           "expected": true
         },
         {
           "field": "violations",
-          "operator": "exists",
+          "operator": "nonempty",
           "actual": [
             "carry_on"
           ],
           "expected": true
         }
       ],
-      "run_id": "031610ad70e4495c8404d51c71edb939",
-      "source_commit": "fe53abaf67c27f0f17283ef55f10c6eda1b110bd"
+      "run_id": "f51f7da3193c469d82b75b7c465b5747",
+      "source_commit": "d0ece181d0126156ed2bf440c0e59b43da81677a"
     },
     {
       "capability_id": "memory.remember",
@@ -1385,8 +1385,8 @@
           "expected": "喜欢轻便背包"
         }
       ],
-      "run_id": "031610ad70e4495c8404d51c71edb939",
-      "source_commit": "fe53abaf67c27f0f17283ef55f10c6eda1b110bd"
+      "run_id": "f51f7da3193c469d82b75b7c465b5747",
+      "source_commit": "d0ece181d0126156ed2bf440c0e59b43da81677a"
     },
     {
       "capability_id": "memory.remember",
@@ -1421,8 +1421,8 @@
           "expected": "喜欢轻便背包"
         }
       ],
-      "run_id": "031610ad70e4495c8404d51c71edb939",
-      "source_commit": "fe53abaf67c27f0f17283ef55f10c6eda1b110bd"
+      "run_id": "f51f7da3193c469d82b75b7c465b5747",
+      "source_commit": "d0ece181d0126156ed2bf440c0e59b43da81677a"
     },
     {
       "capability_id": "memory.update",
@@ -1449,8 +1449,8 @@
           "expected": true
         }
       ],
-      "run_id": "031610ad70e4495c8404d51c71edb939",
-      "source_commit": "fe53abaf67c27f0f17283ef55f10c6eda1b110bd"
+      "run_id": "f51f7da3193c469d82b75b7c465b5747",
+      "source_commit": "d0ece181d0126156ed2bf440c0e59b43da81677a"
     },
     {
       "capability_id": "memory.update",
@@ -1476,8 +1476,8 @@
           "expected": "更新"
         }
       ],
-      "run_id": "031610ad70e4495c8404d51c71edb939",
-      "source_commit": "fe53abaf67c27f0f17283ef55f10c6eda1b110bd"
+      "run_id": "f51f7da3193c469d82b75b7c465b5747",
+      "source_commit": "d0ece181d0126156ed2bf440c0e59b43da81677a"
     },
     {
       "capability_id": "memory.forget",
@@ -1504,8 +1504,8 @@
           "expected": "喜欢超轻背包"
         }
       ],
-      "run_id": "031610ad70e4495c8404d51c71edb939",
-      "source_commit": "fe53abaf67c27f0f17283ef55f10c6eda1b110bd"
+      "run_id": "f51f7da3193c469d82b75b7c465b5747",
+      "source_commit": "d0ece181d0126156ed2bf440c0e59b43da81677a"
     },
     {
       "capability_id": "memory.forget",
@@ -1540,8 +1540,8 @@
           "expected": "喜欢超轻背包"
         }
       ],
-      "run_id": "031610ad70e4495c8404d51c71edb939",
-      "source_commit": "fe53abaf67c27f0f17283ef55f10c6eda1b110bd"
+      "run_id": "f51f7da3193c469d82b75b7c465b5747",
+      "source_commit": "d0ece181d0126156ed2bf440c0e59b43da81677a"
     },
     {
       "capability_id": "state.session_isolation",
@@ -1571,7 +1571,7 @@
       "value_assertions": [
         {
           "field": "shopping_session_id",
-          "operator": "exists",
+          "operator": "nonempty",
           "actual": [
             "session-a",
             "session-b"
@@ -1580,7 +1580,7 @@
         },
         {
           "field": "correlation.session_id",
-          "operator": "exists",
+          "operator": "nonempty",
           "actual": [
             "sha256:e8de016fbd70182f6d2325e8",
             "sha256:fa57a52dbf08190218529730"
@@ -1588,8 +1588,8 @@
           "expected": true
         }
       ],
-      "run_id": "031610ad70e4495c8404d51c71edb939",
-      "source_commit": "fe53abaf67c27f0f17283ef55f10c6eda1b110bd"
+      "run_id": "f51f7da3193c469d82b75b7c465b5747",
+      "source_commit": "d0ece181d0126156ed2bf440c0e59b43da81677a"
     },
     {
       "capability_id": "state.session_isolation",
@@ -1619,7 +1619,7 @@
       "value_assertions": [
         {
           "field": "buyer_id",
-          "operator": "exists",
+          "operator": "nonempty",
           "actual": [
             "buyer-a",
             "buyer-b"
@@ -1636,8 +1636,8 @@
           "expected": true
         }
       ],
-      "run_id": "031610ad70e4495c8404d51c71edb939",
-      "source_commit": "fe53abaf67c27f0f17283ef55f10c6eda1b110bd"
+      "run_id": "f51f7da3193c469d82b75b7c465b5747",
+      "source_commit": "d0ece181d0126156ed2bf440c0e59b43da81677a"
     },
     {
       "capability_id": "trade.prepare",
@@ -1661,8 +1661,8 @@
       "result": "pass",
       "event_count": 3,
       "observed_values": {
-        "confirmation_id": "91230266687040bcb7ca1b3335a328df",
-        "snapshot_hash": "b9849496c917e99ec0f8bf018b17b1a7f7b2c21bb4813f8dff179f474d5ceb30",
+        "confirmation_id": "cbccc850d45944ea80871d58677b6628",
+        "snapshot_hash": "a4ab3b774647864c720a04b2a113835fe1ad124d3ee1babd11a5c3ac246ac7f5",
         "status": "pending",
         "payload_keys": [
           "amount_scope",
@@ -1684,8 +1684,8 @@
           "total_amount_minor"
         ],
         "confirmation_required": true,
-        "confirmation.confirmation_id": "91230266687040bcb7ca1b3335a328df",
-        "confirmation.snapshot_hash": "b9849496c917e99ec0f8bf018b17b1a7f7b2c21bb4813f8dff179f474d5ceb30",
+        "confirmation.confirmation_id": "cbccc850d45944ea80871d58677b6628",
+        "confirmation.snapshot_hash": "a4ab3b774647864c720a04b2a113835fe1ad124d3ee1babd11a5c3ac246ac7f5",
         "confirmation.status": "pending",
         "confirmation.payload": {
           "items": [
@@ -1733,14 +1733,14 @@
         },
         {
           "field": "confirmation.confirmation_id",
-          "operator": "exists",
-          "actual": "91230266687040bcb7ca1b3335a328df",
+          "operator": "nonempty",
+          "actual": "cbccc850d45944ea80871d58677b6628",
           "expected": true
         },
         {
           "field": "confirmation.snapshot_hash",
-          "operator": "exists",
-          "actual": "b9849496c917e99ec0f8bf018b17b1a7f7b2c21bb4813f8dff179f474d5ceb30",
+          "operator": "nonempty",
+          "actual": "a4ab3b774647864c720a04b2a113835fe1ad124d3ee1babd11a5c3ac246ac7f5",
           "expected": true
         },
         {
@@ -1751,7 +1751,7 @@
         },
         {
           "field": "confirmation.payload",
-          "operator": "nonempty",
+          "operator": "exists",
           "actual": {
             "items": [
               {
@@ -1791,8 +1791,8 @@
           "expected": true
         }
       ],
-      "run_id": "031610ad70e4495c8404d51c71edb939",
-      "source_commit": "fe53abaf67c27f0f17283ef55f10c6eda1b110bd"
+      "run_id": "f51f7da3193c469d82b75b7c465b5747",
+      "source_commit": "d0ece181d0126156ed2bf440c0e59b43da81677a"
     },
     {
       "capability_id": "trade.prepare",
@@ -1827,19 +1827,19 @@
       "value_assertions": [
         {
           "field": "order_count_before",
-          "operator": "exists",
+          "operator": "equals",
           "actual": 0,
-          "expected": true
+          "expected": 0
         },
         {
           "field": "order_count_after",
-          "operator": "exists",
+          "operator": "equals",
           "actual": 0,
-          "expected": true
+          "expected": 0
         },
         {
           "field": "inventory_before",
-          "operator": "nonempty",
+          "operator": "exists",
           "actual": {
             "P1001-S1": 50
           },
@@ -1847,15 +1847,15 @@
         },
         {
           "field": "inventory_after",
-          "operator": "nonempty",
+          "operator": "exists",
           "actual": {
             "P1001-S1": 50
           },
           "expected": true
         }
       ],
-      "run_id": "031610ad70e4495c8404d51c71edb939",
-      "source_commit": "fe53abaf67c27f0f17283ef55f10c6eda1b110bd"
+      "run_id": "f51f7da3193c469d82b75b7c465b5747",
+      "source_commit": "d0ece181d0126156ed2bf440c0e59b43da81677a"
     },
     {
       "capability_id": "trade.query",
@@ -1872,10 +1872,10 @@
       "result": "pass",
       "event_count": 2,
       "observed_values": {
-        "order_id": "3e8c5c96a20443809dda2f4f52606c20",
+        "order_id": "d49134e30ad043efb6ae1597bcc71bd4",
         "status": "CONFIRMED",
         "order": {
-          "order_id": "3e8c5c96a20443809dda2f4f52606c20",
+          "order_id": "d49134e30ad043efb6ae1597bcc71bd4",
           "buyer_id": "buyer-trade",
           "status": "CONFIRMED",
           "total_amount_major": 214.0,
@@ -1891,7 +1891,7 @@
               "quantity": 1
             }
           ],
-          "created_at": "2026-11-01T16:43:04.576310+00:00",
+          "created_at": "2026-11-01T16:52:39.874408+00:00",
           "cancel_reason": null,
           "total_amount_minor": 21400,
           "amount_scope": "landed_total",
@@ -1914,7 +1914,7 @@
           "field": "order",
           "operator": "nonempty",
           "actual": {
-            "order_id": "3e8c5c96a20443809dda2f4f52606c20",
+            "order_id": "d49134e30ad043efb6ae1597bcc71bd4",
             "buyer_id": "buyer-trade",
             "status": "CONFIRMED",
             "total_amount_major": 214.0,
@@ -1930,7 +1930,7 @@
                 "quantity": 1
               }
             ],
-            "created_at": "2026-11-01T16:43:04.576310+00:00",
+            "created_at": "2026-11-01T16:52:39.874408+00:00",
             "cancel_reason": null,
             "total_amount_minor": 21400,
             "amount_scope": "landed_total",
@@ -1950,8 +1950,8 @@
           "expected": true
         }
       ],
-      "run_id": "031610ad70e4495c8404d51c71edb939",
-      "source_commit": "fe53abaf67c27f0f17283ef55f10c6eda1b110bd"
+      "run_id": "f51f7da3193c469d82b75b7c465b5747",
+      "source_commit": "d0ece181d0126156ed2bf440c0e59b43da81677a"
     },
     {
       "capability_id": "search.category_insight",
@@ -2002,8 +2002,8 @@
           "expected": true
         }
       ],
-      "run_id": "031610ad70e4495c8404d51c71edb939",
-      "source_commit": "fe53abaf67c27f0f17283ef55f10c6eda1b110bd"
+      "run_id": "f51f7da3193c469d82b75b7c465b5747",
+      "source_commit": "d0ece181d0126156ed2bf440c0e59b43da81677a"
     },
     {
       "capability_id": "search.category_insight",
@@ -2033,25 +2033,25 @@
       "value_assertions": [
         {
           "field": "insights[].source",
-          "operator": "exists",
+          "operator": "nonempty",
           "actual": "guide.md",
           "expected": true
         },
         {
           "field": "insights[].metadata.source_reference",
-          "operator": "exists",
+          "operator": "nonempty",
           "actual": "未登记的临时知识文档",
           "expected": true
         },
         {
           "field": "insights[].metadata.source_type",
-          "operator": "exists",
+          "operator": "nonempty",
           "actual": "unversioned_fixture",
           "expected": true
         }
       ],
-      "run_id": "031610ad70e4495c8404d51c71edb939",
-      "source_commit": "fe53abaf67c27f0f17283ef55f10c6eda1b110bd"
+      "run_id": "f51f7da3193c469d82b75b7c465b5747",
+      "source_commit": "d0ece181d0126156ed2bf440c0e59b43da81677a"
     },
     {
       "capability_id": "search.category_insight",
@@ -2100,8 +2100,8 @@
           "expected": true
         }
       ],
-      "run_id": "031610ad70e4495c8404d51c71edb939",
-      "source_commit": "fe53abaf67c27f0f17283ef55f10c6eda1b110bd"
+      "run_id": "f51f7da3193c469d82b75b7c465b5747",
+      "source_commit": "d0ece181d0126156ed2bf440c0e59b43da81677a"
     },
     {
       "capability_id": "search.category_insight",
@@ -2140,8 +2140,8 @@
           "expected": true
         }
       ],
-      "run_id": "031610ad70e4495c8404d51c71edb939",
-      "source_commit": "fe53abaf67c27f0f17283ef55f10c6eda1b110bd"
+      "run_id": "f51f7da3193c469d82b75b7c465b5747",
+      "source_commit": "d0ece181d0126156ed2bf440c0e59b43da81677a"
     },
     {
       "capability_id": "trade.approve",
@@ -2161,9 +2161,9 @@
       "case": "approved",
       "observed_values": {
         "status": "approved",
-        "order_id": "000f1144f2254dd8a133d2e3978b240a",
+        "order_id": "bd4e2c70b0074e6680caa2cfc732eb0b",
         "confirmation.status": "approved",
-        "confirmation.result.order_id": "000f1144f2254dd8a133d2e3978b240a"
+        "confirmation.result.order_id": "bd4e2c70b0074e6680caa2cfc732eb0b"
       },
       "value_assertions": [
         {
@@ -2174,13 +2174,13 @@
         },
         {
           "field": "confirmation.result.order_id",
-          "operator": "exists",
-          "actual": "000f1144f2254dd8a133d2e3978b240a",
+          "operator": "nonempty",
+          "actual": "bd4e2c70b0074e6680caa2cfc732eb0b",
           "expected": true
         }
       ],
-      "run_id": "031610ad70e4495c8404d51c71edb939",
-      "source_commit": "fe53abaf67c27f0f17283ef55f10c6eda1b110bd"
+      "run_id": "f51f7da3193c469d82b75b7c465b5747",
+      "source_commit": "d0ece181d0126156ed2bf440c0e59b43da81677a"
     },
     {
       "capability_id": "trade.approve",
@@ -2212,25 +2212,25 @@
           "P1001-S1": 49
         },
         "inventory_delta": -1,
-        "order_id": "000f1144f2254dd8a133d2e3978b240a",
+        "order_id": "bd4e2c70b0074e6680caa2cfc732eb0b",
         "order_status": "CONFIRMED"
       },
       "value_assertions": [
         {
           "field": "order_count_before",
-          "operator": "exists",
+          "operator": "equals",
           "actual": 0,
-          "expected": true
+          "expected": 0
         },
         {
           "field": "order_count_after",
-          "operator": "exists",
+          "operator": "equals",
           "actual": 1,
-          "expected": true
+          "expected": 1
         },
         {
           "field": "inventory_before",
-          "operator": "nonempty",
+          "operator": "exists",
           "actual": {
             "P1001-S1": 50
           },
@@ -2238,15 +2238,15 @@
         },
         {
           "field": "inventory_after",
-          "operator": "nonempty",
+          "operator": "exists",
           "actual": {
             "P1001-S1": 49
           },
           "expected": true
         }
       ],
-      "run_id": "031610ad70e4495c8404d51c71edb939",
-      "source_commit": "fe53abaf67c27f0f17283ef55f10c6eda1b110bd"
+      "run_id": "f51f7da3193c469d82b75b7c465b5747",
+      "source_commit": "d0ece181d0126156ed2bf440c0e59b43da81677a"
     },
     {
       "capability_id": "trade.approve",
@@ -2274,8 +2274,8 @@
           "expected": "rejected"
         }
       ],
-      "run_id": "031610ad70e4495c8404d51c71edb939",
-      "source_commit": "fe53abaf67c27f0f17283ef55f10c6eda1b110bd"
+      "run_id": "f51f7da3193c469d82b75b7c465b5747",
+      "source_commit": "d0ece181d0126156ed2bf440c0e59b43da81677a"
     },
     {
       "capability_id": "trade.approve",
@@ -2313,19 +2313,19 @@
       "value_assertions": [
         {
           "field": "order_count_before",
-          "operator": "exists",
+          "operator": "equals",
           "actual": 0,
-          "expected": true
+          "expected": 0
         },
         {
           "field": "order_count_after",
-          "operator": "exists",
+          "operator": "equals",
           "actual": 0,
-          "expected": true
+          "expected": 0
         },
         {
           "field": "inventory_before",
-          "operator": "nonempty",
+          "operator": "exists",
           "actual": {
             "P1001-S1": 50
           },
@@ -2333,15 +2333,15 @@
         },
         {
           "field": "inventory_after",
-          "operator": "nonempty",
+          "operator": "exists",
           "actual": {
             "P1001-S1": 50
           },
           "expected": true
         }
       ],
-      "run_id": "031610ad70e4495c8404d51c71edb939",
-      "source_commit": "fe53abaf67c27f0f17283ef55f10c6eda1b110bd"
+      "run_id": "f51f7da3193c469d82b75b7c465b5747",
+      "source_commit": "d0ece181d0126156ed2bf440c0e59b43da81677a"
     },
     {
       "capability_id": "trade.cancel",
@@ -2365,10 +2365,10 @@
       "observed_values": {
         "status": "approved",
         "action": "cancel",
-        "order_id": "1c16bc6689e64b438ea0f2906dc7c861",
+        "order_id": "c7087e5863e743a2af00f073f1f6ea20",
         "confirmation.status": "approved",
         "confirmation.action": "cancel",
-        "confirmation.result.order_id": "1c16bc6689e64b438ea0f2906dc7c861",
+        "confirmation.result.order_id": "c7087e5863e743a2af00f073f1f6ea20",
         "confirmation.result.status": "CANCELLED"
       },
       "value_assertions": [
@@ -2386,19 +2386,22 @@
         },
         {
           "field": "confirmation.result.order_id",
-          "operator": "exists",
-          "actual": "1c16bc6689e64b438ea0f2906dc7c861",
+          "operator": "nonempty",
+          "actual": "c7087e5863e743a2af00f073f1f6ea20",
           "expected": true
         },
         {
           "field": "confirmation.result.status",
-          "operator": "exists",
+          "operator": "in",
           "actual": "CANCELLED",
-          "expected": true
+          "expected": [
+            "CONFIRMED",
+            "CANCELLED"
+          ]
         }
       ],
-      "run_id": "031610ad70e4495c8404d51c71edb939",
-      "source_commit": "fe53abaf67c27f0f17283ef55f10c6eda1b110bd"
+      "run_id": "f51f7da3193c469d82b75b7c465b5747",
+      "source_commit": "d0ece181d0126156ed2bf440c0e59b43da81677a"
     },
     {
       "capability_id": "trade.cancel",
@@ -2422,10 +2425,10 @@
       "observed_values": {
         "order_count_before": 2,
         "order_count_after": 2,
-        "target_order_id": "1c16bc6689e64b438ea0f2906dc7c861",
+        "target_order_id": "c7087e5863e743a2af00f073f1f6ea20",
         "target_status_before": "CONFIRMED",
         "target_status_after": "CANCELLED",
-        "unaffected_order_id": "5c7fa7d831aa4a209d0851216b9d17f8",
+        "unaffected_order_id": "eff0b578652c48b6a586b9d1d14817f1",
         "unaffected_status_before": "CONFIRMED",
         "unaffected_status_after": "CONFIRMED",
         "inventory_before": {
@@ -2439,19 +2442,19 @@
       "value_assertions": [
         {
           "field": "order_count_before",
-          "operator": "exists",
+          "operator": "equals",
           "actual": 2,
-          "expected": true
+          "expected": 2
         },
         {
           "field": "order_count_after",
-          "operator": "exists",
+          "operator": "equals",
           "actual": 2,
-          "expected": true
+          "expected": 2
         },
         {
           "field": "inventory_before",
-          "operator": "nonempty",
+          "operator": "exists",
           "actual": {
             "P1001-S1": 48
           },
@@ -2459,15 +2462,15 @@
         },
         {
           "field": "inventory_after",
-          "operator": "nonempty",
+          "operator": "exists",
           "actual": {
             "P1001-S1": 49
           },
           "expected": true
         }
       ],
-      "run_id": "031610ad70e4495c8404d51c71edb939",
-      "source_commit": "fe53abaf67c27f0f17283ef55f10c6eda1b110bd"
+      "run_id": "f51f7da3193c469d82b75b7c465b5747",
+      "source_commit": "d0ece181d0126156ed2bf440c0e59b43da81677a"
     },
     {
       "capability_id": "trade.idempotency",
@@ -2486,9 +2489,9 @@
       "event_count": 1,
       "observed_values": {
         "status": "approved",
-        "order_id": "f542eaa7c306479f8e40022568ce6dc9",
+        "order_id": "f63a69b6558c4cf29af77437522db358",
         "confirmation.status": "approved",
-        "confirmation.result.order_id": "f542eaa7c306479f8e40022568ce6dc9"
+        "confirmation.result.order_id": "f63a69b6558c4cf29af77437522db358"
       },
       "value_assertions": [
         {
@@ -2499,13 +2502,13 @@
         },
         {
           "field": "confirmation.result.order_id",
-          "operator": "exists",
-          "actual": "f542eaa7c306479f8e40022568ce6dc9",
+          "operator": "nonempty",
+          "actual": "f63a69b6558c4cf29af77437522db358",
           "expected": true
         }
       ],
-      "run_id": "031610ad70e4495c8404d51c71edb939",
-      "source_commit": "fe53abaf67c27f0f17283ef55f10c6eda1b110bd"
+      "run_id": "f51f7da3193c469d82b75b7c465b5747",
+      "source_commit": "d0ece181d0126156ed2bf440c0e59b43da81677a"
     },
     {
       "capability_id": "trade.idempotency",
@@ -2524,9 +2527,9 @@
       "event_count": 1,
       "observed_values": {
         "status": "approved",
-        "order_id": "f542eaa7c306479f8e40022568ce6dc9",
+        "order_id": "f63a69b6558c4cf29af77437522db358",
         "confirmation.status": "approved",
-        "confirmation.result.order_id": "f542eaa7c306479f8e40022568ce6dc9"
+        "confirmation.result.order_id": "f63a69b6558c4cf29af77437522db358"
       },
       "value_assertions": [
         {
@@ -2537,13 +2540,13 @@
         },
         {
           "field": "confirmation.result.order_id",
-          "operator": "exists",
-          "actual": "f542eaa7c306479f8e40022568ce6dc9",
+          "operator": "nonempty",
+          "actual": "f63a69b6558c4cf29af77437522db358",
           "expected": true
         }
       ],
-      "run_id": "031610ad70e4495c8404d51c71edb939",
-      "source_commit": "fe53abaf67c27f0f17283ef55f10c6eda1b110bd"
+      "run_id": "f51f7da3193c469d82b75b7c465b5747",
+      "source_commit": "d0ece181d0126156ed2bf440c0e59b43da81677a"
     },
     {
       "capability_id": "trade.idempotency",
@@ -2568,8 +2571,8 @@
         "order_count_before": 0,
         "order_count_after": 1,
         "order_count_after_first": 1,
-        "first_order_id": "f542eaa7c306479f8e40022568ce6dc9",
-        "second_order_id": "f542eaa7c306479f8e40022568ce6dc9",
+        "first_order_id": "f63a69b6558c4cf29af77437522db358",
+        "second_order_id": "f63a69b6558c4cf29af77437522db358",
         "inventory_before": {
           "P1001-S1": 50
         },
@@ -2584,19 +2587,19 @@
       "value_assertions": [
         {
           "field": "order_count_before",
-          "operator": "exists",
+          "operator": "equals",
           "actual": 0,
-          "expected": true
+          "expected": 0
         },
         {
           "field": "order_count_after",
-          "operator": "exists",
+          "operator": "equals",
           "actual": 1,
-          "expected": true
+          "expected": 1
         },
         {
           "field": "inventory_before",
-          "operator": "nonempty",
+          "operator": "exists",
           "actual": {
             "P1001-S1": 50
           },
@@ -2604,15 +2607,15 @@
         },
         {
           "field": "inventory_after",
-          "operator": "nonempty",
+          "operator": "exists",
           "actual": {
             "P1001-S1": 49
           },
           "expected": true
         }
       ],
-      "run_id": "031610ad70e4495c8404d51c71edb939",
-      "source_commit": "fe53abaf67c27f0f17283ef55f10c6eda1b110bd"
+      "run_id": "f51f7da3193c469d82b75b7c465b5747",
+      "source_commit": "d0ece181d0126156ed2bf440c0e59b43da81677a"
     }
   ],
   "capabilities": [
@@ -2638,10 +2641,10 @@
   "external_connect_attempts": 0,
   "paid_requests": 0,
   "external_model_requests": 0,
-  "run_id": "031610ad70e4495c8404d51c71edb939",
-  "generated_at": "2026-11-01T16:43:05.937462+00:00",
-  "source_commit": "fe53abaf67c27f0f17283ef55f10c6eda1b110bd",
+  "run_id": "f51f7da3193c469d82b75b7c465b5747",
+  "generated_at": "2026-11-01T16:52:41.271370+00:00",
+  "source_commit": "d0ece181d0126156ed2bf440c0e59b43da81677a",
   "tracked_worktree_clean": true,
   "scanner_sha256": "c4843cd3834a05d5f7d9fd7b035f1361c6e81d8d769101eb7ecdadf8530c6b18",
-  "records_sha256": "7822e2cf85092e43e51d9f329b33cf28b3d0539ec54c8f88eb464fafd2461571"
+  "records_sha256": "1c8d9170c1bb834225716e6f08ae8c2efc59b5fceecd9c3ec1958e92f0d0515b"
 }
