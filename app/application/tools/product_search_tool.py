@@ -8,6 +8,7 @@ MainAgent 单干与 SearchAgent 派发两条路径共用同一工具实例。
 注意：本模块不能用 `from __future__ import annotations`——
 AgentScope 用 pydantic 从函数签名动态生成 JSON schema，字符串化注解会解析失败。
 """
+import copy
 import json
 from typing import Optional
 
@@ -183,6 +184,8 @@ def build_product_search_tool(usecase: CatalogSearchUseCase, bus: TradeEventBus,
                 content=[TextBlock(type="text", text=f"[error] {error}")],
                 state=ToolResultState.ERROR,
             )
+        fingerprint = json.dumps(args, sort_keys=True, ensure_ascii=False, default=str)
+        cached = guard.cached_result(fingerprint) if guard is not None else None
         try:
             spec = ProductSearchSpec(
                 normalized_query=args["normalized_query"],
@@ -201,7 +204,13 @@ def build_product_search_tool(usecase: CatalogSearchUseCase, bus: TradeEventBus,
                 preferred_product_type=args["preferred_product_type"],
                 prefer_lightweight=args["prefer_lightweight"],
             )
-            result = await usecase.execute(spec)
+            if cached is not None:
+                result = copy.deepcopy(cached)
+                result["reused_duplicate"] = True
+            else:
+                result = await usecase.execute(spec)
+                if guard is not None:
+                    guard.remember_result(fingerprint, result)
         except ValueError as err:
             bus.publish(session_id, "tool.result", {"tool": "product_search_tool", "error": str(err)})
             return ToolChunk(

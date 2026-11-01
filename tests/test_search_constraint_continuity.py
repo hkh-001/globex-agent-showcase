@@ -236,3 +236,27 @@ async def test_tool_publishes_effective_conditions_and_does_not_pad_to_top_k():
     assert seen_specs[-1].product_type == "背包"
     assert len(payloads[-1]["hits"]) == 1  # top_k 是上限，不为凑数补无关商品。
     assert json.loads(reply.content[0].text)["hits"][0]["product_id"] == "P1"
+
+
+async def test_identical_effective_request_reuses_previous_result_within_turn():
+    calls: list[str] = []
+
+    class UseCase:
+        async def execute(self, spec):
+            calls.append(spec.normalized_query)
+            return {"hits": [{"product_id": "P1"}], "recall_strategy": "keyword_2gram",
+                    "total_candidates": 1, "rerank_applied": False}
+
+    tool = build_product_search_tool(UseCase(), TradeEventBus())
+    context_token = ShoppingContext.set(ShoppingContextSnapshot("s", "b", "zh-CN", "CNY"))
+    guard_token = SearchConstraintScope.start("找背包")
+    try:
+        await tool(normalized_query="背包", product_type="背包", ship_to="CN", top_k=5)
+        await tool(normalized_query="背包", product_type="背包", ship_to="CN", top_k=5)
+        # 约束相同但查询文字不同：必须重新检索，不能被去重拦截
+        await tool(normalized_query="登山背包", product_type="背包", ship_to="CN", top_k=5)
+    finally:
+        SearchConstraintScope.reset(guard_token)
+        ShoppingContext.reset(context_token)
+
+    assert calls == ["背包", "登山背包"]

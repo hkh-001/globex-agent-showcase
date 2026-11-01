@@ -44,6 +44,8 @@ class SearchConstraintGuard:
     raw_query: str
     _constraints: dict[str, Any] = field(default_factory=dict)
     _lock: asyncio.Lock = field(default_factory=asyncio.Lock, repr=False)
+    _last_fingerprint: str | None = None
+    _last_result: dict[str, Any] | None = None
 
     def __post_init__(self) -> None:
         self._turn_types = mentioned_product_types(self.raw_query)
@@ -133,6 +135,17 @@ class SearchConstraintGuard:
             "removed_unsupported_query_terms": sorted(removed_query_terms),
             "scope": "exact_id" if exact_id else "turn",
         }
+
+
+    def cached_result(self, fingerprint: str) -> dict[str, Any] | None:
+        """Return the previous result only for a byte-identical effective request."""
+        if fingerprint and fingerprint == self._last_fingerprint:
+            return self._last_result
+        return None
+
+    def remember_result(self, fingerprint: str, result: dict[str, Any]) -> None:
+        self._last_fingerprint = fingerprint
+        self._last_result = result
 
 
 _current_guard: ContextVar[SearchConstraintGuard | None] = ContextVar("globex_search_constraint_guard", default=None)
