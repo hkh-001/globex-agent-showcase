@@ -81,7 +81,7 @@ def _observation_errors(cid: str, observations) -> list[str]:
 
 def _git(*args: str) -> tuple[int, str]:
     process = subprocess.run(["git", *args], cwd=ROOT, text=True, capture_output=True)
-    return process.returncode, process.stdout.strip()
+    return process.returncode, process.stdout
 
 
 def _probe_integrity_errors(probe: dict) -> list[str]:
