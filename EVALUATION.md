@@ -2,7 +2,7 @@
 
 | 层 | 回答的问题 | 当前公开证据 |
 | --- | --- | --- |
-| 单元与契约 | 业务规则、协议和安全门是否保持 | 1081 collected；1080 passed；1 个显式平台豁免 |
+| 单元与契约 | 业务规则、协议和安全门是否保持 | 1084 collected；1083 passed；1 个显式平台豁免 |
 | 公开业务基线 | 精选检索与交易链是否实际执行 | 18 / 18 |
 | 真实模型闭环 | 模型能否完成检索和准备订单，确定性批准后状态是否正确 | 4 次物理请求；闭环通过 |
 
@@ -22,7 +22,7 @@ make baseline
 uv run python -m scripts.eval.harness run --suite eval/harness/v1/suite.json --profile contracts --output .globex-runtime/contracts
 ```
 
-当前口径是 1081 项被收集，其中 1080 项执行并通过，1 项是带精确 nodeid、平台和原因的显式豁免。未声明 skip、原因变化或过期白名单都会失败。
+当前口径是 1084 项被收集，其中 1083 项执行并通过，1 项是带精确 nodeid、平台和原因的显式豁免。未声明 skip、原因变化或过期白名单都会失败。
 
 ## AgentBench Stage 0
 
