@@ -6,7 +6,7 @@ import json
 
 import pytest
 
-from scripts.eval.agentbench import run_pilot_plumbing, scorer
+from scripts.eval.agentbench import check_pilot_plumbing, run_pilot_plumbing, scorer
 
 
 @pytest.mark.asyncio
@@ -32,6 +32,14 @@ async def test_plumbing_replay_runs_real_tools_and_both_scorers(tmp_path):
                   if item["selector"] == "category_insight_tool")
     assert any(item["source"] == "eval-digital-accessories-价格与预算.md"
                for item in result["payload"]["insights"])
+    assert check_pilot_plumbing.check(output, network, manifest) == []
+
+    tampered = json.loads(output.read_text(encoding="utf-8"))
+    tampered["records"][0]["events"][0]["payload"]["tool"] = "forged_tool"
+    output.write_text(json.dumps(tampered), encoding="utf-8")
+    errors = check_pilot_plumbing.check(output, network, manifest)
+    assert "evidence_file_sha256_mismatch" in errors
+    assert "records_sha256_mismatch" in errors
 
 
 @pytest.mark.asyncio
