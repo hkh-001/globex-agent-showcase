@@ -3,10 +3,13 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
+import socket
 
 import pytest
 
-from scripts.eval.agentbench import check_pilot_plumbing, run_pilot_plumbing, scorer
+from scripts.eval.agentbench import (check_pilot_plumbing, compare_plumbing_replay,
+                                     network_guard, run_pilot_plumbing, scorer)
 from scripts.eval.agentbench.run_pilot_plumbing import _sha
 
 
@@ -116,3 +119,51 @@ def test_plumbing_replay_refuses_enabled_pilot_flags(tmp_path, monkeypatch):
     with pytest.raises(ValueError, match="flags"):
         import asyncio
         asyncio.run(run_pilot_plumbing.run(tmp_path / "out.json", tmp_path / "network.jsonl"))
+
+
+def test_network_guard_blocks_external_and_records(tmp_path):
+    log = tmp_path / "network.jsonl"
+    previous = os.environ.get("AGENTBENCH_NETWORK_GUARD_LOG")
+    os.environ["AGENTBENCH_NETWORK_GUARD_LOG"] = str(log)
+    network_guard.pytest_configure(None)
+    try:
+        with pytest.raises(OSError):
+            socket.create_connection(("203.0.113.1", 9), timeout=0.2)
+        server = socket.socket()
+        server.bind(("127.0.0.1", 0))
+        server.listen(1)
+        try:
+            with socket.create_connection(server.getsockname(), timeout=1):
+                pass
+        finally:
+            server.close()
+    finally:
+        network_guard.pytest_unconfigure(None)
+        if previous is None:
+            os.environ.pop("AGENTBENCH_NETWORK_GUARD_LOG", None)
+        else:
+            os.environ["AGENTBENCH_NETWORK_GUARD_LOG"] = previous
+    rows = [json.loads(line) for line in log.read_text(encoding="utf-8").splitlines() if line]
+    assert {"kind": "external", "operation": "connect"} in rows
+    assert any(row["kind"] == "loopback" for row in rows)
+
+
+def test_semantic_comparison_ignores_dynamic_fields():
+    baseline = json.loads((run_pilot_plumbing.ROOT / "stage2/pilot/evidence-plumbing-v2/evidence.json")
+                          .read_text(encoding="utf-8"))
+    candidate = json.loads(json.dumps(baseline))
+    candidate["records"][0]["events"][0]["occurred_at"] = "different"
+    candidate["records"][0]["events"][0]["correlation"]["dispatch_id"] = "different"
+    assert compare_plumbing_replay.compare(baseline, candidate) == []
+    candidate["records"][0]["events"][-1]["payload"]["tool"] = "forged_tool"
+    assert compare_plumbing_replay.compare(baseline, candidate)
+
+
+@pytest.mark.asyncio
+async def test_fresh_replay_matches_v2_semantically(tmp_path):
+    output, network, manifest = (tmp_path / name for name in ("evidence.json", "network.jsonl", "manifest.json"))
+    payload = await run_pilot_plumbing.run(output, network)
+    run_pilot_plumbing.write_manifest(output, network, manifest, payload)
+    baseline = json.loads((run_pilot_plumbing.ROOT / "stage2/pilot/evidence-plumbing-v2/evidence.json")
+                          .read_text(encoding="utf-8"))
+    assert compare_plumbing_replay.compare(baseline, payload) == []
