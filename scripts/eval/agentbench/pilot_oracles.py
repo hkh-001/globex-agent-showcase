@@ -43,7 +43,7 @@ def checks(asset: str, oracle: dict) -> list[dict]:
              "field": "hits[].canonical_product_id", "operator": "contains_any",
              "expected": oracle["relevant_canonical_ids"]},
             {"kind": "event", "selector": "tool.result:product_search_tool",
-             "field": "hits[].landed_price.currency", "operator": "all_equal",
+             "field": "hits[].currency", "operator": "all_equal",
              "expected": oracle["target_currency"]},
         ]
         if oracle["require_in_stock"]:

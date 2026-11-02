@@ -14,5 +14,15 @@
   `hit_count/abstained/policy_fact_statuses`。对应源文档必须存在于正式 `knowledge/manifest.jsonl`；
   scorer 强制按 `shopping_session_id + run_id` scope 过滤 event 与 ToolChunk。
 - validator 会从 registry 与源资产重建完整 canonical pilot；任务合同任一字段漂移都会失败。
-- `automatic_scoring=false`、`execution_ready=false`：dry-run 尚未实现。
+- `automatic_scoring=false`、`execution_ready=false`：scorer plumbing runner 已实现，但在独立审查前不解锁。
 - 暂缺 memory / context / transaction：没有满足 Dev 且语义明确的源，宁缺勿凑。
+
+## Scorer plumbing dry-run 边界
+
+`scripts/eval/agentbench/run_pilot_plumbing.py` 用 fixture 按已冻结计划调用真实工具，采集真实
+bus event 与 ToolChunk，并同时运行 execution graph 与 deterministic-check scorer。它不执行
+LLM Agent，只能证明评分管线，不是任务通过率或 Agent 能力证据。每题强制独立 session/run scope，
+模型调用为 0，外部网络由守卫阻断；任务中的 `automatic_scoring` 与 `execution_ready` 保持 false。
+
+Knowledge 使用正式 `KNOWLEDGE_DIR` 上的确定性 keyword fallback，仅验证真实文件、工具合同和
+ToolChunk 采集，不证明向量召回效果。

@@ -99,7 +99,7 @@
         {
           "kind": "event",
           "selector": "tool.result:product_search_tool",
-          "field": "hits[].landed_price.currency",
+          "field": "hits[].currency",
           "operator": "all_equal",
           "expected": "CNY"
         },

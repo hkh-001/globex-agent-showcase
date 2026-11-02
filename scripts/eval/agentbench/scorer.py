@@ -63,12 +63,22 @@ def score_execution_graph(
     contract: dict[str, Any],
     *,
     capability_map: dict[str, set[str]] | None = None,
+    scope: dict[str, str] | None = None,
 ) -> dict[str, Any]:
     """Score observable execution only; business-oracle checks are separate.
 
     Missing ownership is evidence_invalid rather than a model failure.  This
     prevents old or truncated journals from silently passing a route check.
     """
+    if scope is not None:
+        required_scope = {"shopping_session_id", "run_id"}
+        if set(scope) != required_scope or not all(isinstance(scope[key], str) and scope[key]
+                                                   for key in required_scope):
+            return {"status": "evidence_invalid", "passed": False,
+                    "evidence_errors": ["invalid_scope"], "failures": [], "edges": []}
+        events = [event for event in events
+                  if event.get("shopping_session_id") == scope["shopping_session_id"]
+                  and ((event.get("correlation") or {}).get("run_id") == scope["run_id"])]
     capabilities = capability_map or DEFAULT_CAPABILITIES
     failures: list[str] = []
     evidence_errors: list[str] = []

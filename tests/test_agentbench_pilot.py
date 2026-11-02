@@ -122,7 +122,7 @@ def _positive_traces():
         _event("tool.invoke", "product_search_tool"),
         _event("tool.result", "product_search_tool", {"hits": [{
             "product_id": "P1015", "canonical_product_id": "CAN-LEGACY-014",
-            "landed_price": {"currency": "CNY"}, "skus": [{"stock": 3}],
+            "currency": "CNY", "skus": [{"stock": 3}],
         }]}),
     ]
     knowledge = [
