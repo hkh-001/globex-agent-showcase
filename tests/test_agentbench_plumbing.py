@@ -79,6 +79,30 @@ async def test_plumbing_replay_runs_real_tools_and_both_scorers(tmp_path):
     reseal(original_payload, network_manifest)
     assert "external_connect_count_mismatch" in check_pilot_plumbing.check(output, network, manifest)
 
+    duplicated = json.loads(json.dumps(original_payload))
+    copied = json.loads(json.dumps(duplicated["records"][0]))
+    copied["scope"] = {"shopping_session_id": "duplicate-session", "run_id": "duplicate-run"}
+    for item in [*copied["events"], *copied["tool_results"]]:
+        item["shopping_session_id"] = "duplicate-session"
+        if "correlation" in item:
+            item["correlation"]["run_id"] = "duplicate-run"
+        else:
+            item["run_id"] = "duplicate-run"
+    copied["events_sha256"] = _sha(copied["events"])
+    copied["tool_results_sha256"] = _sha(copied["tool_results"])
+    duplicated["records"][1] = copied
+    reseal(duplicated, dict(original_manifest))
+    errors = check_pilot_plumbing.check(output, network, manifest)
+    assert "duplicate_task_id" in errors
+    assert "pilot_task_set_mismatch" in errors
+
+    forged_manifest = dict(original_manifest)
+    forged_manifest.update({"task_count": 999, "passed_count": 0, "claim_boundary": "forged"})
+    reseal(original_payload, forged_manifest)
+    errors = check_pilot_plumbing.check(output, network, manifest)
+    assert "task_counts_invalid" in errors
+    assert "claim_boundary_invalid" in errors
+
 
 @pytest.mark.asyncio
 async def test_plumbing_replay_enforces_declared_budgets():

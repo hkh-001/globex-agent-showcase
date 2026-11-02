@@ -11,6 +11,12 @@ from scripts.eval.agentbench import deterministic_checks, scorer
 from scripts.eval.agentbench.run_pilot_plumbing import ROOT, _sha
 
 
+EVIDENCE_SCHEMA = "agentbench-scorer-plumbing-v1"
+MANIFEST_SCHEMA = "agentbench-scorer-plumbing-manifest-v1"
+MODE = "scorer_plumbing_fixture_replay"
+CLAIM_BOUNDARY = "validates scorer plumbing only; not Agent task success"
+
+
 def _git(*args: str, binary: bool = False):
     return subprocess.check_output(["git", *args], cwd=ROOT, text=not binary)
 
@@ -58,6 +64,15 @@ def check(evidence_path: Path, network_path: Path, manifest_path: Path) -> list[
         errors.append("records_sha256_mismatch")
     if evidence.get("agent_executed") is not False or manifest.get("agent_executed") is not False:
         errors.append("agent_execution_claim_invalid")
+    if evidence.get("schema_version") != EVIDENCE_SCHEMA:
+        errors.append("evidence_schema_invalid")
+    if manifest.get("schema_version") != MANIFEST_SCHEMA:
+        errors.append("manifest_schema_invalid")
+    if evidence.get("mode") != MODE:
+        errors.append("evidence_mode_invalid")
+    if (evidence.get("claim_boundary") != CLAIM_BOUNDARY
+            or manifest.get("claim_boundary") != CLAIM_BOUNDARY):
+        errors.append("claim_boundary_invalid")
     if evidence.get("external_connect_attempts") != 0 or evidence.get("paid_requests") != 0:
         errors.append("network_or_paid_requests_nonzero")
     network_rows = []
@@ -72,8 +87,20 @@ def check(evidence_path: Path, network_path: Path, manifest_path: Path) -> list[
                          if isinstance(row, dict))
     if external_count != evidence.get("external_connect_attempts") or external_count:
         errors.append("external_connect_count_mismatch")
-    if evidence.get("task_count") != len(records) or evidence.get("passed_count") != len(records):
+    passed_count = sum(record.get("passed") is True for record in records)
+    if (evidence.get("task_count") != len(records)
+            or evidence.get("passed_count") != passed_count
+            or manifest.get("task_count") != len(records)
+            or manifest.get("passed_count") != passed_count):
         errors.append("task_counts_invalid")
+    record_task_ids = [record.get("task_id") for record in records]
+    pilot_task_ids = list(tasks)
+    if len(record_task_ids) != len(set(record_task_ids)):
+        errors.append("duplicate_task_id")
+    if set(record_task_ids) != set(pilot_task_ids):
+        errors.append("pilot_task_set_mismatch")
+    if record_task_ids != pilot_task_ids:
+        errors.append("pilot_task_order_mismatch")
     scopes = set()
     for index, record in enumerate(records):
         scope = record.get("scope") or {}
