@@ -1,0 +1,1883 @@
+{
+  "schema_version": "agentbench-scorer-plumbing-v1",
+  "mode": "scorer_plumbing_fixture_replay",
+  "agent_executed": false,
+  "claim_boundary": "validates scorer plumbing only; not Agent task success",
+  "pilot_sha256": "9c6329cf59e4d9d0ce00dd9d0a0302a893e31b19f6038a597ba42e9c163a26bc",
+  "task_count": 3,
+  "passed_count": 3,
+  "external_connect_attempts": 0,
+  "paid_requests": 0,
+  "records": [
+    {
+      "task_id": "pilot-search-trailox-landed",
+      "mode": "scorer_plumbing_fixture_replay",
+      "agent_executed": false,
+      "scope": {
+        "shopping_session_id": "plumbing-pilot-search-trailox-landed",
+        "run_id": "run-pilot-search-trailox-landed"
+      },
+      "turns": 1,
+      "physical_model_calls": 0,
+      "events": [
+        {
+          "shopping_session_id": "plumbing-pilot-search-trailox-landed",
+          "type": "tool.invoke",
+          "payload": {
+            "tool": "product_search_tool",
+            "args": {
+              "normalized_query": "TrailOx 24寸托运行李箱 铝框款",
+              "category": "旅行装备",
+              "ship_to": null,
+              "top_k": 5,
+              "price_max_major": null,
+              "target_currency": "CNY",
+              "excluded_material_tags": [],
+              "required_material_tags": [],
+              "product_id": null,
+              "sku_id": null,
+              "sku_spec": null,
+              "product_type": null,
+              "max_weight_kg": null,
+              "preferred_product_type": null,
+              "prefer_lightweight": false
+            }
+          },
+          "occurred_at": "2026-11-02T03:03:53.566189+00:00",
+          "correlation": {
+            "agent": "main_agent",
+            "session_id": "sha256:f7ef917adc1aafbf1a444152",
+            "run_id": "run-pilot-search-trailox-landed"
+          }
+        },
+        {
+          "shopping_session_id": "plumbing-pilot-search-trailox-landed",
+          "type": "tool.result",
+          "payload": {
+            "tool": "product_search_tool",
+            "hit_count": 5,
+            "recall_strategy": "keyword_2gram",
+            "total_candidates": 15,
+            "rerank_applied": false,
+            "query_conditions": {
+              "normalized_query": "TrailOx 24寸托运行李箱 铝框款",
+              "category": "旅行装备",
+              "ship_to": null,
+              "top_k": 5,
+              "price_max_major": null,
+              "target_currency": "CNY",
+              "excluded_material_tags": [],
+              "required_material_tags": [],
+              "product_id": null,
+              "sku_id": null,
+              "sku_spec": null,
+              "product_type": null,
+              "max_weight_kg": null,
+              "preferred_product_type": null,
+              "prefer_lightweight": false
+            },
+            "constraint_continuity": {
+              "inherited": [],
+              "inferred": [],
+              "scope": "none"
+            },
+            "reused_duplicate": false,
+            "hits": [
+              {
+                "product_id": "P1015",
+                "title": "TrailOx 24寸托运行李箱 铝框款",
+                "brand": "TrailOx",
+                "category": "旅行装备",
+                "origin_country": "DE",
+                "price_major": 1199.0,
+                "currency": "CNY",
+                "source_price_major": 1199.0,
+                "source_currency": "CNY",
+                "highlights": [
+                  "箱体：铝框，抗摔"
+                ],
+                "skus": [
+                  {
+                    "sku_id": "P1015-S1",
+                    "spec": "银色 / 24寸",
+                    "price_major": 1199.0,
+                    "currency": "CNY",
+                    "stock": 12
+                  }
+                ],
+                "score": 15.0,
+                "source_platform": "etsy",
+                "canonical_product_id": "CAN-LEGACY-014",
+                "material_tags": [
+                  "天然材料"
+                ],
+                "weight_kg": 1.41,
+                "description": "铝镁合金框 托运尺寸 24寸 结实抗摔 万向静音轮 TSA锁 长途旅行",
+                "rating_summary": {
+                  "average": 4.5,
+                  "review_count": 184
+                },
+                "rating_is_live": false,
+                "ships_to": [
+                  "CN",
+                  "US",
+                  "EU"
+                ],
+                "dimensions_cm": {
+                  "height": 6,
+                  "length": 26,
+                  "width": 22
+                },
+                "updated_at": "2026-08-01",
+                "default_sku_id": "P1015-S1",
+                "image_url": null,
+                "image_kind": "placeholder",
+                "image_alt": "TrailOx 24寸托运行李箱 铝框款：暂无商品图片",
+                "product_type": "行李箱",
+                "known_weight_kg": 1.41,
+                "eligible_sku_ids": [
+                  "P1015-S1"
+                ]
+              },
+              {
+                "product_id": "P1002",
+                "title": "TrailOx 20寸登机行李箱 铝框款",
+                "brand": "TrailOx",
+                "category": "旅行装备",
+                "origin_country": "DE",
+                "price_major": 899.0,
+                "currency": "CNY",
+                "source_price_major": 899.0,
+                "source_currency": "CNY",
+                "highlights": [
+                  "箱体：德国工艺铝框，抗摔",
+                  "轮组：日本静音万向轮"
+                ],
+                "skus": [
+                  {
+                    "sku_id": "P1002-S1",
+                    "spec": "银色 / 20寸",
+                    "price_major": 899.0,
+                    "currency": "CNY",
+                    "stock": 20
+                  },
+                  {
+                    "sku_id": "P1002-S2",
+                    "spec": "黑色 / 20寸",
+                    "price_major": 899.0,
+                    "currency": "CNY",
+                    "stock": 15
+                  }
+                ],
+                "score": 9.0,
+                "source_platform": "ebay",
+                "canonical_product_id": "CAN-LEGACY-001",
+                "material_tags": [
+                  "天然材料"
+                ],
+                "weight_kg": 0.24,
+                "description": "铝镁合金框架 PC箱体 结实抗摔 抗造 万向静音轮 TSA海关锁 登机尺寸 商务旅行",
+                "rating_summary": {
+                  "average": 4.1,
+                  "review_count": 41
+                },
+                "rating_is_live": false,
+                "ships_to": [
+                  "CN",
+                  "US",
+                  "EU"
+                ],
+                "dimensions_cm": {
+                  "height": 5,
+                  "length": 13,
+                  "width": 9
+                },
+                "updated_at": "2026-08-01",
+                "default_sku_id": "P1002-S1",
+                "image_url": null,
+                "image_kind": "placeholder",
+                "image_alt": "TrailOx 20寸登机行李箱 铝框款：暂无商品图片",
+                "product_type": "行李箱",
+                "known_weight_kg": 0.24,
+                "eligible_sku_ids": [
+                  "P1002-S1",
+                  "P1002-S2"
+                ]
+              },
+              {
+                "product_id": "P3036",
+                "title": "Roamix 行李箱 GX-03-2 24寸 托运尺寸",
+                "brand": "Roamix",
+                "category": "旅行装备",
+                "origin_country": "DE",
+                "price_major": 297.01,
+                "currency": "CNY",
+                "source_price_major": 56.04,
+                "source_currency": "SGD",
+                "highlights": [
+                  "规格：24寸 托运尺寸",
+                  "材质：金属"
+                ],
+                "skus": [
+                  {
+                    "sku_id": "P3036-S1",
+                    "spec": "石墨黑",
+                    "price_major": 56.04,
+                    "currency": "SGD",
+                    "stock": 83
+                  },
+                  {
+                    "sku_id": "P3036-S2",
+                    "spec": "雾灰",
+                    "price_major": 57.74,
+                    "currency": "SGD",
+                    "stock": 90
+                  }
+                ],
+                "score": 8.0,
+                "source_platform": "amazon",
+                "canonical_product_id": "CAN-GX-03-2",
+                "material_tags": [
+                  "金属"
+                ],
+                "weight_kg": 0.4,
+                "description": "机场转机拖行，铝合金箱体配万向轮。本型号规格：24寸 托运尺寸。商品功能以本型号为准，其他档位配置不包含在内。",
+                "rating_summary": {
+                  "average": 4.0,
+                  "review_count": 128
+                },
+                "rating_is_live": false,
+                "ships_to": [
+                  "CN",
+                  "US",
+                  "EU",
+                  "JP",
+                  "SG"
+                ],
+                "dimensions_cm": {
+                  "height": 9,
+                  "length": 23,
+                  "width": 13
+                },
+                "updated_at": "2026-09-18",
+                "default_sku_id": "P3036-S1",
+                "image_url": null,
+                "image_kind": "placeholder",
+                "image_alt": "Roamix 行李箱 GX-03-2 24寸 托运尺寸：暂无商品图片",
+                "product_type": "行李箱",
+                "known_weight_kg": 0.4,
+                "eligible_sku_ids": [
+                  "P3036-S1",
+                  "P3036-S2"
+                ],
+                "data_provenance": "synthetic"
+              },
+              {
+                "product_id": "P3032",
+                "title": "Roamix 行李箱 GX-03-1 28寸 托运尺寸",
+                "brand": "Roamix",
+                "category": "旅行装备",
+                "origin_country": "DE",
+                "price_major": 177.0,
+                "currency": "CNY",
+                "source_price_major": 3687.5,
+                "source_currency": "JPY",
+                "highlights": [
+                  "规格：28寸 托运尺寸",
+                  "材质：金属"
+                ],
+                "skus": [
+                  {
+                    "sku_id": "P3032-S1",
+                    "spec": "石墨黑",
+                    "price_major": 3687.5,
+                    "currency": "JPY",
+                    "stock": 31
+                  },
+                  {
+                    "sku_id": "P3032-S2",
+                    "spec": "雾灰",
+                    "price_major": 3875.0,
+                    "currency": "JPY",
+                    "stock": 38
+                  }
+                ],
+                "score": 6.0,
+                "source_platform": "amazon",
+                "canonical_product_id": "CAN-GX-03-1",
+                "material_tags": [
+                  "金属"
+                ],
+                "weight_kg": 0.37,
+                "description": "机场转机拖行，铝合金箱体配万向轮。本型号规格：28寸 托运尺寸。商品功能以本型号为准，其他档位配置不包含在内。",
+                "rating_summary": {
+                  "average": 4.5,
+                  "review_count": 116
+                },
+                "rating_is_live": false,
+                "ships_to": [
+                  "CN",
+                  "US",
+                  "EU",
+                  "JP",
+                  "SG"
+                ],
+                "dimensions_cm": {
+                  "height": 8,
+                  "length": 20,
+                  "width": 12
+                },
+                "updated_at": "2026-09-18",
+                "default_sku_id": "P3032-S1",
+                "image_url": null,
+                "image_kind": "placeholder",
+                "image_alt": "Roamix 行李箱 GX-03-1 28寸 托运尺寸：暂无商品图片",
+                "product_type": "行李箱",
+                "known_weight_kg": 0.37,
+                "eligible_sku_ids": [
+                  "P3032-S1",
+                  "P3032-S2"
+                ],
+                "data_provenance": "synthetic"
+              },
+              {
+                "product_id": "P1060",
+                "title": "UniversalStrap 行李捆扎带 TSA锁",
+                "brand": "UniversalStrap",
+                "category": "旅行装备",
+                "origin_country": "CN",
+                "price_major": 55.0,
+                "currency": "CNY",
+                "source_price_major": 55.0,
+                "source_currency": "CNY",
+                "highlights": [
+                  "锁具：TSA 海关认可"
+                ],
+                "skus": [
+                  {
+                    "sku_id": "P1060-S1",
+                    "spec": "橙色",
+                    "price_major": 55.0,
+                    "currency": "CNY",
+                    "stock": 150
+                  }
+                ],
+                "score": 5.0,
+                "source_platform": "etsy",
+                "canonical_product_id": "CAN-LEGACY-026",
+                "material_tags": [
+                  "天然材料"
+                ],
+                "weight_kg": 0.69,
+                "description": "捆扎带 TSA 密码锁 防护 易辨识 加固行李箱",
+                "rating_summary": {
+                  "average": 4.8,
+                  "review_count": 316
+                },
+                "rating_is_live": false,
+                "ships_to": [
+                  "CN",
+                  "US",
+                  "EU"
+                ],
+                "dimensions_cm": {
+                  "height": 6,
+                  "length": 38,
+                  "width": 19
+                },
+                "updated_at": "2026-08-01",
+                "default_sku_id": "P1060-S1",
+                "image_url": null,
+                "image_kind": "placeholder",
+                "image_alt": "UniversalStrap 行李捆扎带 TSA锁：暂无商品图片",
+                "product_type": null,
+                "known_weight_kg": 0.69,
+                "eligible_sku_ids": [
+                  "P1060-S1"
+                ]
+              }
+            ],
+            "result_ref": "plumbing-result",
+            "filtered_out": [
+              {
+                "product_id": "P3040",
+                "title": "Roamix 行李箱 GX-03-3 20寸 仅密码锁",
+                "category": "旅行装备",
+                "price_major": 567.0,
+                "currency": "CNY",
+                "reason": "out_of_stock"
+              },
+              {
+                "product_id": "P3050",
+                "title": "Roamix 压缩收纳袋 GX-04-1 2件 无压缩层",
+                "category": "旅行装备",
+                "price_major": 72.98,
+                "currency": "CNY",
+                "reason": "out_of_stock"
+              },
+              {
+                "product_id": "P3060",
+                "title": "Roamix 压缩收纳袋 GX-04-4 6件 双层压缩干湿分离",
+                "category": "旅行装备",
+                "price_major": 329.0,
+                "currency": "CNY",
+                "reason": "out_of_stock"
+              }
+            ]
+          },
+          "occurred_at": "2026-11-02T03:03:53.601930+00:00",
+          "correlation": {
+            "agent": "main_agent",
+            "session_id": "sha256:f7ef917adc1aafbf1a444152",
+            "run_id": "run-pilot-search-trailox-landed"
+          }
+        }
+      ],
+      "tool_results": [
+        {
+          "selector": "product_search_tool",
+          "payload": {
+            "total_candidates": 15,
+            "recall_strategy": "keyword_2gram",
+            "rerank_applied": false,
+            "retrieval_diagnostics": {
+              "rerank_status": "not_configured",
+              "score_kind": "keyword",
+              "relevance_filter_applied": false,
+              "low_relevance_removed": 0
+            },
+            "filtered_out": [
+              {
+                "product_id": "P3040",
+                "title": "Roamix 行李箱 GX-03-3 20寸 仅密码锁",
+                "category": "旅行装备",
+                "price_major": 567.0,
+                "currency": "CNY",
+                "reason": "out_of_stock"
+              },
+              {
+                "product_id": "P3050",
+                "title": "Roamix 压缩收纳袋 GX-04-1 2件 无压缩层",
+                "category": "旅行装备",
+                "price_major": 72.98,
+                "currency": "CNY",
+                "reason": "out_of_stock"
+              },
+              {
+                "product_id": "P3060",
+                "title": "Roamix 压缩收纳袋 GX-04-4 6件 双层压缩干湿分离",
+                "category": "旅行装备",
+                "price_major": 329.0,
+                "currency": "CNY",
+                "reason": "out_of_stock"
+              }
+            ],
+            "query_conditions": {
+              "normalized_query": "TrailOx 24寸托运行李箱 铝框款",
+              "category": "旅行装备",
+              "ship_to": null,
+              "top_k": 5,
+              "price_max_major": null,
+              "target_currency": "CNY",
+              "excluded_material_tags": [],
+              "required_material_tags": [],
+              "product_id": null,
+              "sku_id": null,
+              "sku_spec": null,
+              "product_type": null,
+              "max_weight_kg": null,
+              "preferred_product_type": null,
+              "prefer_lightweight": false
+            },
+            "constraint_continuity": {
+              "inherited": [],
+              "inferred": [],
+              "scope": "none"
+            },
+            "observed_at": "2026-11-02T03:03:53.601918+00:00",
+            "result_ref": "plumbing-result",
+            "hits": [
+              {
+                "product_id": "P1015",
+                "title": "TrailOx 24寸托运行李箱 铝框款",
+                "brand": "TrailOx",
+                "category": "旅行装备",
+                "price_major": 1199.0,
+                "currency": "CNY",
+                "source_price_major": 1199.0,
+                "source_currency": "CNY",
+                "skus": [
+                  {
+                    "sku_id": "P1015-S1",
+                    "spec": "银色 / 24寸",
+                    "price_major": 1199.0,
+                    "currency": "CNY",
+                    "stock": 12
+                  }
+                ],
+                "material_tags": [
+                  "天然材料"
+                ],
+                "ships_to": [
+                  "CN",
+                  "US",
+                  "EU"
+                ],
+                "highlights": [
+                  "箱体：铝框，抗摔"
+                ],
+                "default_sku_id": "P1015-S1",
+                "canonical_product_id": "CAN-LEGACY-014",
+                "weight_kg": 1.41,
+                "known_weight_kg": 1.41,
+                "product_type": "行李箱",
+                "eligible_sku_ids": [
+                  "P1015-S1"
+                ],
+                "dimensions_cm": {
+                  "height": 6,
+                  "length": 26,
+                  "width": 22
+                },
+                "origin_country": "DE",
+                "source_platform": "etsy"
+              },
+              {
+                "product_id": "P1002",
+                "title": "TrailOx 20寸登机行李箱 铝框款",
+                "brand": "TrailOx",
+                "category": "旅行装备",
+                "price_major": 899.0,
+                "currency": "CNY",
+                "source_price_major": 899.0,
+                "source_currency": "CNY",
+                "skus": [
+                  {
+                    "sku_id": "P1002-S1",
+                    "spec": "银色 / 20寸",
+                    "price_major": 899.0,
+                    "currency": "CNY",
+                    "stock": 20
+                  },
+                  {
+                    "sku_id": "P1002-S2",
+                    "spec": "黑色 / 20寸",
+                    "price_major": 899.0,
+                    "currency": "CNY",
+                    "stock": 15
+                  }
+                ],
+                "material_tags": [
+                  "天然材料"
+                ],
+                "ships_to": [
+                  "CN",
+                  "US",
+                  "EU"
+                ],
+                "highlights": [
+                  "箱体：德国工艺铝框，抗摔",
+                  "轮组：日本静音万向轮"
+                ],
+                "default_sku_id": "P1002-S1",
+                "canonical_product_id": "CAN-LEGACY-001",
+                "weight_kg": 0.24,
+                "known_weight_kg": 0.24,
+                "product_type": "行李箱",
+                "eligible_sku_ids": [
+                  "P1002-S1",
+                  "P1002-S2"
+                ],
+                "dimensions_cm": {
+                  "height": 5,
+                  "length": 13,
+                  "width": 9
+                },
+                "origin_country": "DE",
+                "source_platform": "ebay"
+              },
+              {
+                "product_id": "P3036",
+                "title": "Roamix 行李箱 GX-03-2 24寸 托运尺寸",
+                "brand": "Roamix",
+                "category": "旅行装备",
+                "price_major": 297.01,
+                "currency": "CNY",
+                "source_price_major": 56.04,
+                "source_currency": "SGD",
+                "skus": [
+                  {
+                    "sku_id": "P3036-S1",
+                    "spec": "石墨黑",
+                    "price_major": 56.04,
+                    "currency": "SGD",
+                    "stock": 83
+                  },
+                  {
+                    "sku_id": "P3036-S2",
+                    "spec": "雾灰",
+                    "price_major": 57.74,
+                    "currency": "SGD",
+                    "stock": 90
+                  }
+                ],
+                "material_tags": [
+                  "金属"
+                ],
+                "ships_to": [
+                  "CN",
+                  "US",
+                  "EU",
+                  "JP",
+                  "SG"
+                ],
+                "highlights": [
+                  "规格：24寸 托运尺寸",
+                  "材质：金属"
+                ],
+                "default_sku_id": "P3036-S1",
+                "canonical_product_id": "CAN-GX-03-2",
+                "weight_kg": 0.4,
+                "known_weight_kg": 0.4,
+                "product_type": "行李箱",
+                "eligible_sku_ids": [
+                  "P3036-S1",
+                  "P3036-S2"
+                ],
+                "dimensions_cm": {
+                  "height": 9,
+                  "length": 23,
+                  "width": 13
+                },
+                "origin_country": "DE",
+                "source_platform": "amazon"
+              },
+              {
+                "product_id": "P3032",
+                "title": "Roamix 行李箱 GX-03-1 28寸 托运尺寸",
+                "brand": "Roamix",
+                "category": "旅行装备",
+                "price_major": 177.0,
+                "currency": "CNY",
+                "source_price_major": 3687.5,
+                "source_currency": "JPY",
+                "skus": [
+                  {
+                    "sku_id": "P3032-S1",
+                    "spec": "石墨黑",
+                    "price_major": 3687.5,
+                    "currency": "JPY",
+                    "stock": 31
+                  },
+                  {
+                    "sku_id": "P3032-S2",
+                    "spec": "雾灰",
+                    "price_major": 3875.0,
+                    "currency": "JPY",
+                    "stock": 38
+                  }
+                ],
+                "material_tags": [
+                  "金属"
+                ],
+                "ships_to": [
+                  "CN",
+                  "US",
+                  "EU",
+                  "JP",
+                  "SG"
+                ],
+                "highlights": [
+                  "规格：28寸 托运尺寸",
+                  "材质：金属"
+                ],
+                "default_sku_id": "P3032-S1",
+                "canonical_product_id": "CAN-GX-03-1",
+                "weight_kg": 0.37,
+                "known_weight_kg": 0.37,
+                "product_type": "行李箱",
+                "eligible_sku_ids": [
+                  "P3032-S1",
+                  "P3032-S2"
+                ],
+                "dimensions_cm": {
+                  "height": 8,
+                  "length": 20,
+                  "width": 12
+                },
+                "origin_country": "DE",
+                "source_platform": "amazon"
+              },
+              {
+                "product_id": "P1060",
+                "title": "UniversalStrap 行李捆扎带 TSA锁",
+                "brand": "UniversalStrap",
+                "category": "旅行装备",
+                "price_major": 55.0,
+                "currency": "CNY",
+                "source_price_major": 55.0,
+                "source_currency": "CNY",
+                "skus": [
+                  {
+                    "sku_id": "P1060-S1",
+                    "spec": "橙色",
+                    "price_major": 55.0,
+                    "currency": "CNY",
+                    "stock": 150
+                  }
+                ],
+                "material_tags": [
+                  "天然材料"
+                ],
+                "ships_to": [
+                  "CN",
+                  "US",
+                  "EU"
+                ],
+                "highlights": [
+                  "锁具：TSA 海关认可"
+                ],
+                "default_sku_id": "P1060-S1",
+                "canonical_product_id": "CAN-LEGACY-026",
+                "weight_kg": 0.69,
+                "known_weight_kg": 0.69,
+                "product_type": null,
+                "eligible_sku_ids": [
+                  "P1060-S1"
+                ],
+                "dimensions_cm": {
+                  "height": 6,
+                  "length": 38,
+                  "width": 19
+                },
+                "origin_country": "CN",
+                "source_platform": "etsy"
+              }
+            ]
+          },
+          "shopping_session_id": "plumbing-pilot-search-trailox-landed",
+          "run_id": "run-pilot-search-trailox-landed"
+        }
+      ],
+      "events_sha256": "e4e6cecd665bca4ff068ed896f89f5e53764447397e0df60b0ba9c97e9186381",
+      "tool_results_sha256": "c26f584c6b7b2a2e17a23955161f19503a137d1faab0e962a07af1e9c76ce9be",
+      "execution_score": {
+        "status": "passed",
+        "passed": true,
+        "evidence_errors": [],
+        "failures": [],
+        "edges": [
+          [
+            "main_agent",
+            "product_search_tool"
+          ]
+        ],
+        "dispatch_count": 0,
+        "tool_invocations": {
+          "product_search_tool": 1
+        }
+      },
+      "deterministic_score": {
+        "status": "passed",
+        "passed": true,
+        "evidence_errors": [],
+        "failures": []
+      },
+      "status": "passed",
+      "passed": true
+    },
+    {
+      "task_id": "pilot-knowledge-policy-fields",
+      "mode": "scorer_plumbing_fixture_replay",
+      "agent_executed": false,
+      "scope": {
+        "shopping_session_id": "plumbing-pilot-knowledge-policy-fields",
+        "run_id": "run-pilot-knowledge-policy-fields"
+      },
+      "turns": 1,
+      "physical_model_calls": 0,
+      "events": [
+        {
+          "shopping_session_id": "plumbing-pilot-knowledge-policy-fields",
+          "type": "tool.invoke",
+          "payload": {
+            "tool": "category_insight_tool",
+            "args": {
+              "question": "选购数码配件 价格与预算时，应该优先核对哪些可验证字段？",
+              "top_k": 2
+            }
+          },
+          "occurred_at": "2026-11-02T03:03:53.655861+00:00",
+          "correlation": {
+            "agent": "main_agent",
+            "session_id": "sha256:e2faa6e8f1b288d220bdaa39",
+            "run_id": "run-pilot-knowledge-policy-fields"
+          }
+        },
+        {
+          "shopping_session_id": "plumbing-pilot-knowledge-policy-fields",
+          "type": "tool.result",
+          "payload": {
+            "tool": "category_insight_tool",
+            "hit_count": 2,
+            "abstained": false,
+            "retrieval_mode": "keyword_fallback",
+            "degraded_reason": "fixture replay uses deterministic knowledge fallback",
+            "policy_fact_statuses": [
+              "not_policy",
+              "not_policy"
+            ]
+          },
+          "occurred_at": "2026-11-02T03:03:53.664828+00:00",
+          "correlation": {
+            "agent": "main_agent",
+            "session_id": "sha256:e2faa6e8f1b288d220bdaa39",
+            "run_id": "run-pilot-knowledge-policy-fields"
+          }
+        }
+      ],
+      "tool_results": [
+        {
+          "selector": "category_insight_tool",
+          "payload": {
+            "insights": [
+              {
+                "content": "# 数码配件价格与预算评测知识快照\n\n## 判断卡片\n### 1. 场景\n先把使用场景拆成携带频率、接触对象和使用时长；数码配件价格与预算只讨论供电、音频与连接，不把其他品类的经验直接套用。\n\n### 2. 预算\n数码配件价格与预算需要分别记录商品标价、目标币种、运费和税费，预算不足时应指出是哪一项造成缺口。\n\n### 3. 材质\n核对数码配件价格与预算的材质标签与实际接触部位；营销词不能替代对供电、音频与连接相关属性的可验证说明。\n\n### 4. 规格\n对数码配件价格与预算比较重量、尺寸、容量或功率时，应保留单位和 SKU 规格，避免把不同版本混成同一结论。\n\n### 5. 库存\n数码配件价格与预算的默认规格可能缺货，推荐前应检查可售 SKU；无库存不是可用候选，只能作为替代说明。\n\n### 6. 配送\n数码配件价格与预算的配送范围要按目的国核验；没有覆盖该地区时，不能根据相近国家的规则推断可送达。\n\n### 7. 风险\n遇到数码配件价格与预算的过敏、易碎、禁运或安全问题，应列出缺失证据并要求通过实时工具或商品页确认。\n\n### 8. 时效\n数码配件价格与预算资料的更新时间影响判断；当资料早于本次评测快照时，应提示用户结果可能过期。\n\n### 9. 比较\n数码配件价格与预算的候选排序应说明各自满足了哪些供电、音频与连接条件，不能只因为标题相似就宣称同样适合。\n\n### 10. 表达\n回答数码配件价格与预算问题时，区分已验证事实、推测和待确认事项；价格与配送数字只能引用当次工具结果。\n\n### 11. 复核\n在给出数码配件价格与预算结论前复核目的地、币种和 SKU 是否一致；任一条件变化都应重新计算而非沿用旧答案。\n\n### 12. 边界\n数码配件价格与预算快照用于离线评测，不替代商品说明或监管公告；涉及供电、音频与连接的强断言必须附带来源和有效期。\n\n### 13. 替代\n当数码配件价格与预算没有完全满足供电、音频与连接的商品时，应给出约束不满足的原因，而不是把近似候选包装成等价替代。\n\n### 14. 证据\n数码配件价格与预算的每个关键结论应能回指材质、尺寸、库存、配送或报价字段；缺少证据时只允许提出待确认建议。\n\n### 15. 优先级\n买家同时提出预算和安全限制时，数码配件价格与预算应先满足不可妥协的供电、音频与连接约束，再解释可调节的偏好。\n\n### 16. 版本\n记录数码配件价格与预算使用的文档版本和商品更新时间，避免把历史供电、音频与连接结论混入本次推荐。\n\n### 17. 地域\n数码配件价格与预算的地区规则必须与收货地逐项对应；GLOBAL 指引不能直接替代针对供电、音频与连接的区域性证据。\n\n### 18. 不确定性\n如果数码配件价格与预算缺少判断供电、音频与连接所需字段，回复要明确说明未知项及补充信息，而不是以常识补齐。\n\n### 19. 交叉\n数码配件价格与预算与其他品类共同决策时，分别列出各自的供电、音频与连接条件，避免一篇文档替另一篇文档做结论。\n\n### 20. 复盘\n遇到用户追问时，重新展示数码配件价格与预算已验证的供电、音频与连接证据和未验证条件，保证多轮回答没有悄悄改变口径。\n\n### 21. 来源\n数码配件价格与预算引用外部资料时要标出来源类型和发布日期；没有可靠来源的供电、音频与连接信息只能作为待核实线索。\n\n### 22. 量化\n比较数码配件价格与预算候选时，以统一单位量化重量、容量、功率或价格，避免用模糊形容词代替供电、音频与连接判断。\n\n### 23. 例外\n数码配件价格与预算中存在例外条件时，应把触发条件写清楚；不能因为多数商品符合供电、音频与连接就默认所有商品都符合。\n\n### 24. 筛选\n先以数码配件价格与预算的硬约束缩小候选，再比较供电、音频与连接偏好；筛选顺序应能从工具事件和字段值复现。\n\n### 25. 沟通\n向用户解释数码配件价格与预算取舍时，说明哪个供电、音频与连接条件导致排除，帮助用户决定是否放宽限制。\n\n### 26. 异常\n当数码配件价格与预算工具返回为空、超时或字段不完整时，回复应报告异常并停止对供电、音频与连接做确定性推荐。\n\n### 27. 一致\n确保数码配件价格与预算的商品卡、到手价和最终回复使用同一币种与 SKU，避免供电、音频与连接结论在不同环节矛盾。\n\n### 28. 维护\n数码配件价格与预算文档更新后应重新验证涉及供电、音频与连接的评测金标，防止旧样本继续奖励过期行为。\n\n### 29. 升级\n当数码配件价格与预算问题超出合成快照范围时，建议升级到实时商品或权威来源核验，而不是扩写未经证实的供电、音频与连接细节。\n\n### 30. 记录\n保留数码配件价格与预算推荐采用的关键字段和理由，使后续评测能检查供电、音频与连接判断是否来自可追溯证据。",
+                "source": "eval-digital-accessories-价格与预算.md",
+                "score": 0.5909,
+                "metadata": {
+                  "source_reference": "Globex 离线评测知识快照（合成演示，不用于实时法规结论）",
+                  "source_type": "synthetic_evaluation_fixture",
+                  "published_at": "2026-08-01",
+                  "effective_from": "2026-08-01",
+                  "effective_to": "2026-12-31",
+                  "region": "GLOBAL",
+                  "version": "2026.08-eval-v1",
+                  "topic": "category"
+                },
+                "policy_fact_status": "not_policy"
+              },
+              {
+                "content": "# 数码配件参数判断评测知识快照\n\n## 判断卡片\n### 1. 场景\n先把使用场景拆成携带频率、接触对象和使用时长；数码配件参数判断只讨论供电、音频与连接，不把其他品类的经验直接套用。\n\n### 2. 预算\n数码配件参数判断需要分别记录商品标价、目标币种、运费和税费，预算不足时应指出是哪一项造成缺口。\n\n### 3. 材质\n核对数码配件参数判断的材质标签与实际接触部位；营销词不能替代对供电、音频与连接相关属性的可验证说明。\n\n### 4. 规格\n对数码配件参数判断比较重量、尺寸、容量或功率时，应保留单位和 SKU 规格，避免把不同版本混成同一结论。\n\n### 5. 库存\n数码配件参数判断的默认规格可能缺货，推荐前应检查可售 SKU；无库存不是可用候选，只能作为替代说明。\n\n### 6. 配送\n数码配件参数判断的配送范围要按目的国核验；没有覆盖该地区时，不能根据相近国家的规则推断可送达。\n\n### 7. 风险\n遇到数码配件参数判断的过敏、易碎、禁运或安全问题，应列出缺失证据并要求通过实时工具或商品页确认。\n\n### 8. 时效\n数码配件参数判断资料的更新时间影响判断；当资料早于本次评测快照时，应提示用户结果可能过期。\n\n### 9. 比较\n数码配件参数判断的候选排序应说明各自满足了哪些供电、音频与连接条件，不能只因为标题相似就宣称同样适合。\n\n### 10. 表达\n回答数码配件参数判断问题时，区分已验证事实、推测和待确认事项；价格与配送数字只能引用当次工具结果。\n\n### 11. 复核\n在给出数码配件参数判断结论前复核目的地、币种和 SKU 是否一致；任一条件变化都应重新计算而非沿用旧答案。\n\n### 12. 边界\n数码配件参数判断快照用于离线评测，不替代商品说明或监管公告；涉及供电、音频与连接的强断言必须附带来源和有效期。\n\n### 13. 替代\n当数码配件参数判断没有完全满足供电、音频与连接的商品时，应给出约束不满足的原因，而不是把近似候选包装成等价替代。\n\n### 14. 证据\n数码配件参数判断的每个关键结论应能回指材质、尺寸、库存、配送或报价字段；缺少证据时只允许提出待确认建议。\n\n### 15. 优先级\n买家同时提出预算和安全限制时，数码配件参数判断应先满足不可妥协的供电、音频与连接约束，再解释可调节的偏好。\n\n### 16. 版本\n记录数码配件参数判断使用的文档版本和商品更新时间，避免把历史供电、音频与连接结论混入本次推荐。\n\n### 17. 地域\n数码配件参数判断的地区规则必须与收货地逐项对应；GLOBAL 指引不能直接替代针对供电、音频与连接的区域性证据。\n\n### 18. 不确定性\n如果数码配件参数判断缺少判断供电、音频与连接所需字段，回复要明确说明未知项及补充信息，而不是以常识补齐。\n\n### 19. 交叉\n数码配件参数判断与其他品类共同决策时，分别列出各自的供电、音频与连接条件，避免一篇文档替另一篇文档做结论。\n\n### 20. 复盘\n遇到用户追问时，重新展示数码配件参数判断已验证的供电、音频与连接证据和未验证条件，保证多轮回答没有悄悄改变口径。\n\n### 21. 来源\n数码配件参数判断引用外部资料时要标出来源类型和发布日期；没有可靠来源的供电、音频与连接信息只能作为待核实线索。\n\n### 22. 量化\n比较数码配件参数判断候选时，以统一单位量化重量、容量、功率或价格，避免用模糊形容词代替供电、音频与连接判断。\n\n### 23. 例外\n数码配件参数判断中存在例外条件时，应把触发条件写清楚；不能因为多数商品符合供电、音频与连接就默认所有商品都符合。\n\n### 24. 筛选\n先以数码配件参数判断的硬约束缩小候选，再比较供电、音频与连接偏好；筛选顺序应能从工具事件和字段值复现。\n\n### 25. 沟通\n向用户解释数码配件参数判断取舍时，说明哪个供电、音频与连接条件导致排除，帮助用户决定是否放宽限制。\n\n### 26. 异常\n当数码配件参数判断工具返回为空、超时或字段不完整时，回复应报告异常并停止对供电、音频与连接做确定性推荐。\n\n### 27. 一致\n确保数码配件参数判断的商品卡、到手价和最终回复使用同一币种与 SKU，避免供电、音频与连接结论在不同环节矛盾。\n\n### 28. 维护\n数码配件参数判断文档更新后应重新验证涉及供电、音频与连接的评测金标，防止旧样本继续奖励过期行为。\n\n### 29. 升级\n当数码配件参数判断问题超出合成快照范围时，建议升级到实时商品或权威来源核验，而不是扩写未经证实的供电、音频与连接细节。\n\n### 30. 记录\n保留数码配件参数判断推荐采用的关键字段和理由，使后续评测能检查供电、音频与连接判断是否来自可追溯证据。",
+                "source": "eval-digital-accessories-参数判断.md",
+                "score": 0.5455,
+                "metadata": {
+                  "source_reference": "Globex 离线评测知识快照（合成演示，不用于实时法规结论）",
+                  "source_type": "synthetic_evaluation_fixture",
+                  "published_at": "2026-08-01",
+                  "effective_from": "2026-08-01",
+                  "effective_to": "2026-12-31",
+                  "region": "GLOBAL",
+                  "version": "2026.08-eval-v1",
+                  "topic": "category"
+                },
+                "policy_fact_status": "not_policy"
+              }
+            ],
+            "retrieval_mode": "keyword_fallback"
+          },
+          "shopping_session_id": "plumbing-pilot-knowledge-policy-fields",
+          "run_id": "run-pilot-knowledge-policy-fields"
+        }
+      ],
+      "events_sha256": "9a4ca51cc829a16dbd7cada45174f69eac60af79529d483c42034b3a6d11d1af",
+      "tool_results_sha256": "985d095f1efb8af84be9c34de87132aa5ecce870e09cb297f57e361c8fde0b2b",
+      "execution_score": {
+        "status": "passed",
+        "passed": true,
+        "evidence_errors": [],
+        "failures": [],
+        "edges": [
+          [
+            "main_agent",
+            "category_insight_tool"
+          ]
+        ],
+        "dispatch_count": 0,
+        "tool_invocations": {
+          "category_insight_tool": 1
+        }
+      },
+      "deterministic_score": {
+        "status": "passed",
+        "passed": true,
+        "evidence_errors": [],
+        "failures": []
+      },
+      "status": "passed",
+      "passed": true
+    },
+    {
+      "task_id": "pilot-routing-compare-two",
+      "mode": "scorer_plumbing_fixture_replay",
+      "agent_executed": false,
+      "scope": {
+        "shopping_session_id": "plumbing-pilot-routing-compare-two",
+        "run_id": "run-pilot-routing-compare-two"
+      },
+      "turns": 1,
+      "physical_model_calls": 0,
+      "events": [
+        {
+          "shopping_session_id": "plumbing-pilot-routing-compare-two",
+          "type": "agent.dispatch",
+          "payload": {
+            "agent": "search_agent",
+            "demands": "比较 Atlas 便携餐盒 165 和 Atlas 旅行洗护套装 188 寄到 JP 的到手价。",
+            "started_at": "2026-11-02T03:03:53.716141+00:00",
+            "dispatch_id": "dispatch-41dfa6d9c0b34b188d1f28fd2c6e4c63"
+          },
+          "occurred_at": "2026-11-02T03:03:53.716152+00:00",
+          "correlation": {
+            "agent": "main_agent",
+            "dispatch_id": "dispatch-41dfa6d9c0b34b188d1f28fd2c6e4c63",
+            "session_id": "sha256:a97db899a4cec5eab5673e19",
+            "run_id": "run-pilot-routing-compare-two"
+          }
+        },
+        {
+          "shopping_session_id": "plumbing-pilot-routing-compare-two",
+          "type": "tool.invoke",
+          "payload": {
+            "tool": "product_search_tool",
+            "args": {
+              "normalized_query": "比较 Atlas 便携餐盒 165 和 Atlas 旅行洗护套装 188 寄到 JP 的到手价。",
+              "category": "厨房餐饮",
+              "ship_to": "JP",
+              "top_k": 5,
+              "price_max_major": null,
+              "target_currency": "CNY",
+              "excluded_material_tags": [],
+              "required_material_tags": [],
+              "product_id": null,
+              "sku_id": null,
+              "sku_spec": null,
+              "product_type": null,
+              "max_weight_kg": null,
+              "preferred_product_type": null,
+              "prefer_lightweight": false
+            }
+          },
+          "occurred_at": "2026-11-02T03:03:53.716226+00:00",
+          "correlation": {
+            "agent": "search_agent",
+            "dispatch_id": "dispatch-41dfa6d9c0b34b188d1f28fd2c6e4c63",
+            "session_id": "sha256:a97db899a4cec5eab5673e19",
+            "run_id": "run-pilot-routing-compare-two"
+          }
+        },
+        {
+          "shopping_session_id": "plumbing-pilot-routing-compare-two",
+          "type": "tool.result",
+          "payload": {
+            "tool": "product_search_tool",
+            "hit_count": 5,
+            "recall_strategy": "keyword_2gram",
+            "total_candidates": 25,
+            "rerank_applied": false,
+            "query_conditions": {
+              "normalized_query": "比较 Atlas 便携餐盒 165 和 Atlas 旅行洗护套装 188 寄到 JP 的到手价。",
+              "category": "厨房餐饮",
+              "ship_to": "JP",
+              "top_k": 5,
+              "price_max_major": null,
+              "target_currency": "CNY",
+              "excluded_material_tags": [],
+              "required_material_tags": [],
+              "product_id": null,
+              "sku_id": null,
+              "sku_spec": null,
+              "product_type": null,
+              "max_weight_kg": null,
+              "preferred_product_type": null,
+              "prefer_lightweight": false
+            },
+            "constraint_continuity": {
+              "inherited": [],
+              "inferred": [],
+              "scope": "none"
+            },
+            "reused_duplicate": false,
+            "hits": [
+              {
+                "product_id": "P2165",
+                "title": "Atlas 便携餐盒 165",
+                "brand": "Atlas-21",
+                "category": "厨房餐饮",
+                "origin_country": "VN",
+                "price_major": 329.0,
+                "currency": "CNY",
+                "source_price_major": 329.0,
+                "source_currency": "CNY",
+                "highlights": [
+                  "材质：帆布棉麻",
+                  "测试属性：候选分组 33"
+                ],
+                "skus": [
+                  {
+                    "sku_id": "P2165-S1",
+                    "spec": "标准版",
+                    "price_major": 329.0,
+                    "currency": "CNY",
+                    "stock": 83
+                  },
+                  {
+                    "sku_id": "P2165-S2",
+                    "spec": "升级版",
+                    "price_major": 782.88,
+                    "currency": "CNY",
+                    "stock": 94
+                  }
+                ],
+                "score": 9.0,
+                "source_platform": "ebay",
+                "canonical_product_id": "CAN-033",
+                "material_tags": [
+                  "天然纤维"
+                ],
+                "weight_kg": 2.1,
+                "description": "厨房 食品接触 便携 帆布棉麻 多场景使用 轻量 耐用 评测候选 165",
+                "rating_summary": {
+                  "average": 4.7,
+                  "review_count": 2165
+                },
+                "rating_is_live": false,
+                "ships_to": [
+                  "JP"
+                ],
+                "dimensions_cm": {
+                  "height": 12,
+                  "length": 20,
+                  "width": 19
+                },
+                "updated_at": "2026-08-26",
+                "default_sku_id": "P2165-S1",
+                "image_url": null,
+                "image_kind": "placeholder",
+                "image_alt": "Atlas 便携餐盒 165：暂无商品图片",
+                "product_type": null,
+                "known_weight_kg": 2.1,
+                "eligible_sku_ids": [
+                  "P2165-S1",
+                  "P2165-S2"
+                ],
+                "landed_price": {
+                  "ship_to": "JP",
+                  "subtotal_major": 329.0,
+                  "freight_major": 45.0,
+                  "tariff_major": 0.0,
+                  "tariff_rate": 0.08,
+                  "de_minimis_applied": true,
+                  "landed_total_major": 374.0,
+                  "currency": "CNY"
+                }
+              },
+              {
+                "product_id": "P2053",
+                "title": "Atlas 便携餐盒 053",
+                "brand": "Atlas-05",
+                "category": "厨房餐饮",
+                "origin_country": "VN",
+                "price_major": 43.65,
+                "currency": "CNY",
+                "source_price_major": 909.44,
+                "source_currency": "JPY",
+                "highlights": [
+                  "材质：高温陶瓷",
+                  "测试属性：候选分组 10"
+                ],
+                "skus": [
+                  {
+                    "sku_id": "P2053-S1",
+                    "spec": "标准版",
+                    "price_major": 27062.0,
+                    "currency": "JPY",
+                    "stock": 0
+                  },
+                  {
+                    "sku_id": "P2053-S2",
+                    "spec": "升级版",
+                    "price_major": 909.44,
+                    "currency": "JPY",
+                    "stock": 30
+                  }
+                ],
+                "score": 8.0,
+                "source_platform": "ebay",
+                "canonical_product_id": "CAN-010",
+                "material_tags": [
+                  "陶瓷"
+                ],
+                "weight_kg": 1.54,
+                "description": "厨房 食品接触 便携 高温陶瓷 多场景使用 轻量 耐用 评测候选 053 标题近似款：关键属性故意不匹配，用于检验属性过滤而非标题碰撞。",
+                "rating_summary": {
+                  "average": 4.3,
+                  "review_count": 709
+                },
+                "rating_is_live": false,
+                "ships_to": [
+                  "CN",
+                  "US",
+                  "EU",
+                  "JP",
+                  "SG"
+                ],
+                "dimensions_cm": {
+                  "height": 4,
+                  "length": 32,
+                  "width": 9
+                },
+                "updated_at": "2026-08-26",
+                "default_sku_id": "P2053-S2",
+                "image_url": null,
+                "image_kind": "placeholder",
+                "image_alt": "Atlas 便携餐盒 053：暂无商品图片",
+                "product_type": null,
+                "known_weight_kg": 1.54,
+                "eligible_sku_ids": [
+                  "P2053-S2"
+                ],
+                "landed_price": {
+                  "ship_to": "JP",
+                  "subtotal_major": 43.65,
+                  "freight_major": 45.0,
+                  "tariff_major": 0.0,
+                  "tariff_rate": 0.08,
+                  "de_minimis_applied": true,
+                  "landed_total_major": 88.65,
+                  "currency": "CNY"
+                }
+              },
+              {
+                "product_id": "P2061",
+                "title": "Atlas 便携餐盒 061",
+                "brand": "Atlas-13",
+                "category": "厨房餐饮",
+                "origin_country": "VN",
+                "price_major": 189.29,
+                "currency": "CNY",
+                "source_price_major": 26.66,
+                "source_currency": "USD",
+                "highlights": [
+                  "材质：再生尼龙",
+                  "测试属性：候选分组 12"
+                ],
+                "skus": [
+                  {
+                    "sku_id": "P2061-S1",
+                    "spec": "标准版",
+                    "price_major": 12.54,
+                    "currency": "USD",
+                    "stock": 0
+                  },
+                  {
+                    "sku_id": "P2061-S2",
+                    "spec": "升级版",
+                    "price_major": 26.66,
+                    "currency": "USD",
+                    "stock": 86
+                  }
+                ],
+                "score": 8.0,
+                "source_platform": "ebay",
+                "canonical_product_id": "CAN-012",
+                "material_tags": [
+                  "合成聚合物"
+                ],
+                "weight_kg": 2.18,
+                "description": "厨房 食品接触 便携 再生尼龙 多场景使用 轻量 耐用 评测候选 061 标题近似款：关键属性故意不匹配，用于检验属性过滤而非标题碰撞。",
+                "rating_summary": {
+                  "average": 3.9,
+                  "review_count": 813
+                },
+                "rating_is_live": false,
+                "ships_to": [
+                  "US",
+                  "EU",
+                  "JP"
+                ],
+                "dimensions_cm": {
+                  "height": 12,
+                  "length": 40,
+                  "width": 17
+                },
+                "updated_at": "2026-08-06",
+                "default_sku_id": "P2061-S2",
+                "image_url": null,
+                "image_kind": "placeholder",
+                "image_alt": "Atlas 便携餐盒 061：暂无商品图片",
+                "product_type": null,
+                "known_weight_kg": 2.18,
+                "eligible_sku_ids": [
+                  "P2061-S2"
+                ],
+                "landed_price": {
+                  "ship_to": "JP",
+                  "subtotal_major": 189.29,
+                  "freight_major": 45.0,
+                  "tariff_major": 0.0,
+                  "tariff_rate": 0.08,
+                  "de_minimis_applied": true,
+                  "landed_total_major": 234.29,
+                  "currency": "CNY"
+                }
+              },
+              {
+                "product_id": "P2093",
+                "title": "Atlas 便携餐盒 093",
+                "brand": "Atlas-21",
+                "category": "厨房餐饮",
+                "origin_country": "VN",
+                "price_major": 782.85,
+                "currency": "CNY",
+                "source_price_major": 16309.44,
+                "source_currency": "JPY",
+                "highlights": [
+                  "材质：高温陶瓷",
+                  "测试属性：候选分组 18"
+                ],
+                "skus": [
+                  {
+                    "sku_id": "P2093-S1",
+                    "spec": "标准版",
+                    "price_major": 6854.0,
+                    "currency": "JPY",
+                    "stock": 0
+                  },
+                  {
+                    "sku_id": "P2093-S2",
+                    "spec": "升级版",
+                    "price_major": 16309.44,
+                    "currency": "JPY",
+                    "stock": 130
+                  }
+                ],
+                "score": 8.0,
+                "source_platform": "ebay",
+                "canonical_product_id": "CAN-018",
+                "material_tags": [
+                  "陶瓷"
+                ],
+                "weight_kg": 1.94,
+                "description": "厨房 食品接触 便携 高温陶瓷 多场景使用 轻量 耐用 评测候选 093",
+                "rating_summary": {
+                  "average": 4.7,
+                  "review_count": 1229
+                },
+                "rating_is_live": false,
+                "ships_to": [
+                  "JP"
+                ],
+                "dimensions_cm": {
+                  "height": 5,
+                  "length": 10,
+                  "width": 15
+                },
+                "updated_at": "2026-08-10",
+                "default_sku_id": "P2093-S2",
+                "image_url": null,
+                "image_kind": "placeholder",
+                "image_alt": "Atlas 便携餐盒 093：暂无商品图片",
+                "product_type": null,
+                "known_weight_kg": 1.94,
+                "eligible_sku_ids": [
+                  "P2093-S2"
+                ],
+                "landed_price": {
+                  "ship_to": "JP",
+                  "subtotal_major": 782.85,
+                  "freight_major": 45.0,
+                  "tariff_major": 22.63,
+                  "tariff_rate": 0.08,
+                  "de_minimis_applied": false,
+                  "landed_total_major": 850.48,
+                  "currency": "CNY"
+                }
+              },
+              {
+                "product_id": "P2125",
+                "title": "Atlas 便携餐盒 125",
+                "brand": "Atlas-05",
+                "category": "厨房餐饮",
+                "origin_country": "VN",
+                "price_major": 1299.0,
+                "currency": "CNY",
+                "source_price_major": 1299.0,
+                "source_currency": "CNY",
+                "highlights": [
+                  "材质：帆布棉麻",
+                  "测试属性：候选分组 25"
+                ],
+                "skus": [
+                  {
+                    "sku_id": "P2125-S1",
+                    "spec": "标准版",
+                    "price_major": 1299.0,
+                    "currency": "CNY",
+                    "stock": 163
+                  },
+                  {
+                    "sku_id": "P2125-S2",
+                    "spec": "升级版",
+                    "price_major": 43.68,
+                    "currency": "CNY",
+                    "stock": 174
+                  }
+                ],
+                "score": 8.0,
+                "source_platform": "ebay",
+                "canonical_product_id": "CAN-025",
+                "material_tags": [
+                  "天然纤维"
+                ],
+                "weight_kg": 1.7,
+                "description": "厨房 食品接触 便携 帆布棉麻 多场景使用 轻量 耐用 评测候选 125",
+                "rating_summary": {
+                  "average": 4.3,
+                  "review_count": 1645
+                },
+                "rating_is_live": false,
+                "ships_to": [
+                  "CN",
+                  "US",
+                  "EU",
+                  "JP",
+                  "SG"
+                ],
+                "dimensions_cm": {
+                  "height": 11,
+                  "length": 11,
+                  "width": 13
+                },
+                "updated_at": "2026-08-14",
+                "default_sku_id": "P2125-S1",
+                "image_url": null,
+                "image_kind": "placeholder",
+                "image_alt": "Atlas 便携餐盒 125：暂无商品图片",
+                "product_type": null,
+                "known_weight_kg": 1.7,
+                "eligible_sku_ids": [
+                  "P2125-S1",
+                  "P2125-S2"
+                ],
+                "landed_price": {
+                  "ship_to": "JP",
+                  "subtotal_major": 1299.0,
+                  "freight_major": 45.0,
+                  "tariff_major": 63.92,
+                  "tariff_rate": 0.08,
+                  "de_minimis_applied": false,
+                  "landed_total_major": 1407.92,
+                  "currency": "CNY"
+                }
+              }
+            ],
+            "result_ref": "plumbing-result",
+            "filtered_out": [
+              {
+                "product_id": "P2005",
+                "title": "Atlas 便携餐盒 005",
+                "category": "厨房餐饮",
+                "price_major": 1299.0,
+                "currency": "CNY",
+                "reason": "out_of_stock"
+              },
+              {
+                "product_id": "P2013",
+                "title": "Atlas 便携餐盒 013",
+                "category": "厨房餐饮",
+                "price_major": 88.99,
+                "currency": "CNY",
+                "reason": "out_of_stock"
+              },
+              {
+                "product_id": "P2021",
+                "title": "Atlas 便携餐盒 021",
+                "category": "厨房餐饮",
+                "price_major": 329.01,
+                "currency": "CNY",
+                "reason": "out_of_stock"
+              }
+            ]
+          },
+          "occurred_at": "2026-11-02T03:03:53.751651+00:00",
+          "correlation": {
+            "agent": "search_agent",
+            "dispatch_id": "dispatch-41dfa6d9c0b34b188d1f28fd2c6e4c63",
+            "session_id": "sha256:a97db899a4cec5eab5673e19",
+            "run_id": "run-pilot-routing-compare-two"
+          }
+        },
+        {
+          "shopping_session_id": "plumbing-pilot-routing-compare-two",
+          "type": "tool.result",
+          "payload": {
+            "tool": "task_dispatch",
+            "agent": "search_agent",
+            "dispatch_id": "dispatch-41dfa6d9c0b34b188d1f28fd2c6e4c63",
+            "status": "completed",
+            "started_at": "2026-11-02T03:03:53.716141+00:00",
+            "finished_at": "2026-11-02T03:03:53.751847+00:00",
+            "elapsed_ms": 36
+          },
+          "occurred_at": "2026-11-02T03:03:53.751850+00:00",
+          "correlation": {
+            "agent": "main_agent",
+            "dispatch_id": "dispatch-41dfa6d9c0b34b188d1f28fd2c6e4c63",
+            "session_id": "sha256:a97db899a4cec5eab5673e19",
+            "run_id": "run-pilot-routing-compare-two"
+          }
+        }
+      ],
+      "tool_results": [
+        {
+          "selector": "product_search_tool",
+          "payload": {
+            "total_candidates": 25,
+            "recall_strategy": "keyword_2gram",
+            "rerank_applied": false,
+            "retrieval_diagnostics": {
+              "rerank_status": "not_configured",
+              "score_kind": "keyword",
+              "relevance_filter_applied": false,
+              "low_relevance_removed": 0
+            },
+            "filtered_out": [
+              {
+                "product_id": "P2005",
+                "title": "Atlas 便携餐盒 005",
+                "category": "厨房餐饮",
+                "price_major": 1299.0,
+                "currency": "CNY",
+                "reason": "out_of_stock"
+              },
+              {
+                "product_id": "P2013",
+                "title": "Atlas 便携餐盒 013",
+                "category": "厨房餐饮",
+                "price_major": 88.99,
+                "currency": "CNY",
+                "reason": "out_of_stock"
+              },
+              {
+                "product_id": "P2021",
+                "title": "Atlas 便携餐盒 021",
+                "category": "厨房餐饮",
+                "price_major": 329.01,
+                "currency": "CNY",
+                "reason": "out_of_stock"
+              }
+            ],
+            "query_conditions": {
+              "normalized_query": "比较 Atlas 便携餐盒 165 和 Atlas 旅行洗护套装 188 寄到 JP 的到手价。",
+              "category": "厨房餐饮",
+              "ship_to": "JP",
+              "top_k": 5,
+              "price_max_major": null,
+              "target_currency": "CNY",
+              "excluded_material_tags": [],
+              "required_material_tags": [],
+              "product_id": null,
+              "sku_id": null,
+              "sku_spec": null,
+              "product_type": null,
+              "max_weight_kg": null,
+              "preferred_product_type": null,
+              "prefer_lightweight": false
+            },
+            "constraint_continuity": {
+              "inherited": [],
+              "inferred": [],
+              "scope": "none"
+            },
+            "observed_at": "2026-11-02T03:03:53.751643+00:00",
+            "result_ref": "plumbing-result",
+            "hits": [
+              {
+                "product_id": "P2165",
+                "title": "Atlas 便携餐盒 165",
+                "brand": "Atlas-21",
+                "category": "厨房餐饮",
+                "price_major": 329.0,
+                "currency": "CNY",
+                "source_price_major": 329.0,
+                "source_currency": "CNY",
+                "skus": [
+                  {
+                    "sku_id": "P2165-S1",
+                    "spec": "标准版",
+                    "price_major": 329.0,
+                    "currency": "CNY",
+                    "stock": 83
+                  },
+                  {
+                    "sku_id": "P2165-S2",
+                    "spec": "升级版",
+                    "price_major": 782.88,
+                    "currency": "CNY",
+                    "stock": 94
+                  }
+                ],
+                "landed_price": {
+                  "ship_to": "JP",
+                  "subtotal_major": 329.0,
+                  "freight_major": 45.0,
+                  "tariff_major": 0.0,
+                  "tariff_rate": 0.08,
+                  "de_minimis_applied": true,
+                  "landed_total_major": 374.0,
+                  "currency": "CNY"
+                },
+                "material_tags": [
+                  "天然纤维"
+                ],
+                "ships_to": [
+                  "JP"
+                ],
+                "highlights": [
+                  "材质：帆布棉麻",
+                  "测试属性：候选分组 33"
+                ],
+                "default_sku_id": "P2165-S1",
+                "canonical_product_id": "CAN-033",
+                "weight_kg": 2.1,
+                "known_weight_kg": 2.1,
+                "product_type": null,
+                "eligible_sku_ids": [
+                  "P2165-S1",
+                  "P2165-S2"
+                ],
+                "dimensions_cm": {
+                  "height": 12,
+                  "length": 20,
+                  "width": 19
+                },
+                "origin_country": "VN",
+                "source_platform": "ebay"
+              },
+              {
+                "product_id": "P2053",
+                "title": "Atlas 便携餐盒 053",
+                "brand": "Atlas-05",
+                "category": "厨房餐饮",
+                "price_major": 43.65,
+                "currency": "CNY",
+                "source_price_major": 909.44,
+                "source_currency": "JPY",
+                "skus": [
+                  {
+                    "sku_id": "P2053-S1",
+                    "spec": "标准版",
+                    "price_major": 27062.0,
+                    "currency": "JPY",
+                    "stock": 0
+                  },
+                  {
+                    "sku_id": "P2053-S2",
+                    "spec": "升级版",
+                    "price_major": 909.44,
+                    "currency": "JPY",
+                    "stock": 30
+                  }
+                ],
+                "landed_price": {
+                  "ship_to": "JP",
+                  "subtotal_major": 43.65,
+                  "freight_major": 45.0,
+                  "tariff_major": 0.0,
+                  "tariff_rate": 0.08,
+                  "de_minimis_applied": true,
+                  "landed_total_major": 88.65,
+                  "currency": "CNY"
+                },
+                "material_tags": [
+                  "陶瓷"
+                ],
+                "ships_to": [
+                  "CN",
+                  "US",
+                  "EU",
+                  "JP",
+                  "SG"
+                ],
+                "highlights": [
+                  "材质：高温陶瓷",
+                  "测试属性：候选分组 10"
+                ],
+                "default_sku_id": "P2053-S2",
+                "canonical_product_id": "CAN-010",
+                "weight_kg": 1.54,
+                "known_weight_kg": 1.54,
+                "product_type": null,
+                "eligible_sku_ids": [
+                  "P2053-S2"
+                ],
+                "dimensions_cm": {
+                  "height": 4,
+                  "length": 32,
+                  "width": 9
+                },
+                "origin_country": "VN",
+                "source_platform": "ebay"
+              },
+              {
+                "product_id": "P2061",
+                "title": "Atlas 便携餐盒 061",
+                "brand": "Atlas-13",
+                "category": "厨房餐饮",
+                "price_major": 189.29,
+                "currency": "CNY",
+                "source_price_major": 26.66,
+                "source_currency": "USD",
+                "skus": [
+                  {
+                    "sku_id": "P2061-S1",
+                    "spec": "标准版",
+                    "price_major": 12.54,
+                    "currency": "USD",
+                    "stock": 0
+                  },
+                  {
+                    "sku_id": "P2061-S2",
+                    "spec": "升级版",
+                    "price_major": 26.66,
+                    "currency": "USD",
+                    "stock": 86
+                  }
+                ],
+                "landed_price": {
+                  "ship_to": "JP",
+                  "subtotal_major": 189.29,
+                  "freight_major": 45.0,
+                  "tariff_major": 0.0,
+                  "tariff_rate": 0.08,
+                  "de_minimis_applied": true,
+                  "landed_total_major": 234.29,
+                  "currency": "CNY"
+                },
+                "material_tags": [
+                  "合成聚合物"
+                ],
+                "ships_to": [
+                  "US",
+                  "EU",
+                  "JP"
+                ],
+                "highlights": [
+                  "材质：再生尼龙",
+                  "测试属性：候选分组 12"
+                ],
+                "default_sku_id": "P2061-S2",
+                "canonical_product_id": "CAN-012",
+                "weight_kg": 2.18,
+                "known_weight_kg": 2.18,
+                "product_type": null,
+                "eligible_sku_ids": [
+                  "P2061-S2"
+                ],
+                "dimensions_cm": {
+                  "height": 12,
+                  "length": 40,
+                  "width": 17
+                },
+                "origin_country": "VN",
+                "source_platform": "ebay"
+              },
+              {
+                "product_id": "P2093",
+                "title": "Atlas 便携餐盒 093",
+                "brand": "Atlas-21",
+                "category": "厨房餐饮",
+                "price_major": 782.85,
+                "currency": "CNY",
+                "source_price_major": 16309.44,
+                "source_currency": "JPY",
+                "skus": [
+                  {
+                    "sku_id": "P2093-S1",
+                    "spec": "标准版",
+                    "price_major": 6854.0,
+                    "currency": "JPY",
+                    "stock": 0
+                  },
+                  {
+                    "sku_id": "P2093-S2",
+                    "spec": "升级版",
+                    "price_major": 16309.44,
+                    "currency": "JPY",
+                    "stock": 130
+                  }
+                ],
+                "landed_price": {
+                  "ship_to": "JP",
+                  "subtotal_major": 782.85,
+                  "freight_major": 45.0,
+                  "tariff_major": 22.63,
+                  "tariff_rate": 0.08,
+                  "de_minimis_applied": false,
+                  "landed_total_major": 850.48,
+                  "currency": "CNY"
+                },
+                "material_tags": [
+                  "陶瓷"
+                ],
+                "ships_to": [
+                  "JP"
+                ],
+                "highlights": [
+                  "材质：高温陶瓷",
+                  "测试属性：候选分组 18"
+                ],
+                "default_sku_id": "P2093-S2",
+                "canonical_product_id": "CAN-018",
+                "weight_kg": 1.94,
+                "known_weight_kg": 1.94,
+                "product_type": null,
+                "eligible_sku_ids": [
+                  "P2093-S2"
+                ],
+                "dimensions_cm": {
+                  "height": 5,
+                  "length": 10,
+                  "width": 15
+                },
+                "origin_country": "VN",
+                "source_platform": "ebay"
+              },
+              {
+                "product_id": "P2125",
+                "title": "Atlas 便携餐盒 125",
+                "brand": "Atlas-05",
+                "category": "厨房餐饮",
+                "price_major": 1299.0,
+                "currency": "CNY",
+                "source_price_major": 1299.0,
+                "source_currency": "CNY",
+                "skus": [
+                  {
+                    "sku_id": "P2125-S1",
+                    "spec": "标准版",
+                    "price_major": 1299.0,
+                    "currency": "CNY",
+                    "stock": 163
+                  },
+                  {
+                    "sku_id": "P2125-S2",
+                    "spec": "升级版",
+                    "price_major": 43.68,
+                    "currency": "CNY",
+                    "stock": 174
+                  }
+                ],
+                "landed_price": {
+                  "ship_to": "JP",
+                  "subtotal_major": 1299.0,
+                  "freight_major": 45.0,
+                  "tariff_major": 63.92,
+                  "tariff_rate": 0.08,
+                  "de_minimis_applied": false,
+                  "landed_total_major": 1407.92,
+                  "currency": "CNY"
+                },
+                "material_tags": [
+                  "天然纤维"
+                ],
+                "ships_to": [
+                  "CN",
+                  "US",
+                  "EU",
+                  "JP",
+                  "SG"
+                ],
+                "highlights": [
+                  "材质：帆布棉麻",
+                  "测试属性：候选分组 25"
+                ],
+                "default_sku_id": "P2125-S1",
+                "canonical_product_id": "CAN-025",
+                "weight_kg": 1.7,
+                "known_weight_kg": 1.7,
+                "product_type": null,
+                "eligible_sku_ids": [
+                  "P2125-S1",
+                  "P2125-S2"
+                ],
+                "dimensions_cm": {
+                  "height": 11,
+                  "length": 11,
+                  "width": 13
+                },
+                "origin_country": "VN",
+                "source_platform": "ebay"
+              }
+            ]
+          },
+          "shopping_session_id": "plumbing-pilot-routing-compare-two",
+          "run_id": "run-pilot-routing-compare-two"
+        },
+        {
+          "selector": "task_dispatch",
+          "payload": {
+            "agent": "search_agent",
+            "status": "completed",
+            "summary": "fixture search completed",
+            "evidence_refs": [
+              "plumbing-result"
+            ],
+            "verified_product_ids": [
+              "P2053",
+              "P2053-S1",
+              "P2053-S2",
+              "P2061",
+              "P2061-S1",
+              "P2061-S2",
+              "P2093",
+              "P2093-S1",
+              "P2093-S2",
+              "P2125",
+              "P2125-S1",
+              "P2125-S2",
+              "P2165",
+              "P2165-S1",
+              "P2165-S2"
+            ],
+            "unverified_product_ids": []
+          },
+          "shopping_session_id": "plumbing-pilot-routing-compare-two",
+          "run_id": "run-pilot-routing-compare-two"
+        }
+      ],
+      "events_sha256": "1ec783cfd337f061c3f44150070d877a3323d262ca8792f58999eb577fe4fc58",
+      "tool_results_sha256": "8958f81715adc1e01e4aeb4ef92dfffb9a3a81a8f818c1ba918b8409f77f1dce",
+      "execution_score": {
+        "status": "passed",
+        "passed": true,
+        "evidence_errors": [],
+        "failures": [],
+        "edges": [
+          [
+            "main_agent",
+            "search_agent"
+          ],
+          [
+            "search_agent",
+            "product_search_tool"
+          ]
+        ],
+        "dispatch_count": 1,
+        "tool_invocations": {
+          "product_search_tool": 1
+        }
+      },
+      "deterministic_score": {
+        "status": "passed",
+        "passed": true,
+        "evidence_errors": [],
+        "failures": []
+      },
+      "status": "passed",
+      "passed": true
+    }
+  ],
+  "records_sha256": "4719a2f29f9cacee3cdc3ea6d122c211372eec3609886ca00529d82831bf46cf"
+}

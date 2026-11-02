@@ -1,0 +1,15 @@
+{
+  "schema_version": "agentbench-scorer-plumbing-manifest-v1",
+  "source_commit": "417869d204df6be864d6279a7d9ef04ce846bcf0",
+  "source_tree": "3488a787caa2a8d1a247f7e43887e4f748ee712d",
+  "tracked_worktree_clean": true,
+  "runner_sha256": "02fae19b48b0815835be369ac99ac76bdf95d2494e344bf6c49c865e8c72dc21",
+  "pilot_sha256": "9c6329cf59e4d9d0ce00dd9d0a0302a893e31b19f6038a597ba42e9c163a26bc",
+  "evidence_file_sha256": "63a9002af0174626d23eaa5620cb86c465f4f20cea46972c6a90bbab5eb8a1bb",
+  "network_log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "records_sha256": "4719a2f29f9cacee3cdc3ea6d122c211372eec3609886ca00529d82831bf46cf",
+  "task_count": 3,
+  "passed_count": 3,
+  "agent_executed": false,
+  "claim_boundary": "validates scorer plumbing only; not Agent task success"
+}
