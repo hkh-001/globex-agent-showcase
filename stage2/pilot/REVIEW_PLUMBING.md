@@ -6,22 +6,40 @@
 ## 1. 来源与工作区
 
 ```bash
-git worktree add /tmp/plumbing-review 417869d
-cd /tmp/plumbing-review
+SOURCE_REPO=/tmp/plumbing-source-417869d
+REVIEW_REPO=/Users/hkh/Desktop/实习准备/Globex-agent-showcase
+REVIEW_TOOLING_COMMIT=3a0704169a2786b7e6db69a2e6b72873b807e2c5
+PY="$REVIEW_REPO/.venv/bin/python"
+git -C "$REVIEW_REPO" worktree add "$SOURCE_REPO" 417869d
+cd "$SOURCE_REPO"
 git status --porcelain
 ```
 
 预期：干净；`source_commit=417869d`，`source_tree` 与 manifest 一致。
 
+审查工具不存在于 `417869d`，必须从单独的已绑定提交执行：
+
+```bash
+git -C "$REVIEW_REPO" merge-base --is-ancestor "$REVIEW_TOOLING_COMMIT" HEAD
+git -C "$REVIEW_REPO" show "$REVIEW_TOOLING_COMMIT":scripts/eval/agentbench/check_pilot_plumbing.py | shasum -a 256
+git -C "$REVIEW_REPO" show "$REVIEW_TOOLING_COMMIT":scripts/eval/agentbench/compare_plumbing_replay.py | shasum -a 256
+git -C "$REVIEW_REPO" show "$REVIEW_TOOLING_COMMIT":tests/test_agentbench_plumbing.py | shasum -a 256
+```
+
+预期分别为：
+
+- `278dbbf8e67ac814f894d16b8ffa2aa8f3ffa026f02e1d5df7f4e35d93ec1bdc`
+- `7180f60e97c72d9e6c44cbae15968d0a89a51e89ddcdaed1bfb8e2522a94616b`
+- `0319a4af17ea4a02ded5968f7f4d587483b96844aa71e6ff29287cdd11b108b7`
+
 ## 2. 重跑 runner
 
 ```bash
-REPO=/Users/hkh/Desktop/实习准备/Globex-agent-showcase
-PY="$REPO/.venv/bin/python"
+cd "$SOURCE_REPO"
 $PY -m scripts.eval.agentbench.run_pilot_plumbing \
-  --output /tmp/plumbing-review/out/evidence.json \
-  --network-log /tmp/plumbing-review/out/network.jsonl \
-  --manifest /tmp/plumbing-review/out/manifest.json
+  --output "$SOURCE_REPO/out/evidence.json" \
+  --network-log "$SOURCE_REPO/out/network.jsonl" \
+  --manifest "$SOURCE_REPO/out/manifest.json"
 ```
 
 预期：`mode=scorer_plumbing_fixture_replay`、`agent_executed=false`、`3/3`、`external_connect_attempts=0`。
@@ -31,9 +49,10 @@ $PY -m scripts.eval.agentbench.run_pilot_plumbing \
 `occurred_at / dispatch_id / elapsed_ms / started_at / finished_at` 等是动态字段，禁止要求字节一致：
 
 ```bash
+cd "$REVIEW_REPO"
 $PY -m scripts.eval.agentbench.compare_plumbing_replay \
-  --baseline "$REPO/stage2/pilot/evidence-plumbing-v2" \
-  --candidate /tmp/plumbing-review/out
+  --baseline "$REVIEW_REPO/stage2/pilot/evidence-plumbing-v2" \
+  --candidate "$SOURCE_REPO/out"
 ```
 
 预期：`passed=true`。比较项为 task/scope/event 类型与工具/关键 payload/ToolChunk/双 scorer 结果。
@@ -41,10 +60,11 @@ $PY -m scripts.eval.agentbench.compare_plumbing_replay \
 ## 4. 独立重算
 
 ```bash
+cd "$REVIEW_REPO"
 $PY -m scripts.eval.agentbench.check_pilot_plumbing \
-  --evidence "$REPO/stage2/pilot/evidence-plumbing-v2/evidence.json" \
-  --network-log "$REPO/stage2/pilot/evidence-plumbing-v2/network.jsonl" \
-  --manifest "$REPO/stage2/pilot/evidence-plumbing-v2/manifest.json"
+  --evidence "$REVIEW_REPO/stage2/pilot/evidence-plumbing-v2/evidence.json" \
+  --network-log "$REVIEW_REPO/stage2/pilot/evidence-plumbing-v2/network.jsonl" \
+  --manifest "$REVIEW_REPO/stage2/pilot/evidence-plumbing-v2/manifest.json"
 ```
 
 预期：`passed=true`。注意：checker 只证明“自洽且可重算”，不证明执行真实性；执行真实性来自第 2/3 步的独立重放。
@@ -52,6 +72,7 @@ $PY -m scripts.eval.agentbench.check_pilot_plumbing \
 ## 5. network guard 正向对照
 
 ```bash
+cd "$REVIEW_REPO"
 $PY -m pytest -q -p no:cacheprovider \
   tests/test_agentbench_plumbing.py::test_network_guard_blocks_external_and_records
 ```
