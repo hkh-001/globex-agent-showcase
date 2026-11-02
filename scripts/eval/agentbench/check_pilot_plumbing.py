@@ -7,6 +7,7 @@ import json
 from pathlib import Path
 import subprocess
 
+from scripts.eval.agentbench import deterministic_checks, scorer
 from scripts.eval.agentbench.run_pilot_plumbing import ROOT, _sha
 
 
@@ -27,6 +28,8 @@ def check(evidence_path: Path, network_path: Path, manifest_path: Path) -> list[
         tree = ""
     if tree != manifest.get("source_tree"):
         errors.append("source_tree_mismatch")
+    if manifest.get("tracked_worktree_clean") is not True:
+        errors.append("tracked_worktree_not_clean")
     for key, value in {
         "evidence_file_sha256": hashlib.sha256(evidence_path.read_bytes()).hexdigest(),
         "network_log_sha256": hashlib.sha256(network_path.read_bytes()).hexdigest(),
@@ -44,6 +47,12 @@ def check(evidence_path: Path, network_path: Path, manifest_path: Path) -> list[
     pilot_hash = hashlib.sha256(pilot_blob).hexdigest()
     if pilot_hash != manifest.get("pilot_sha256") or pilot_hash != evidence.get("pilot_sha256"):
         errors.append("pilot_sha256_mismatch")
+    try:
+        pilot = json.loads(pilot_blob)
+        tasks = {task["task_id"]: task for task in pilot["tasks"]}
+    except (json.JSONDecodeError, KeyError, TypeError):
+        errors.append("pilot_blob_invalid")
+        tasks = {}
     records = evidence.get("records") or []
     if _sha(records) != evidence.get("records_sha256") or _sha(records) != manifest.get("records_sha256"):
         errors.append("records_sha256_mismatch")
@@ -51,6 +60,18 @@ def check(evidence_path: Path, network_path: Path, manifest_path: Path) -> list[
         errors.append("agent_execution_claim_invalid")
     if evidence.get("external_connect_attempts") != 0 or evidence.get("paid_requests") != 0:
         errors.append("network_or_paid_requests_nonzero")
+    network_rows = []
+    for line in network_path.read_text(encoding="utf-8").splitlines():
+        if not line.strip():
+            continue
+        try:
+            network_rows.append(json.loads(line))
+        except json.JSONDecodeError:
+            errors.append("network_log_invalid_json")
+    external_count = sum(row.get("kind") == "external" for row in network_rows
+                         if isinstance(row, dict))
+    if external_count != evidence.get("external_connect_attempts") or external_count:
+        errors.append("external_connect_count_mismatch")
     if evidence.get("task_count") != len(records) or evidence.get("passed_count") != len(records):
         errors.append("task_counts_invalid")
     scopes = set()
@@ -65,6 +86,21 @@ def check(evidence_path: Path, network_path: Path, manifest_path: Path) -> list[
                 or not (record.get("execution_score") or {}).get("passed")
                 or not (record.get("deterministic_score") or {}).get("passed")):
             errors.append(f"record[{index}]:result_invalid")
+        task = tasks.get(record.get("task_id"))
+        if task is None:
+            errors.append(f"record[{index}]:task_missing_from_pilot")
+        else:
+            recomputed_execution = scorer.score_execution_graph(
+                record.get("events") or [], task, scope=scope)
+            recomputed_deterministic = deterministic_checks.score(
+                task["deterministic_checks"], record.get("events") or [],
+                tool_results=record.get("tool_results") or [], scope=scope)
+            if recomputed_execution != record.get("execution_score"):
+                errors.append(f"record[{index}]:execution_score_mismatch")
+            if recomputed_deterministic != record.get("deterministic_score"):
+                errors.append(f"record[{index}]:deterministic_score_mismatch")
+            if not recomputed_execution.get("passed") or not recomputed_deterministic.get("passed"):
+                errors.append(f"record[{index}]:recomputed_score_failed")
         if _sha(record.get("events") or []) != record.get("events_sha256"):
             errors.append(f"record[{index}]:events_sha256_mismatch")
         if _sha(record.get("tool_results") or []) != record.get("tool_results_sha256"):

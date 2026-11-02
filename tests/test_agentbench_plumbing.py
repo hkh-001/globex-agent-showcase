@@ -7,6 +7,7 @@ import json
 import pytest
 
 from scripts.eval.agentbench import check_pilot_plumbing, run_pilot_plumbing, scorer
+from scripts.eval.agentbench.run_pilot_plumbing import _sha
 
 
 @pytest.mark.asyncio
@@ -14,6 +15,10 @@ async def test_plumbing_replay_runs_real_tools_and_both_scorers(tmp_path):
     output, network, manifest = (tmp_path / name for name in ("evidence.json", "network.jsonl", "manifest.json"))
     payload = await run_pilot_plumbing.run(output, network)
     recorded = run_pilot_plumbing.write_manifest(output, network, manifest, payload)
+    # Unit tests run with their own tracked edits; exercise the clean-evidence
+    # checker contract explicitly.  The committed evidence is generated clean.
+    recorded["tracked_worktree_clean"] = True
+    manifest.write_text(json.dumps(recorded, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     assert payload["mode"] == "scorer_plumbing_fixture_replay"
     assert payload["agent_executed"] is False
     assert payload["task_count"] == payload["passed_count"] == 3
@@ -34,12 +39,42 @@ async def test_plumbing_replay_runs_real_tools_and_both_scorers(tmp_path):
                for item in result["payload"]["insights"])
     assert check_pilot_plumbing.check(output, network, manifest) == []
 
-    tampered = json.loads(output.read_text(encoding="utf-8"))
-    tampered["records"][0]["events"][0]["payload"]["tool"] = "forged_tool"
-    output.write_text(json.dumps(tampered), encoding="utf-8")
+    original_payload = json.loads(output.read_text(encoding="utf-8"))
+    original_manifest = json.loads(manifest.read_text(encoding="utf-8"))
+
+    def reseal(payload, manifest_value):
+        payload["records_sha256"] = _sha(payload["records"])
+        output.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        manifest_value["records_sha256"] = payload["records_sha256"]
+        manifest_value["evidence_file_sha256"] = hashlib.sha256(output.read_bytes()).hexdigest()
+        manifest.write_text(json.dumps(manifest_value, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+    tampered = json.loads(json.dumps(original_payload))
+    knowledge_record = next(row for row in tampered["records"] if "knowledge" in row["task_id"])
+    knowledge_record["tool_results"] = []
+    knowledge_record["tool_results_sha256"] = _sha([])
+    reseal(tampered, dict(original_manifest))
     errors = check_pilot_plumbing.check(output, network, manifest)
-    assert "evidence_file_sha256_mismatch" in errors
-    assert "records_sha256_mismatch" in errors
+    assert any("deterministic_score_mismatch" in error for error in errors)
+    assert any("recomputed_score_failed" in error for error in errors)
+
+    tampered = json.loads(json.dumps(original_payload))
+    routing_record = next(row for row in tampered["records"] if "routing" in row["task_id"])
+    routing_record["events"] = [event for event in routing_record["events"]
+                                if event.get("payload", {}).get("tool") != "product_search_tool"]
+    routing_record["events_sha256"] = _sha(routing_record["events"])
+    reseal(tampered, dict(original_manifest))
+    errors = check_pilot_plumbing.check(output, network, manifest)
+    assert any("execution_score_mismatch" in error for error in errors)
+
+    reseal(original_payload, {**original_manifest, "tracked_worktree_clean": False})
+    assert "tracked_worktree_not_clean" in check_pilot_plumbing.check(output, network, manifest)
+
+    network.write_text('{"kind":"external","operation":"connect"}\n', encoding="utf-8")
+    network_manifest = dict(original_manifest)
+    network_manifest["network_log_sha256"] = hashlib.sha256(network.read_bytes()).hexdigest()
+    reseal(original_payload, network_manifest)
+    assert "external_connect_count_mismatch" in check_pilot_plumbing.check(output, network, manifest)
 
 
 @pytest.mark.asyncio

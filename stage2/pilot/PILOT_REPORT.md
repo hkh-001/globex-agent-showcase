@@ -23,6 +23,7 @@
 bus event 与 ToolChunk，并同时运行 execution graph 与 deterministic-check scorer。它不执行
 LLM Agent，只能证明评分管线，不是任务通过率或 Agent 能力证据。每题强制独立 session/run scope，
 模型调用为 0，外部网络由守卫阻断；任务中的 `automatic_scoring` 与 `execution_ready` 保持 false。
+`physical_model_calls=0` 是该 fixture 模式没有模型执行路径的定义值，不是供应商用量埋点测量。
 
 Knowledge 使用正式 `KNOWLEDGE_DIR` 上的确定性 keyword fallback，仅验证真实文件、工具合同和
 ToolChunk 采集，不证明向量召回效果。
