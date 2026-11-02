@@ -220,8 +220,8 @@
       },
       "deterministic_checks": [
         {
-          "kind": "event",
-          "selector": "tool.result:category_insight_tool",
+          "kind": "tool_result",
+          "selector": "category_insight_tool",
           "field": "insights[].source",
           "operator": "contains_any",
           "expected": [

@@ -10,6 +10,8 @@
 - 每题保存 `source_oracle`、`source_oracle_sha256`、`oracle_adapter_id/version`、adapter 输出 hash。
 - deterministic checks 使用显式 selector 与量词（`contains_any/contains_all/all_equal/any_gt`），
   并由 `scripts/eval/agentbench/deterministic_checks.py` fail-closed 执行；合成正负轨迹已纳入契约测试。
+- Knowledge 的文档来源只从真实 ToolChunk 的 `tool_result` 读取；bus event 仅判
+  `hit_count/abstained/policy_fact_statuses`。scorer 支持按 session/run scope 过滤。
 - validator 会从 registry 与源资产重建完整 canonical pilot；任务合同任一字段漂移都会失败。
 - `automatic_scoring=false`、`execution_ready=false`：dry-run 尚未实现。
 - 暂缺 memory / context / transaction：没有满足 Dev 且语义明确的源，宁缺勿凑。

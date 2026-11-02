@@ -4,6 +4,10 @@ from __future__ import annotations
 import json
 import pathlib
 
+import pytest
+
+from app.application.tools.category_insight_tool import build_category_insight_tool
+from app.infrastructure.eventbus import TradeEventBus, observe_run_events
 from scripts.eval.agentbench import deterministic_checks, generate_pilot, scorer, validate_pilot
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
@@ -101,12 +105,15 @@ def test_validator_rejects_weakened_execution_contract(tmp_path):
         assert _write_tampered(tmp_path, mutate)
 
 
-def _event(event_type, tool, payload=None, *, agent="main_agent", dispatch_id=None):
+def _event(event_type, tool, payload=None, *, agent="main_agent", dispatch_id=None,
+           session="pilot-session", run_id="pilot-run"):
     body = {"tool": tool, **(payload or {})}
     correlation = {"agent": agent}
     if dispatch_id:
         correlation["dispatch_id"] = dispatch_id
-    return {"type": event_type, "payload": body, "correlation": correlation}
+    correlation["run_id"] = run_id
+    return {"shopping_session_id": session, "type": event_type, "payload": body,
+            "correlation": correlation}
 
 
 def _positive_traces():
@@ -125,8 +132,9 @@ def _positive_traces():
         }),
     ]
     routing = [
-        {"type": "agent.dispatch", "payload": {"agent": "search_agent", "dispatch_id": "d1"},
-         "correlation": {"agent": "main_agent", "dispatch_id": "d1"}},
+        {"shopping_session_id": "pilot-session", "type": "agent.dispatch",
+         "payload": {"agent": "search_agent", "dispatch_id": "d1"},
+         "correlation": {"agent": "main_agent", "dispatch_id": "d1", "run_id": "pilot-run"}},
         _event("tool.invoke", "product_search_tool", agent="search_agent", dispatch_id="d1"),
         _event("tool.result", "product_search_tool", {"hits": [{"product_id": "P1"}]},
                agent="search_agent", dispatch_id="d1"),
@@ -141,11 +149,17 @@ def test_three_pilot_contracts_accept_positive_and_reject_negative_traces():
     traces = _positive_traces()
     for task in data["tasks"]:
         events = traces[task["capability"]]
+        tool_results = ([{"selector": "category_insight_tool", "shopping_session_id": "pilot-session",
+                          "run_id": "pilot-run", "payload": {
+                              "insights": [{"source": "eval-digital-accessories-价格与预算.md"}]}}]
+                        if task["capability"] == "search.category_insight" else [])
         assert scorer.score_execution_graph(events, task)["passed"]
-        assert deterministic_checks.score(task["deterministic_checks"], events)["passed"]
+        assert deterministic_checks.score(task["deterministic_checks"], events,
+                                            tool_results=tool_results)["passed"]
         broken = [event for event in events if event.get("payload", {}).get("tool") != (
             "product_search_tool" if task["capability"] != "search.category_insight" else "category_insight_tool")]
-        assert not deterministic_checks.score(task["deterministic_checks"], broken)["passed"]
+        assert not deterministic_checks.score(task["deterministic_checks"], broken,
+                                                tool_results=tool_results)["passed"]
 
 
 def test_deterministic_check_schema_and_array_quantifiers_are_fail_closed():
@@ -165,3 +179,59 @@ def test_last_matching_observation_is_authoritative():
         _event("tool.result", "x", {"hits": [{"id": "BAD"}]}),
     ]
     assert not deterministic_checks.score(checks, events)["passed"]
+
+
+@pytest.mark.asyncio
+async def test_knowledge_oracle_uses_real_tool_chunk_not_bus_payload(tmp_path):
+    class BrokenKnowledgeBase:
+        async def search(self, *args, **kwargs):
+            raise RuntimeError("force deterministic fallback")
+
+    docs = tmp_path / "knowledge"
+    docs.mkdir()
+    filename = "eval-digital-accessories-价格与预算.md"
+    (docs / filename).write_text(
+        "# 数码配件价格与预算\n选购数码配件时核对商品价格、运费、税费与币种。", encoding="utf-8")
+    bus = TradeEventBus()
+    tool = build_category_insight_tool(BrokenKnowledgeBase(), bus, fallback_knowledge_dir=docs)
+    captured = []
+    with observe_run_events(captured.append):
+        chunk = await tool(question="选购数码配件价格与预算时核对哪些字段", top_k=2)
+    events = [event.to_dict() for event in captured]
+    event_result = next(event for event in events if event["type"] == "tool.result")
+    assert "insights" not in event_result["payload"]
+    payload = json.loads(chunk.content[0].text)
+    tool_results = [{"selector": "category_insight_tool", "payload": payload}]
+    task = next(task for task in json.loads(PILOT.read_text())["tasks"]
+                if task["capability"] == "search.category_insight")
+    assert deterministic_checks.score(task["deterministic_checks"], events,
+                                       tool_results=tool_results)["passed"]
+    assert not deterministic_checks.score(task["deterministic_checks"], events,
+                                           tool_results=[])["passed"]
+
+
+def test_check_types_fail_closed_without_type_errors():
+    bad = [
+        {"kind": "event", "selector": "tool.result:x", "field": "a",
+         "operator": "contains_any", "expected": [{"not": "scalar"}]},
+        {"kind": "event", "selector": "tool.result:x", "field": "a",
+         "operator": "any_gt", "expected": "zero"},
+        {"kind": "event", "selector": "tool.result:x", "field": "a",
+         "operator": "nonempty", "expected": "false"},
+    ]
+    for check in bad:
+        result = deterministic_checks.score([check], [_event("tool.result", "x", {"a": [{}]})])
+        assert result["status"] == "evidence_invalid"
+
+
+def test_scope_excludes_other_session_and_run():
+    check = {"kind": "event", "selector": "tool.result:x", "field": "value",
+             "operator": "scalar_equals", "expected": "GOOD"}
+    events = [
+        _event("tool.result", "x", {"value": "GOOD"}, session="wanted", run_id="run-1"),
+        _event("tool.result", "x", {"value": "BAD"}, session="other", run_id="run-2"),
+    ]
+    assert deterministic_checks.score([check], events,
+                                       scope={"shopping_session_id": "wanted", "run_id": "run-1"})["passed"]
+    assert not deterministic_checks.score([check], events,
+                                           scope={"shopping_session_id": "other", "run_id": "run-2"})["passed"]

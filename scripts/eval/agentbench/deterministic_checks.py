@@ -47,23 +47,46 @@ def _event_payloads(events: Iterable[dict[str, Any]], selector: str) -> list[dic
             and event["payload"].get("tool") == tool]
 
 
+def _is_scalar(value: Any) -> bool:
+    return value is None or isinstance(value, (str, int, float, bool))
+
+
+def _scalar_list(value: Any) -> bool:
+    return isinstance(value, list) and all(_is_scalar(item) for item in value)
+
+
+def _in_scope(record: dict[str, Any], scope: dict[str, str] | None) -> bool:
+    if not scope:
+        return True
+    if "shopping_session_id" in scope and record.get("shopping_session_id") != scope["shopping_session_id"]:
+        return False
+    if "run_id" in scope:
+        run_id = record.get("run_id") or (record.get("correlation") or {}).get("run_id")
+        if run_id != scope["run_id"]:
+            return False
+    return True
+
+
 def _evaluate(operator: str, actual: Any, expected: Any) -> bool:
     if operator == "exists":
         return actual is not MISSING
     if actual is MISSING:
         return False
     if operator == "scalar_equals":
-        return not isinstance(actual, (list, dict)) and actual == expected
+        return _is_scalar(actual) and _is_scalar(expected) and actual == expected
     if operator == "scalar_gt":
         return type(actual) in {int, float} and actual > expected
     if operator == "nonempty":
-        return bool(actual) is bool(expected)
+        return isinstance(expected, bool) and bool(actual) is expected
     if operator == "contains_any":
-        return isinstance(actual, list) and isinstance(expected, list) and bool(set(actual) & set(expected))
+        return (_scalar_list(actual) and _scalar_list(expected)
+                and any(item in expected for item in actual))
     if operator == "contains_all":
-        return isinstance(actual, list) and isinstance(expected, list) and set(expected) <= set(actual)
+        return (_scalar_list(actual) and _scalar_list(expected)
+                and all(item in actual for item in expected))
     if operator == "all_equal":
-        return isinstance(actual, list) and bool(actual) and all(item == expected for item in actual)
+        return _scalar_list(actual) and _is_scalar(expected) and bool(actual) and all(
+            item == expected for item in actual)
     if operator == "any_gt":
         return isinstance(actual, list) and any(type(item) in {int, float} and item > expected for item in actual)
     return False
@@ -73,19 +96,36 @@ def validate_check(check: dict[str, Any]) -> str | None:
     required = {"kind", "selector", "field", "operator", "expected"}
     if set(check) != required:
         return "check_schema"
-    if check["kind"] not in {"event", "tool"}:
+    if check["kind"] not in {"event", "tool", "tool_result"}:
         return "check_kind"
     if check["operator"] not in OPERATORS:
         return "check_operator"
     if not all(isinstance(check[key], str) and check[key] for key in ("selector", "field", "operator")):
         return "check_text"
+    operator, expected = check["operator"], check["expected"]
+    if operator in {"contains_any", "contains_all"} and not _scalar_list(expected):
+        return "check_expected_scalar_list"
+    if operator in {"scalar_gt", "any_gt"} and type(expected) not in {int, float}:
+        return "check_expected_number"
+    if operator in {"nonempty", "exists"} and not isinstance(expected, bool):
+        return "check_expected_bool"
+    if operator in {"scalar_equals", "all_equal"} and not _is_scalar(expected):
+        return "check_expected_scalar"
     return None
 
 
-def score(checks: list[dict[str, Any]], events: list[dict[str, Any]]) -> dict[str, Any]:
+def score(
+    checks: list[dict[str, Any]],
+    events: list[dict[str, Any]],
+    *,
+    tool_results: list[dict[str, Any]] | None = None,
+    scope: dict[str, str] | None = None,
+) -> dict[str, Any]:
     failures: list[str] = []
     evidence_errors: list[str] = []
-    invoked_tools = [event.get("payload", {}).get("tool") for event in events
+    scoped_events = [event for event in events if _in_scope(event, scope)]
+    scoped_results = [result for result in (tool_results or []) if _in_scope(result, scope)]
+    invoked_tools = [event.get("payload", {}).get("tool") for event in scoped_events
                      if event.get("type") == "tool.invoke" and isinstance(event.get("payload"), dict)]
     for index, check in enumerate(checks):
         problem = validate_check(check)
@@ -97,8 +137,16 @@ def score(checks: list[dict[str, Any]], events: list[dict[str, Any]]) -> dict[st
                 evidence_errors.append(f"check[{index}]:unknown_tool_projection")
                 continue
             actual = invoked_tools
+        elif check["kind"] == "tool_result":
+            payloads = [result["payload"] for result in scoped_results
+                        if result.get("selector") == check["selector"]
+                        and isinstance(result.get("payload"), dict)]
+            if not payloads:
+                failures.append(f"check[{index}]:selector_not_observed")
+                continue
+            actual = _project(payloads[-1], check["field"])
         else:
-            payloads = _event_payloads(events, check["selector"])
+            payloads = _event_payloads(scoped_events, check["selector"])
             if not payloads:
                 failures.append(f"check[{index}]:selector_not_observed")
                 continue

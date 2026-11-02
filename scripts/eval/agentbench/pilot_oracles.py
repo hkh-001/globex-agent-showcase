@@ -52,7 +52,7 @@ def checks(asset: str, oracle: dict) -> list[dict]:
         return result
     if adapter == "knowledge-source":
         return [
-            {"kind": "event", "selector": "tool.result:category_insight_tool",
+            {"kind": "tool_result", "selector": "category_insight_tool",
              "field": "insights[].source", "operator": "contains_any",
              "expected": oracle["relevant"]},
             {"kind": "event", "selector": "tool.result:category_insight_tool",
