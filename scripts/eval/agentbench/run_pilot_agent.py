@@ -9,6 +9,7 @@ from __future__ import annotations
 import argparse
 import asyncio
 import hashlib
+import threading
 import json
 from pathlib import Path
 from typing import Any, Protocol
@@ -25,9 +26,44 @@ def _sha(value) -> str:
                                      separators=(",", ":"), default=str).encode()).hexdigest()
 
 
+class BudgetExceeded(ValueError):
+    pass
+
+
+class ModelCallLedger:
+    """Atomic pre-dispatch reservations for one executor run."""
+
+    def __init__(self, global_limit: int):
+        if not isinstance(global_limit, int) or global_limit <= 0:
+            raise ValueError("global model-call budget must be positive")
+        self._global_limit = global_limit
+        self._total = 0
+        self._per_task: dict[str, int] = {}
+        self._lock = threading.Lock()
+
+    def reserve(self, task_id: str, task_limit: int) -> int:
+        if not isinstance(task_limit, int) or task_limit <= 0:
+            raise BudgetExceeded(f"{task_id}: invalid task budget")
+        with self._lock:
+            used = self._per_task.get(task_id, 0)
+            if used + 1 > task_limit:
+                raise BudgetExceeded(f"{task_id}: per-task budget exceeded")
+            if self._total + 1 > self._global_limit:
+                raise BudgetExceeded("global budget exceeded")
+            self._per_task[task_id] = used + 1
+            self._total += 1
+            return self._total
+
+    def snapshot(self) -> dict[str, Any]:
+        with self._lock:
+            return {"total": self._total, "per_task": dict(self._per_task),
+                    "global_limit": self._global_limit}
+
+
 class AgentBackend(Protocol):
-    async def run(self, task: dict[str, Any], scope: dict[str, str]) -> dict[str, Any]:
-        """Return events, tool_results, agent_executed and physical_model_calls."""
+    async def run(self, task: dict[str, Any], scope: dict[str, str],
+                  ledger: ModelCallLedger) -> dict[str, Any]:
+        """Must call ledger.reserve(task_id, task['max_model_calls']) before each model request."""
 
 
 def preflight(pilot_path: Path = PILOT) -> dict[str, Any]:
@@ -66,18 +102,29 @@ async def execute(tasks: list[dict[str, Any]], backend: AgentBackend,
     budget = authorization.get("max_total_model_calls")
     if not isinstance(budget, int) or budget <= 0:
         raise ValueError("authorization must declare a positive model-call budget")
+    if len({task.get("task_id") for task in tasks}) != len(tasks):
+        raise ValueError("duplicate task_id")
+    for task in tasks:
+        if task.get("automatic_scoring") is not False or task.get("execution_ready") is not False:
+            raise ValueError(f"{task.get('task_id')}: flags must stay false")
+        if not task.get("turns") or not task.get("deterministic_checks"):
+            raise ValueError(f"{task.get('task_id')}: incomplete task contract")
+    ledger = ModelCallLedger(budget)
     records = []
     spent = 0
     for index, task in enumerate(tasks):
         scope = {"shopping_session_id": f"agent-{task['task_id']}-session",
                  "run_id": f"agent-{task['task_id']}-run-{index}"}
-        result = await backend.run(task, scope)
+        result = await backend.run(task, scope, ledger)
         calls = result.get("physical_model_calls")
         if result.get("agent_executed") is not True or not isinstance(calls, int) or calls < 0:
             raise ValueError(f"{task['task_id']}: backend must report real agent execution and calls")
+        task_spent = ledger.snapshot()["per_task"].get(task["task_id"], 0)
+        if calls != task_spent:
+            raise ValueError(f"{task['task_id']}: backend calls {calls} != ledger {task_spent}")
+        if calls > task["max_model_calls"]:
+            raise ValueError(f"{task['task_id']}: per-task budget exceeded")
         spent += calls
-        if spent > budget:
-            raise ValueError(f"model-call budget exceeded: {spent}>{budget}")
         events = result.get("events") or []
         tool_results = result.get("tool_results") or []
         execution = scorer.score_execution_graph(events, task, scope=scope)
@@ -94,6 +141,7 @@ async def execute(tasks: list[dict[str, Any]], backend: AgentBackend,
         "mode": "real_agent_canary",
         "tasks": len(records), "passed_count": sum(record["passed"] for record in records),
         "model_calls": spent,
+        "ledger": ledger.snapshot(),
         "records": records,
         "records_sha256": _sha(records),
         "automatic_scoring": False,
