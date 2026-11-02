@@ -119,10 +119,15 @@ def score(
     events: list[dict[str, Any]],
     *,
     tool_results: list[dict[str, Any]] | None = None,
-    scope: dict[str, str] | None = None,
+    scope: dict[str, str],
 ) -> dict[str, Any]:
     failures: list[str] = []
     evidence_errors: list[str] = []
+    required_scope = {"shopping_session_id", "run_id"}
+    if set(scope) != required_scope or not all(isinstance(scope[key], str) and scope[key]
+                                               for key in required_scope):
+        return {"status": "evidence_invalid", "passed": False,
+                "evidence_errors": ["invalid_or_missing_scope"], "failures": []}
     scoped_events = [event for event in events if _in_scope(event, scope)]
     scoped_results = [result for result in (tool_results or []) if _in_scope(result, scope)]
     invoked_tools = [event.get("payload", {}).get("tool") for event in scoped_events
