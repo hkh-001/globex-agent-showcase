@@ -1,0 +1,13 @@
+{
+  "schema_version": "agentbench-agent-preflight-v1",
+  "mode": "preflight_only",
+  "pilot_sha256": "9c6329cf59e4d9d0ce00dd9d0a0302a893e31b19f6038a597ba42e9c163a26bc",
+  "task_count": 3,
+  "paid_requests": 0,
+  "agent_executed": false,
+  "physical_model_calls": 0,
+  "automatic_scoring": false,
+  "execution_ready": false,
+  "errors": [],
+  "passed": true
+}
